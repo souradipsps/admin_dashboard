@@ -66,6 +66,7 @@ export default function InterviewPanel({
   const [assigningCandidate, setAssigningCandidate] = useState<any>(null);
   const [selectedAppDetail, setSelectedAppDetail] = useState<any>(null);
   const [showAddPanelistModal, setShowAddPanelistModal] = useState(false);
+  const [reminderCandidate, setReminderCandidate] = useState<any>(null);
 
   // Track the current active round view override per candidate (key: name-role)
   const [activeRoundOverrides, setActiveRoundOverrides] = useState<Record<string, number>>({});
@@ -703,6 +704,15 @@ export default function InterviewPanel({
           >
             Panelist
           </button>
+          {i.date && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setReminderCandidate(c); }}
+              style={actionBtnStyle("secondary")}
+              title="Send reminder to panelists and candidate"
+            >
+              🔔 Reminder
+            </button>
+          )}
         </div>,
       ];
     }
@@ -819,6 +829,15 @@ export default function InterviewPanel({
         >
           Panelist
         </button>
+        {i.date && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setReminderCandidate(c); }}
+            style={actionBtnStyle("secondary")}
+            title="Send reminder to panelists and candidate"
+          >
+            🔔 Reminder
+          </button>
+        )}
       </div>,
     ];
   });
@@ -1985,6 +2004,18 @@ export default function InterviewPanel({
           </div>
         </div>
       )}
+
+      {/* Send Reminder Success Modal */}
+      <Modal open={!!reminderCandidate} onClose={() => setReminderCandidate(null)} maxWidth={400}>
+        <div style={{ textAlign: "center", padding: "20px 10px" }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: T.ink, marginBottom: 6 }}>Reminder Sent!</div>
+          <div style={{ fontSize: 13, color: T.inkMid, lineHeight: 1.5, marginBottom: 20 }}>
+            Reminder sent to panelist(s) for <strong style={{ color: T.primary }}>{reminderCandidate?.name}</strong>!
+          </div>
+          <Btn label="Close" onClick={() => setReminderCandidate(null)} style={{ width: "100%" }} />
+        </div>
+      </Modal>
     </div>
   );
 }
