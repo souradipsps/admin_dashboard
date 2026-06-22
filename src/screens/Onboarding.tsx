@@ -25,6 +25,7 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [selectedPostingId, setSelectedPostingId] = useState<string | null>(null);
   const [previewDoc, setPreviewDoc] = useState<{ type: string; title: string; content: React.ReactNode } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ id: string; key: typeof TASK_KEYS[number]; status: "Verified" | "Rejected" } | null>(null);
 
   const [records, setRecords] = useState<any[]>(() => {
     const saved = localStorage.getItem("onboardingRecords");
@@ -33,11 +34,14 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
       // Migrate old boolean tasks to string states
       return parsed.map((r: any) => {
         const migratedTasks = { ...r.tasks };
-        ["profile", "offer", "docsUpload", "docsVerify"].forEach((k) => {
+        ["profile", "offer", "docsUpload", "docsVerify", "bgc"].forEach((k) => {
           if (typeof migratedTasks[k] === "boolean") {
             migratedTasks[k] = migratedTasks[k] ? "Verified" : "Pending";
           }
         });
+        // Force reset to Pending so you can test the verify/reject flow
+        migratedTasks.docsVerify = "Pending";
+        migratedTasks.bgc = "Pending";
         return { ...r, tasks: migratedTasks };
       });
     }
@@ -47,9 +51,8 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
       tasks: {
         profile: "Verified",
         offer: "Verified",
-        docsUpload: "Verified",
-        docsVerify: "Verified",
-        bgc: true,
+        docsVerify: "Pending",
+        bgc: "Pending",
         checkin: o.tasks?.checkin || false,
       },
       status: o.status === "Completed" ? "Completed" : "Documents Pending",
@@ -75,9 +78,7 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
   };
 
   const isTaskDone = (key: typeof TASK_KEYS[number], val: any) => {
-    if (key === "bgc" || key === "checkin") {
-      return !!val;
-    }
+    if (key === "checkin") return !!val;
     return val === "Verified";
   };
 
@@ -129,7 +130,7 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
   const currentRecord = selectedRecord ? records.find(r => r.id === selectedRecord.id) : null;
 
   const getTaskIconAndColor = (key: typeof TASK_KEYS[number], val: any) => {
-    if (key === "bgc" || key === "checkin") {
+    if (key === "checkin") {
       return val
         ? { icon: "✓", color: T.green, bg: T.greenLight, border: "#A7F3D0" }
         : { icon: "○", color: T.inkFaint, bg: T.canvas, border: T.border };
@@ -223,6 +224,26 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
             <div style={{ fontSize: 11, color: T.inkLight }}>{item.note}</div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+
+  const renderBgcPreview = (_record: any) => (
+    <div style={{ fontSize: 13, color: T.inkMid }}>
+      <div style={{ marginBottom: 12 }}><strong>Background Check Details:</strong></div>
+      <div style={{ padding: 12, background: T.canvas, borderRadius: 8, border: `1px solid ${T.border}` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <span style={{ fontWeight: 700, color: T.ink }}>Criminal Record Check</span>
+          <span style={{ fontSize: 10, fontWeight: 800, color: T.green, background: T.greenLight, padding: "2px 8px", borderRadius: 4 }}>CLEAR</span>
+        </div>
+        <div style={{ fontSize: 11, color: T.inkLight }}>No matching records found in national databases.</div>
+      </div>
+      <div style={{ padding: 12, background: T.canvas, borderRadius: 8, border: `1px solid ${T.border}`, marginTop: 10 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <span style={{ fontWeight: 700, color: T.ink }}>Address Verification</span>
+          <span style={{ fontSize: 10, fontWeight: 800, color: T.green, background: T.greenLight, padding: "2px 8px", borderRadius: 4 }}>VERIFIED</span>
+        </div>
+        <div style={{ fontSize: 11, color: T.inkLight }}>Current and permanent addresses physically verified.</div>
       </div>
     </div>
   );
@@ -591,8 +612,9 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {TASK_LABELS.map((t, i) => {
                     const key = TASK_KEYS[i];
+                    if (key === "checkin") return null;
                     const val = currentRecord.tasks[key];
-                    const isSpecialField = key === "profile" || key === "offer" || key === "docsUpload" || key === "docsVerify";
+                    const isSpecialField = key === "profile" || key === "offer" || key === "docsUpload" || key === "docsVerify" || key === "bgc";
 
                     if (isSpecialField) {
                       const statusColor = val === "Verified" ? T.green : val === "Rejected" ? T.red : T.inkFaint;
@@ -654,6 +676,9 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
                                 } else if (key === "docsVerify") {
                                   title = "Document Verification Checks";
                                   content = renderDocsVerifyPreview(currentRecord);
+                                } else if (key === "bgc") {
+                                  title = "Background Check Details";
+                                  content = renderBgcPreview(currentRecord);
                                 }
                                 setPreviewDoc({ type: key, title, content });
                               }}
@@ -664,24 +689,28 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
                             >
                               View
                             </button>
-                            <button
-                              onClick={() => setTaskStatus(currentRecord.id, key, "Verified")}
-                              style={{
-                                border: "none", background: val === "Verified" ? T.green : T.greenLight, color: val === "Verified" ? "#fff" : T.green,
-                                borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer"
-                              }}
-                            >
-                              Verify
-                            </button>
-                            <button
-                              onClick={() => setTaskStatus(currentRecord.id, key, "Rejected")}
-                              style={{
-                                border: "none", background: val === "Rejected" ? T.red : T.redLight, color: val === "Rejected" ? "#fff" : T.red,
-                                borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer"
-                              }}
-                            >
-                              Reject
-                            </button>
+                            {(key === "docsVerify" || key === "bgc") && val !== "Verified" && val !== "Rejected" && (
+                              <>
+                                <button
+                                  onClick={() => setConfirmAction({ id: currentRecord.id, key, status: "Verified" })}
+                                  style={{
+                                    border: "none", background: T.greenLight, color: T.green,
+                                    borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer"
+                                  }}
+                                >
+                                  Verify
+                                </button>
+                                <button
+                                  onClick={() => setConfirmAction({ id: currentRecord.id, key, status: "Rejected" })}
+                                  style={{
+                                    border: "none", background: T.redLight, color: T.red,
+                                    borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer"
+                                  }}
+                                >
+                                  Reject
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
                       );
@@ -720,9 +749,37 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
                 </div>
               </div>
 
-              <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
-                <Btn label="Close" onClick={() => setSelectedRecord(null)} />
-              </div>
+              {(() => {
+                const canCheckIn = currentRecord.tasks.checkin || ["profile", "offer", "docsUpload", "docsVerify", "bgc"].every(k => currentRecord.tasks[k] === "Verified");
+                return (
+                  <div style={{ marginTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ fontSize: 12, color: T.red, fontWeight: 500 }}>
+                      {!canCheckIn && "★ All steps must be verified before Check In"}
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (!canCheckIn) return;
+                        toggleTask(currentRecord.id, "checkin");
+                        setSelectedRecord(null);
+                      }}
+                      style={{
+                        background: canCheckIn ? (currentRecord.tasks.checkin ? T.green : T.blue) : T.canvas,
+                        color: canCheckIn ? "#fff" : T.inkFaint,
+                        border: canCheckIn ? "none" : `1px solid ${T.border}`,
+                        borderRadius: 8,
+                        padding: "8px 20px",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: canCheckIn ? "pointer" : "not-allowed",
+                        transition: "all 0.2s"
+                      }}
+                      disabled={!canCheckIn}
+                    >
+                      {currentRecord.tasks.checkin ? "Checked In" : "Check In"}
+                    </button>
+                  </div>
+                );
+              })()}
             </>
           );
         })()}
@@ -738,6 +795,39 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
             </div>
             <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
               <Btn label="Close" onClick={() => setPreviewDoc(null)} />
+            </div>
+          </>
+        )}
+      </Modal>
+
+      {/* Confirmation Modal */}
+      <Modal open={!!confirmAction} onClose={() => setConfirmAction(null)} maxWidth={400}>
+        {confirmAction && (
+          <>
+            <ModalHeader title="Confirm Action" onClose={() => setConfirmAction(null)} />
+            <div style={{ padding: "12px 0", color: T.inkMid, fontSize: 14 }}>
+              Are you sure you want to mark this task as <strong style={{ color: confirmAction.status === "Verified" ? T.green : T.red }}>{confirmAction.status}</strong>? This action cannot be undone.
+            </div>
+            <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <Btn label="Cancel" variant="outline" onClick={() => setConfirmAction(null)} />
+              <button
+                onClick={() => {
+                  setTaskStatus(confirmAction.id, confirmAction.key, confirmAction.status);
+                  setConfirmAction(null);
+                }}
+                style={{
+                  background: confirmAction.status === "Verified" ? T.green : T.red,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "8px 16px",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: "pointer"
+                }}
+              >
+                Yes, {confirmAction.status}
+              </button>
             </div>
           </>
         )}
