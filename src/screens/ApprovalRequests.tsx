@@ -42,7 +42,7 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
   const openModal = (r: any) => { setSel(r); setComment(""); setFieldErrors({}); };
   const closeModal = () => { setSel(null); setComment(""); setFieldErrors({}); };
 
-  const performAction = (r: any, action: "Approved" | "Rejected" | "Send Back", customComment?: string) => {
+  const performAction = (r: any, action: "Approved" | "Rejected" | "Sent Back", customComment?: string) => {
     const now = new Date().toLocaleDateString();
     const entry = { act: action, by: "HR Admin", date: now, note: customComment || "" };
     const updated = { ...r, status: action, comment: customComment || "", history: [...(r.history || []), entry] };
@@ -51,7 +51,17 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
 
     if (r.type === "Role Request") {
       setRoleRequests((prev) =>
-        prev.map((item) => String(item.id) === String(r.sourceId) ? { ...item, status: action, comment: customComment || "" } : item),
+        prev.map((item) =>
+          String(item.id) === String(r.sourceId)
+            ? {
+                ...item,
+                status: action,
+                comment: customComment || "",
+                salaryRange: r.salary ? r.salary.replace(/^₹/, "") : item.salaryRange,
+                experience: r.experience || item.experience,
+              }
+            : item
+        ),
       );
     }
     if (r.type === "Job Request") {
@@ -105,7 +115,7 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
     }
   };
 
-  const takeAction = (action: "Approved" | "Rejected" | "Send Back") => {
+  const takeAction = (action: "Approved" | "Rejected" | "Sent Back") => {
     if (!sel) return;
     let updatedSel = { ...sel };
     if (sel.type === "Role Request") {
@@ -131,6 +141,67 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
     }
     setFieldErrors({});
     performAction(updatedSel, action, comment);
+    closeModal();
+  };
+
+  const saveEdits = () => {
+    if (!sel) return;
+    let updatedSel = { ...sel };
+    if (sel.type === "Role Request") {
+      const minS = sel.minSalary ?? sel.salary?.replace(/^₹/, "").split("-")[0]?.trim() ?? "";
+      const maxS = sel.maxSalary ?? sel.salary?.replace(/^₹/, "").split("-")[1]?.trim() ?? "";
+      const minE = sel.minExp ?? (sel.experience ? String(sel.experience).split("-")[0]?.trim() : "");
+      const maxE = sel.maxExp ?? (sel.experience ? String(sel.experience).split("-")[1]?.trim() : "");
+
+      const errs: Record<string, string> = {};
+      if (minS && maxS && parseSal(minS) >= parseSal(maxS)) errs.minSalary = "Min salary must be less than max salary";
+      if (minE && maxE && parseFloat(minE) >= parseFloat(maxE)) errs.minExp = "Min experience must be less than max experience";
+      if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
+
+      updatedSel.salary = minS && maxS ? `₹${minS}-${maxS}` : sel.salary;
+      updatedSel.experience = minE && maxE ? `${minE}-${maxE}` : sel.experience;
+    }
+    if (sel.type === "Job Request") {
+      updatedSel.vacancies = sel.vacancies;
+      updatedSel.qual = sel.qual;
+      updatedSel.empType = sel.empType;
+      updatedSel.description = sel.description;
+    }
+    setFieldErrors({});
+    
+    // Save to requests list
+    setRequests((prev) => prev.map((item) => (item.id === sel.id ? updatedSel : item)));
+
+    // Save to roleRequests / jobRequests
+    if (sel.type === "Role Request") {
+      setRoleRequests((prev) =>
+        prev.map((item) =>
+          String(item.id) === String(sel.sourceId)
+            ? {
+                ...item,
+                salaryRange: updatedSel.salary ? updatedSel.salary.replace(/^₹/, "") : item.salaryRange,
+                experience: updatedSel.experience || item.experience,
+              }
+            : item
+        )
+      );
+    }
+    if (sel.type === "Job Request") {
+      setJobRequests((prev) =>
+        prev.map((item) =>
+          String(item.id) === String(sel.sourceId)
+            ? {
+                ...item,
+                vacancies: updatedSel.vacancies,
+                qual: updatedSel.qual,
+                type: updatedSel.empType,
+                description: updatedSel.description,
+              }
+            : item
+        )
+      );
+    }
+    
     closeModal();
   };
 
@@ -364,7 +435,7 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
               {isPending ? (
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 700, color: T.inkLight, display: "block", marginBottom: 6 }}>
-                    Comment <span style={{ color: T.inkFaint, fontWeight: 400 }}>(required for Send Back)</span>
+                    Comment <span style={{ color: T.inkFaint, fontWeight: 400 }}>(required for Sent Back)</span>
                   </label>
                   <textarea
                     placeholder="Add a comment or reason…"
@@ -399,17 +470,27 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                 display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap",
                 background: T.canvas, borderRadius: "0 0 16px 16px",
               }}>
-                <Btn label="✕ Reject" variant="danger" small onClick={() => takeAction("Rejected")} />
                 <Btn
-                  label="↺ Send Back"
+                  label="Cancel Request"
+                  variant="ghost"
+                  small
+                  onClick={() => {
+                    if (!sel) return;
+                    if (confirm("Are you sure you want to cancel this request?")) {
+                      takeAction("Rejected");
+                    }
+                  }}
+                />
+                <Btn
+                  label="Sent Back"
                   variant="amber"
                   small
                   onClick={() => {
                     if (!comment.trim()) { alert("Please add a comment before sending back."); return; }
-                    takeAction("Send Back");
+                    takeAction("Sent Back");
                   }}
                 />
-                <Btn label="✓ Approve" variant="success" small onClick={() => takeAction("Approved")} />
+                <Btn label="Accept" variant="success" small onClick={() => takeAction("Approved")} />
               </div>
             )}
           </div>
@@ -429,7 +510,7 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
             onChange={(e) => setStatusFilter(e.target.value)}
             style={{ border: `1.5px solid ${T.border}`, borderRadius: 8, padding: "8px 12px", fontSize: 13, color: T.inkMid, background: "#fff", cursor: "pointer" }}
           >
-            {["All", "Pending", "Approved", "Rejected", "Send Back"].map((s) => <option key={s}>{s}</option>)}
+            {["All", "Pending", "Approved", "Rejected", "Sent Back"].map((s) => <option key={s}>{s}</option>)}
           </select>
           {pendingCount > 0 && (
             <span style={{ marginLeft: "auto", background: T.amberLight, border: `1px solid #FDE68A`, borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 700, color: T.amber }}>

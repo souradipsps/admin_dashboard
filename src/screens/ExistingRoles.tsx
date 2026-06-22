@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { T } from "../theme";
 import { STATUS_COLORS } from "../theme";
 import { useBreakpoint } from "../hooks";
-import { Card, SectionTitle, Table, Badge, Mono, Input } from "../components/ui";
+import { Card, SectionTitle, Table, Badge, Mono, Input, Modal, ModalHeader, Select } from "../components/ui";
 
 interface ExistingRolesProps {
   roles: any[];
@@ -62,52 +62,110 @@ export default function ExistingRoles({ roles, setRoles }: ExistingRolesProps) {
             onChange={(e) => setSearch(e.target.value)}
             style={{ maxWidth: isMobile ? "100%" : 240 }}
           />
-          <select
-            value={deptFilter}
-            onChange={(e) => setDeptFilter(e.target.value)}
-            style={{ border: `1.5px solid ${T.border}`, borderRadius: 8, padding: "8px 12px", fontSize: 13, color: T.inkMid, background: "#fff", cursor: "pointer" }}
-          >
-            {depts.map((d) => <option key={d}>{d}</option>)}
-          </select>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            style={{ border: `1.5px solid ${T.border}`, borderRadius: 8, padding: "8px 12px", fontSize: 13, color: T.inkMid, background: "#fff", cursor: "pointer" }}
-          >
-            {statuses.map((s) => <option key={s}>{s}</option>)}
-          </select>
+          <div style={{ width: isMobile ? '100%' : 220 }}>
+            <Select
+              value={deptFilter}
+              onChange={(e) => setDeptFilter(e.target.value)}
+              options={depts.map((d) => ({ value: d, label: d }))}
+              placeholder="Department"
+            />
+          </div>
+          <div style={{ width: isMobile ? '100%' : 160 }}>
+            <Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              options={statuses.map((s) => ({ value: s, label: s }))}
+              placeholder="Status"
+            />
+          </div>
           <span style={{ fontSize: 12, color: T.inkFaint, marginLeft: "auto" }}>{filtered.length} roles</span>
         </div>
 
-        <Table
+        <RolesTable
           cols={["Role ID", "Department", "Role Name", "Experience", "Salary Range", "Type", "Status"]}
-          rows={filtered.map((r) => {
-            const sc = STATUS_COLORS[r.currentStatus] || STATUS_COLORS.Active;
-            return [
-              <Mono v={r.id} />,
-              <span style={{ fontSize: 12, color: T.inkMid }}>{r.dept}</span>,
-              <strong style={{ color: T.ink }}>{r.role}</strong>,
-              <span style={{ fontSize: 13, color: T.ink }}>{r.experience ? `${r.experience} yrs` : "—"}</span>,
-              <span style={{ fontSize: 13, color: T.ink, fontWeight: 600 }}>{r.salaryRange ? `₹${r.salaryRange}` : "—"}</span>,
-              <Badge label={r.type} variant={r.type === "Full-time" ? "blue" : "teal"} />,
-              <select
-                value={r.currentStatus}
-                onChange={(e) => handleStatusChange(r.id, e.target.value)}
-                style={{
-                  background: sc.bg, color: sc.color, border: `1.5px solid ${sc.border}`,
-                  borderRadius: 99, padding: "3px 24px 3px 10px", fontSize: 11, fontWeight: 700,
-                  cursor: "pointer", outline: "none", appearance: "none",
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='${encodeURIComponent(sc.color)}' d='M5 7L1 3h8z'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: "no-repeat", backgroundPosition: "right 8px center",
-                }}
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>,
-            ];
-          })}
+          rows={filtered}
+          onStatusChange={handleStatusChange}
         />
       </Card>
+
+      {/* Details modal for role */}
+      <RoleDetailsModal />
     </div>
   );
 }
+
+// Extracted small table wrapper to handle row clicks and open modal
+function RolesTable({ cols, rows, onStatusChange }: { cols: string[]; rows: any[]; onStatusChange: (id: string, s: string) => void }) {
+  const [sel, setSel] = useState<any>(null);
+  const bp = useBreakpoint();
+
+  const open = (r: any) => setSel(r);
+  const close = () => setSel(null);
+
+  const renderRows = () => rows.map((r: any) => {
+    const sc = STATUS_COLORS[r.currentStatus] || STATUS_COLORS.Active;
+    return [
+      <Mono v={r.id} />,
+      <span style={{ fontSize: 12, color: T.inkMid }}>{r.dept}</span>,
+      <strong style={{ color: T.ink }}>{r.role}</strong>,
+      <span style={{ fontSize: 13, color: T.ink }}>{r.experience ? `${r.experience} yrs` : "—"}</span>,
+      <span style={{ fontSize: 13, color: T.ink, fontWeight: 600 }}>{r.salaryRange ? `₹${r.salaryRange}` : "—"}</span>,
+      <Badge label={r.type} variant={r.type === "Full-time" ? "blue" : "teal"} />,
+      <select
+        value={r.currentStatus}
+        onChange={(e) => onStatusChange(r.id, e.target.value)}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: sc.bg, color: sc.color, border: `1.5px solid ${sc.border}`,
+          borderRadius: 99, padding: "3px 24px 3px 10px", fontSize: 11, fontWeight: 700,
+          cursor: "pointer", outline: "none", appearance: "none",
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='${encodeURIComponent(sc.color)}' d='M5 7L1 3h8z'/%3E%3C/svg%3E")`,
+          backgroundRepeat: "no-repeat", backgroundPosition: "right 8px center",
+        }}
+      >
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+      </select>,
+      // attach original row data as last column for mobile rendering
+      <span style={{ display: "none" }} data-row={JSON.stringify(r)} />,
+    ];
+  });
+
+  return (
+    <>
+      <Table
+        cols={cols}
+        rows={renderRows()}
+        onRowClick={(i) => open(rows[i])}
+      />
+      <Modal open={!!sel} onClose={close} maxWidth={720}>
+        {sel && (
+          <div>
+            <ModalHeader title="Role details" onClose={close} />
+            <div style={{ display: "grid", gridTemplateColumns: bp === "mobile" ? "1fr" : "1fr 1fr", gap: 12 }}>
+              <div style={{ padding: 12, border: `1px solid ${T.border}`, borderRadius: 10, background: T.canvas }}>
+                <div style={{ fontSize: 12, color: T.inkFaint }}>Role ID</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: T.ink, marginTop: 6 }}>{sel.id}</div>
+                <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 10 }}>Department</div>
+                <div style={{ fontSize: 13, color: T.ink, marginTop: 6 }}>{sel.dept}</div>
+                <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 10 }}>Type</div>
+                <div style={{ fontSize: 13, color: T.ink, marginTop: 6 }}>{sel.type}</div>
+              </div>
+              <div style={{ padding: 12, border: `1px solid ${T.border}`, borderRadius: 10, background: T.canvas }}>
+                <div style={{ fontSize: 12, color: T.inkFaint }}>Role Name</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: T.ink, marginTop: 6 }}>{sel.role}</div>
+                <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 10 }}>Experience</div>
+                <div style={{ fontSize: 13, color: T.ink, marginTop: 6 }}>{sel.experience ? `${sel.experience} yrs` : "—"}</div>
+                <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 10 }}>Salary Range</div>
+                <div style={{ fontSize: 13, color: T.ink, fontWeight: 700, marginTop: 6 }}>{sel.salaryRange || "—"}</div>
+              </div>
+            </div>
+            {/* Summary removed as requested */}
+          </div>
+        )}
+      </Modal>
+    </>
+  );
+}
+
+function RoleDetailsModal() { return null; }

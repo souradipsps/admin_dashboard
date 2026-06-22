@@ -3,7 +3,7 @@ import { T } from "../theme";
 import { statusVariant } from "../theme";
 import { useBreakpoint } from "../hooks";
 import { Card, SectionTitle, Table, Mono, Badge, Btn, Modal, ModalHeader, FormField, Input } from "../components/ui";
-import { EXISTING_ROLES } from "../data";
+import { EXISTING_ROLES, INTERVIEWS } from "../data";
 
 export default function OfferManagement({
   offers,
@@ -299,25 +299,37 @@ export default function OfferManagement({
           </span>
         </div>
         <Table
-          cols={["Offer ID", "Candidate", "Role", "Status", "Generate", "Actions"]}
+          cols={["Offer ID", "Candidate", "Role", "Score", "Status", "Generate", "Actions"]}
           onRowClick={(i) => setSelectedOfferForModal(filteredOffers[i])}
-          rows={filteredOffers.map((o) => [
-            <Mono v={o.id} />,
-            <strong style={{ color: T.ink }}>{o.candidate}</strong>,
-            o.role,
-            <Badge label={o.status} variant={statusVariant(o.status)} />,
-            <div onClick={(e) => e.stopPropagation()}>
-              <button
-                onClick={() => {
-                  setGenForm({ candidate: o.candidate, role: o.role, ctc: "", expiry: "", joining: "" });
-                  setGenRange(getRoleRange(o.role));
-                  setShowGenerateModal(true);
-                }}
-                style={{ border: "none", background: T.blueLight, color: T.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
-              >
-                Generate Offer
-              </button>
-            </div>,
+          rows={filteredOffers.map((o) => {
+            const interview = INTERVIEWS.find(inv => inv.candidate === o.candidate && inv.role === o.role);
+            const score = interview && interview.score !== null ? (
+              <div style={{
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                width: 34, height: 34, borderRadius: "50%",
+                background: "#E6F6ED", color: "#00796B", fontWeight: 800, fontSize: 13
+              }}>
+                {interview.score}
+              </div>
+            ) : "—";
+            return [
+              <Mono v={o.id} />,
+              <strong style={{ color: T.ink }}>{o.candidate}</strong>,
+              o.role,
+              score,
+              <Badge label={o.status} variant={statusVariant(o.status)} />,
+              <div onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => {
+                    setGenForm({ candidate: o.candidate, role: o.role, ctc: "", expiry: "", joining: "" });
+                    setGenRange(getRoleRange(o.role));
+                    setShowGenerateModal(true);
+                  }}
+                  style={{ border: "none", background: T.blueLight, color: T.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+                >
+                  Generate Offer
+                </button>
+              </div>,
             <div onClick={(e) => e.stopPropagation()}>
               {o.ctc && o.issued && o.expiry ? (
                 <button
@@ -335,7 +347,8 @@ export default function OfferManagement({
                 </button>
               )}
             </div>,
-          ])}
+            ];
+          })}
         />
       </Card>
 
@@ -352,15 +365,19 @@ export default function OfferManagement({
                 ["Offer ID", selectedOfferForModal.id],
                 ["Candidate", selectedOfferForModal.candidate],
                 ["Role", selectedOfferForModal.role],
+                ["Interview Score", (() => {
+                  const int = INTERVIEWS.find(i => i.candidate === selectedOfferForModal.candidate && i.role === selectedOfferForModal.role);
+                  return int && int.score !== null ? `${int.score}` : "—";
+                })()],
                 ["Status", selectedOfferForModal.status],
                 ["CTC (Monthly)", selectedOfferForModal.ctc || "—"],
                 ["Issued Date", selectedOfferForModal.issued || "—"],
                 ["Expiry Date", selectedOfferForModal.expiry || "—"],
                 ["Expected Joining Date", selectedOfferForModal.joining || "—"],
               ].map(([label, value]) => (
-                <div key={label}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>{label}</div>
-                  <div style={{ fontSize: 14, color: T.ink }}>{value}</div>
+                <div key={label as string}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>{label as string}</div>
+                  <div style={{ fontSize: 14, color: T.ink }}>{value as React.ReactNode}</div>
                 </div>
               ))}
             </div>

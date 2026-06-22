@@ -180,19 +180,47 @@ export default function InterviewPanel({
     return true;
   });
 
-  // Unique rounds available in the current job-filtered set
-  const availableRounds = [...new Set(jobFilteredCandidates.map((c) => c.activeRound))].sort((a, b) => a - b);
+  // All rounds up to the max active round
+  const maxRound = jobFilteredCandidates.length > 0 ? Math.max(...jobFilteredCandidates.map((c) => c.activeRound)) : 0;
+  const availableRounds = Array.from({ length: maxRound }, (_, i) => i + 1);
 
-  const filteredCandidates = jobFilteredCandidates.filter((c) => {
-    const matchesSearch =
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.role.toLowerCase().includes(search.toLowerCase()) ||
-      c.email.toLowerCase().includes(search.toLowerCase());
+  const filteredCandidates = jobFilteredCandidates
+    .filter((c) => {
+      const matchesSearch =
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.role.toLowerCase().includes(search.toLowerCase()) ||
+        c.email.toLowerCase().includes(search.toLowerCase());
 
-    const matchesRound = roundFilter === null || c.activeRound === roundFilter;
+      const matchesRound = roundFilter === null || c.activeRound >= roundFilter;
 
-    return matchesSearch && matchesRound;
-  });
+      return matchesSearch && matchesRound;
+    })
+    .map((c) => {
+      if (roundFilter !== null && c.activeRound > roundFilter) {
+        const interview = interviews.find(
+          (i) => i.candidate === c.name && i.role === c.role && i.round === roundFilter
+        ) || {
+          id: `INT-${c.id}-${roundFilter}`,
+          candidate: c.name,
+          role: c.role,
+          date: "",
+          time: "",
+          panel: [],
+          score: null,
+          rec: "—",
+          status: "Pending",
+          mode: "In-Person",
+          meetingLink: "",
+          round: roundFilter,
+        };
+        return {
+          ...c,
+          displayRound: roundFilter,
+          interview,
+        };
+      }
+      return { ...c, displayRound: c.activeRound };
+    });
 
   const isAllSelected =
     filteredCandidates.length > 0 &&
@@ -581,11 +609,15 @@ export default function InterviewPanel({
       "Date & Time",
       "Meeting Link",
       "Score",
+<<<<<<< HEAD
+=======
+      "Actions",
+>>>>>>> 58797b4e7f2df4dee3cc6db314e262b2ee031afe
     ];
 
   const tableRows = filteredCandidates.map((c) => {
     const i = c.interview;
-    const rnd = c.activeRound;
+    const rnd = c.displayRound;
 
     if (isMobile) {
       return [
@@ -761,8 +793,6 @@ export default function InterviewPanel({
       ) : (
         <span style={{ color: T.inkFaint }}>—</span>
       ),
-      i.rec !== "—" ? <Badge label={i.rec} variant={statusVariant(i.rec)} /> : <span style={{ color: T.inkFaint }}>—</span>,
-      <Badge label={i.status} variant={statusVariant(i.status)} />,
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {!i.date ? (
           <button
@@ -1046,7 +1076,7 @@ export default function InterviewPanel({
             <span style={{ marginLeft: 5, opacity: 0.7 }}>({jobFilteredCandidates.length})</span>
           </button>
           {availableRounds.map((rnd) => {
-            const count = jobFilteredCandidates.filter((c) => c.activeRound === rnd).length;
+            const count = jobFilteredCandidates.filter((c) => c.activeRound >= rnd).length;
             const isActive = roundFilter === rnd;
             return (
               <button
@@ -1163,7 +1193,7 @@ export default function InterviewPanel({
               >
                 {filteredCandidates.map((c, idx) => {
                   const i = c.interview;
-                  const rnd = c.activeRound;
+                  const rnd = c.displayRound;
                   const isScheduled = !!i.date;
                   return (
                     <div
@@ -1632,7 +1662,9 @@ export default function InterviewPanel({
                 Interview Rounds History
               </h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {[1, 2, 3, 4, 5].map((r) => {
+                {Array.from({ length: selectedAppDetail.activeRound || 1 }, (_, i) => i + 1).map((r) => {
+                  if (r > selectedAppDetail.activeRound) return null;
+
                   const roundInv = interviews.find(
                     (i) => i.candidate === selectedAppDetail.name && i.role === selectedAppDetail.role && i.round === r
                   );
@@ -1644,14 +1676,14 @@ export default function InterviewPanel({
                           display: "flex",
                           justifyContent: "space-between",
                           alignItems: "center",
-                          padding: "8px 12px",
+                          padding: "10px 14px",
                           background: T.canvas,
                           borderRadius: 8,
                           border: `1.5px dashed ${T.border}`,
                         }}
                       >
-                        <span style={{ fontSize: 12, fontWeight: 700, color: T.inkLight }}>{getRoundOrdinal(r)}</span>
-                        <span style={{ fontSize: 11, color: T.inkFaint, fontStyle: "italic" }}>Not scheduled</span>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: T.ink }}>{getRoundOrdinal(r)}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: T.amber, background: T.amberLight, padding: "3px 10px", borderRadius: 99 }}>Pending Schedule</span>
                       </div>
                     );
                   }

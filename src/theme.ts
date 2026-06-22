@@ -78,7 +78,7 @@ export const statusVariant = (s: string): string => {
     Draft: "accent",
     Hold: "accent",
     "Documents Pending": "accent",
-    "Send Back": "accent",
+    "Sent Back": "accent",
     Inactive: "accent",
 
     // Error/negative states - red
