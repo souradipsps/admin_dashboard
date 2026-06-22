@@ -100,7 +100,7 @@ export default function InterviewPanel({
         phone: a.phone || "",
         role: a.role,
         jobPostingId: a.jobPostingId,
-        referredBy: a.referredBy || "None",
+        
         exp: a.exp,
         qualification: a.qualification || "—",
         applied: a.applied,
@@ -180,19 +180,47 @@ export default function InterviewPanel({
     return true;
   });
 
-  // Unique rounds available in the current job-filtered set
-  const availableRounds = [...new Set(jobFilteredCandidates.map((c) => c.activeRound))].sort((a, b) => a - b);
+  // All rounds up to the max active round
+  const maxRound = jobFilteredCandidates.length > 0 ? Math.max(...jobFilteredCandidates.map((c) => c.activeRound)) : 0;
+  const availableRounds = Array.from({ length: maxRound }, (_, i) => i + 1);
 
-  const filteredCandidates = jobFilteredCandidates.filter((c) => {
-    const matchesSearch =
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.role.toLowerCase().includes(search.toLowerCase()) ||
-      c.email.toLowerCase().includes(search.toLowerCase());
+  const filteredCandidates = jobFilteredCandidates
+    .filter((c) => {
+      const matchesSearch =
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.role.toLowerCase().includes(search.toLowerCase()) ||
+        c.email.toLowerCase().includes(search.toLowerCase());
 
-    const matchesRound = roundFilter === null || c.activeRound === roundFilter;
+      const matchesRound = roundFilter === null || c.activeRound >= roundFilter;
 
-    return matchesSearch && matchesRound;
-  });
+      return matchesSearch && matchesRound;
+    })
+    .map((c) => {
+      if (roundFilter !== null && c.activeRound > roundFilter) {
+        const interview = interviews.find(
+          (i) => i.candidate === c.name && i.role === c.role && i.round === roundFilter
+        ) || {
+          id: `INT-${c.id}-${roundFilter}`,
+          candidate: c.name,
+          role: c.role,
+          date: "",
+          time: "",
+          panel: [],
+          score: null,
+          rec: "—",
+          status: "Pending",
+          mode: "In-Person",
+          meetingLink: "",
+          round: roundFilter,
+        };
+        return {
+          ...c,
+          displayRound: roundFilter,
+          interview,
+        };
+      }
+      return { ...c, displayRound: c.activeRound };
+    });
 
   const isAllSelected =
     filteredCandidates.length > 0 &&
@@ -223,7 +251,7 @@ export default function InterviewPanel({
       filteredCandidates.forEach((c) => {
         const key = candidateKey(c);
         if (selectedCandidateKeys.includes(key)) {
-          next[key] = Math.min(5, c.activeRound + 1);
+          next[key] = Math.min(10, c.activeRound + 1);
         }
       });
       return next;
@@ -231,7 +259,7 @@ export default function InterviewPanel({
   };
 
   const handleIncrementCandidateRound = (c: any, currentRound: number) => {
-    const newRound = Math.min(5, currentRound + 1);
+    const newRound = Math.min(10, currentRound + 1);
     setActiveRoundOverrides((prev) => ({
       ...prev,
       [`${c.name}-${c.role}`]: newRound,
@@ -581,14 +609,15 @@ export default function InterviewPanel({
       "Date & Time",
       "Meeting Link",
       "Score",
-      "Rec",
-      "Status",
+<<<<<<< HEAD
+=======
       "Actions",
+>>>>>>> 58797b4e7f2df4dee3cc6db314e262b2ee031afe
     ];
 
   const tableRows = filteredCandidates.map((c) => {
     const i = c.interview;
-    const rnd = c.activeRound;
+    const rnd = c.displayRound;
 
     if (isMobile) {
       return [
@@ -630,11 +659,11 @@ export default function InterviewPanel({
           </span>
           <button
             onClick={() => handleIncrementCandidateRound(c, rnd)}
-            disabled={rnd >= 5}
+            disabled={rnd >= 10}
             style={{
               width: 18, height: 18, borderRadius: 4, border: "none",
-              background: rnd >= 5 ? T.border : T.primary, color: "#fff",
-              cursor: rnd >= 5 ? "not-allowed" : "pointer",
+              background: rnd >= 10 ? T.border : T.primary, color: "#fff",
+              cursor: rnd >= 10 ? "not-allowed" : "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: "bold"
             }}
           >
@@ -718,11 +747,11 @@ export default function InterviewPanel({
         </span>
         <button
           onClick={() => handleIncrementCandidateRound(c, rnd)}
-          disabled={rnd >= 5}
+          disabled={rnd >= 10}
           style={{
             width: 20, height: 20, borderRadius: 4, border: "none",
-            background: rnd >= 5 ? T.border : T.primary,
-            color: "#fff", fontWeight: "bold", cursor: rnd >= 5 ? "not-allowed" : "pointer",
+            background: rnd >= 10 ? T.border : T.primary,
+            color: "#fff", fontWeight: "bold", cursor: rnd >= 10 ? "not-allowed" : "pointer",
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11
           }}
         >
@@ -764,8 +793,6 @@ export default function InterviewPanel({
       ) : (
         <span style={{ color: T.inkFaint }}>—</span>
       ),
-      i.rec !== "—" ? <Badge label={i.rec} variant={statusVariant(i.rec)} /> : <span style={{ color: T.inkFaint }}>—</span>,
-      <Badge label={i.status} variant={statusVariant(i.status)} />,
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {!i.date ? (
           <button
@@ -1049,7 +1076,7 @@ export default function InterviewPanel({
             <span style={{ marginLeft: 5, opacity: 0.7 }}>({jobFilteredCandidates.length})</span>
           </button>
           {availableRounds.map((rnd) => {
-            const count = jobFilteredCandidates.filter((c) => c.activeRound === rnd).length;
+            const count = jobFilteredCandidates.filter((c) => c.activeRound >= rnd).length;
             const isActive = roundFilter === rnd;
             return (
               <button
@@ -1166,7 +1193,7 @@ export default function InterviewPanel({
               >
                 {filteredCandidates.map((c, idx) => {
                   const i = c.interview;
-                  const rnd = c.activeRound;
+                  const rnd = c.displayRound;
                   const isScheduled = !!i.date;
                   return (
                     <div
@@ -1231,11 +1258,11 @@ export default function InterviewPanel({
                             </span>
                             <button
                               onClick={(e) => { e.stopPropagation(); handleIncrementCandidateRound(c, rnd); }}
-                              disabled={rnd >= 5}
+                              disabled={rnd >= 10}
                               style={{
                                 width: 24, height: 24, borderRadius: 6, border: "none",
-                                background: rnd >= 5 ? T.border : T.primary, color: "#fff",
-                                cursor: rnd >= 5 ? "not-allowed" : "pointer",
+                                background: rnd >= 10 ? T.border : T.primary, color: "#fff",
+                                cursor: rnd >= 10 ? "not-allowed" : "pointer",
                                 display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: "bold",
                               }}
                             >+</button>
@@ -1635,7 +1662,9 @@ export default function InterviewPanel({
                 Interview Rounds History
               </h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {[1, 2, 3, 4, 5].map((r) => {
+                {Array.from({ length: selectedAppDetail.activeRound || 1 }, (_, i) => i + 1).map((r) => {
+                  if (r > selectedAppDetail.activeRound) return null;
+
                   const roundInv = interviews.find(
                     (i) => i.candidate === selectedAppDetail.name && i.role === selectedAppDetail.role && i.round === r
                   );
@@ -1647,14 +1676,14 @@ export default function InterviewPanel({
                           display: "flex",
                           justifyContent: "space-between",
                           alignItems: "center",
-                          padding: "8px 12px",
+                          padding: "10px 14px",
                           background: T.canvas,
                           borderRadius: 8,
                           border: `1.5px dashed ${T.border}`,
                         }}
                       >
-                        <span style={{ fontSize: 12, fontWeight: 700, color: T.inkLight }}>{getRoundOrdinal(r)}</span>
-                        <span style={{ fontSize: 11, color: T.inkFaint, fontStyle: "italic" }}>Not scheduled</span>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: T.ink }}>{getRoundOrdinal(r)}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: T.amber, background: T.amberLight, padding: "3px 10px", borderRadius: 99 }}>Pending Schedule</span>
                       </div>
                     );
                   }
@@ -1746,7 +1775,7 @@ export default function InterviewPanel({
                 <div key={c} style={{ background: T.canvas, borderRadius: 10, padding: "12px 14px", border: `1px solid ${T.border}` }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: T.inkMid, marginBottom: 10 }}>{c}</div>
                   <div style={{ display: "flex", gap: 6 }}>
-                    {[1, 2, 3, 4, 5].map((n) => (
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                       <div
                         key={n}
                         onClick={() => setScores((prev) => ({ ...prev, [c]: n }))}
