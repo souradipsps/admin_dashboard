@@ -542,7 +542,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
             </div>
 
             {/* Modal footer */}
-            {(selectedRequest.status === "Pending" || selectedRequest.status === "Sent Back") ? (
+            {(selectedRequest.status === "Pending" || selectedRequest.status === "Sent Back") && (
               <div style={{
                 padding: "16px 24px",
                 borderTop: `1px solid ${T.border}`,
@@ -551,15 +551,6 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
               }}>
                 <Btn label="Cancel Request" variant="danger" small onClick={() => cancelRoleRequest(selectedRequest.id)} />
                 <Btn label="Accept" variant="success" small onClick={() => saveRoleRequestEdits(true)} />
-              </div>
-            ) : (
-              <div style={{
-                padding: "16px 24px",
-                borderTop: `1px solid ${T.border}`,
-                display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap",
-                background: T.canvas, borderRadius: "0 0 16px 16px",
-              }}>
-                <Btn label="Close" variant="ghost" small onClick={() => { setShowViewModal(false); setSelectedRequest(null); }} />
               </div>
             )}
           </div>

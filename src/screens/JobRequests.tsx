@@ -533,7 +533,7 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
             </div>
 
             {/* Modal footer */}
-            {(selectedRequest.status === "Pending" || selectedRequest.status === "Sent Back") ? (
+            {(selectedRequest.status === "Pending" || selectedRequest.status === "Sent Back") && (
               <div style={{
                 padding: "16px 24px",
                 borderTop: `1px solid ${T.border}`,
@@ -542,15 +542,6 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
               }}>
                 <Btn label="Cancel Request" variant="danger" small onClick={() => cancelJobRequest(selectedRequest.id)} />
                 <Btn label="Accept" variant="success" small onClick={() => saveJobRequestEdits(true)} />
-              </div>
-            ) : (
-              <div style={{
-                padding: "16px 24px",
-                borderTop: `1px solid ${T.border}`,
-                display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap",
-                background: T.canvas, borderRadius: "0 0 16px 16px",
-              }}>
-                <Btn label="Close" variant="ghost" small onClick={() => { setShowViewModal(false); setSelectedRequest(null); }} />
               </div>
             )}
           </div>

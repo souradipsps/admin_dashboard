@@ -53,6 +53,8 @@ export const Card = ({
       border: `1px solid ${T.border}`,
       borderRadius: 12,
       boxShadow: shadow.sm,
+      width: "100%",
+      overflow: "hidden",
       ...style,
     }}
   >
@@ -100,6 +102,7 @@ export const Btn = ({
         whiteSpace: "nowrap",
         lineHeight: 1.4,
         transition: "all 0.15s",
+        minWidth: 0,
         ...style,
       }}
     >
@@ -261,7 +264,8 @@ export const Table = ({
                   color: T.inkLight,
                   letterSpacing: "0.05em",
                   textTransform: "uppercase",
-                  whiteSpace: "nowrap",
+                  whiteSpace: "normal",
+                  wordBreak: "break-word",
                 }}
               >
                 {c}
@@ -284,7 +288,7 @@ export const Table = ({
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
               {row.map((cell, j) => (
-                <td key={j} style={{ padding: "13px 16px", verticalAlign: "middle", color: T.ink }}>
+                <td key={j} style={{ padding: "13px 16px", verticalAlign: "middle", color: T.ink, whiteSpace: "normal", wordBreak: "break-word", maxWidth: 220 }}>
                   {cell}
                 </td>
               ))}
@@ -401,6 +405,7 @@ export const Modal = ({
   children: React.ReactNode;
   maxWidth?: number;
 }) => {
+  const bp = useBreakpoint();
   if (!open) return null;
   return (
     <div
@@ -412,11 +417,11 @@ export const Modal = ({
         justifyContent: "center",
         alignItems: "center",
         zIndex: 9999,
-        padding: 20,
+        padding: bp === "mobile" ? 12 : 20,
       }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <Card style={{ width: "100%", maxWidth, padding: 24, maxHeight: "90vh", overflowY: "auto" }}>
+      <Card style={{ width: "100%", maxWidth: bp === "mobile" ? "100%" : maxWidth, padding: bp === "mobile" ? 16 : 24, maxHeight: "90vh", overflowY: "auto" }}>
         {children}
       </Card>
     </div>
@@ -439,9 +444,10 @@ export const FormRow = ({ children, cols = 2 }: { children: React.ReactNode; col
   <div
     style={{
       display: "grid",
-      gridTemplateColumns: `repeat(${cols}, 1fr)`,
+      gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
       gap: 14,
       marginBottom: 14,
+      width: "100%",
     }}
   >
     {children}
