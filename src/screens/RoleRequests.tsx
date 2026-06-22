@@ -347,33 +347,136 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
         </div>
       )}
 
-      <Card>
-        <Table
-          onRowClick={(index) => {
-            setSelectedRequest(roleRequests[index]);
-            setShowViewModal(true);
-          }}
-          cols={["Request ID", "Department", "Role", "Experience", "Salary Range", "Justification", "Date", "Status", "Admin Comment"]}
-          rows={roleRequests.map((r) => {
-            const ss = getStatusStyle(r.status);
-            return [
-              <Mono v={typeof r.id === "string" ? r.id.substring(0, 18) : String(r.id)} />,
-              r.dept || "—",
-              <strong>{r.role || "—"}</strong>,
-              r.experience ? `${r.experience} yrs` : "—",
-              r.salaryRange ? `₹${r.salaryRange}` : "—",
-              <span style={{ fontSize: 12, color: T.inkLight, maxWidth: 180, display: "inline-block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.just || "—"}</span>,
-              r.date || "—",
-              <span style={{ ...ss, borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 700, display: "inline-block" }}>{r.status}</span>,
-              r.comment
-                ? <div style={{ background: T.amberLight, border: `1px solid #FDE68A`, borderRadius: 7, padding: "4px 10px", fontSize: 12, color: T.amber, fontWeight: 600, display: "inline-block" }}>
-                    ...
+      {isMobile ? (
+        <div style={{ marginBottom: 4 }}>
+          <div style={{ fontSize: 12, color: T.inkFaint, fontWeight: 600, marginBottom: 8, textAlign: "center" }}>
+            {roleRequests.length} request{roleRequests.length !== 1 ? "s" : ""}
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              overflowX: "auto",
+              scrollSnapType: "x mandatory",
+              WebkitOverflowScrolling: "touch",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              gap: 12,
+              paddingBottom: 4,
+            }}
+          >
+            {roleRequests.map((r, idx) => {
+              const ss = getStatusStyle(r.status);
+              return (
+                <div
+                  key={r.id}
+                  onClick={() => { setSelectedRequest(r); setShowViewModal(true); }}
+                  style={{
+                    flexShrink: 0,
+                    width: "100%",
+                    scrollSnapAlign: "center",
+                    background: T.surface,
+                    borderRadius: 18,
+                    border: `1.5px solid ${T.border}`,
+                    overflow: "hidden",
+                    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                    cursor: "pointer",
+                  }}
+                >
+                  {/* Header */}
+                  <div
+                    style={{
+                      background: `linear-gradient(135deg, ${T.primaryPale} 0%, ${T.canvas} 100%)`,
+                      padding: "16px 18px 14px",
+                      borderBottom: `1px solid ${T.border}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.role || "—"}</div>
+                      <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 4 }}>{r.dept || "—"}</div>
+                    </div>
+                    <div style={{ fontSize: 11, color: T.inkFaint, flexShrink: 0 }}>
+                      {idx + 1}/{roleRequests.length}
+                    </div>
                   </div>
-                : <span style={{ color: T.inkFaint, fontSize: 12 }}>—</span>,
-            ];
-          })}
-        />
-      </Card>
+
+                  {/* Details */}
+                  <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 8, borderBottom: `1px solid ${T.border}` }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Request ID</span>
+                      <Mono v={typeof r.id === "string" ? r.id.substring(0, 18) : String(r.id)} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Experience</span>
+                      <span style={{ fontSize: 13, color: T.ink }}>{r.experience ? `${r.experience} yrs` : "—"}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Salary Range</span>
+                      <span style={{ fontSize: 13, color: T.ink, fontWeight: 600 }}>{r.salaryRange ? `₹${r.salaryRange}` : "—"}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Date</span>
+                      <span style={{ fontSize: 13, color: T.ink }}>{r.date || "—"}</span>
+                    </div>
+                    {r.just && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Justification</span>
+                        <div style={{ fontSize: 12, color: T.inkLight, background: T.canvas, padding: "6px 10px", borderRadius: 6, border: `1px solid ${T.border}`, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {r.just}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Status / Comment Row */}
+                  <div style={{ padding: "12px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {r.comment && (
+                        <div style={{ background: T.amberLight, border: `1px solid #FDE68A`, borderRadius: 7, padding: "4px 8px", fontSize: 11, color: T.amber, fontWeight: 600 }}>
+                          Has Comment
+                        </div>
+                      )}
+                      <span style={{ ...ss, borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{r.status}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <Card>
+          <Table
+            onRowClick={(index) => {
+              setSelectedRequest(roleRequests[index]);
+              setShowViewModal(true);
+            }}
+            cols={["Request ID", "Department", "Role", "Experience", "Salary Range", "Justification", "Date", "Status", "Admin Comment"]}
+            rows={roleRequests.map((r) => {
+              const ss = getStatusStyle(r.status);
+              return [
+                <Mono v={typeof r.id === "string" ? r.id.substring(0, 18) : String(r.id)} />,
+                r.dept || "—",
+                <strong>{r.role || "—"}</strong>,
+                r.experience ? `${r.experience} yrs` : "—",
+                r.salaryRange ? `₹${r.salaryRange}` : "—",
+                <span style={{ fontSize: 12, color: T.inkLight, maxWidth: 180, display: "inline-block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.just || "—"}</span>,
+                r.date || "—",
+                <span style={{ ...ss, borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 700, display: "inline-block" }}>{r.status}</span>,
+                r.comment
+                  ? <div style={{ background: T.amberLight, border: `1px solid #FDE68A`, borderRadius: 7, padding: "4px 10px", fontSize: 12, color: T.amber, fontWeight: 600, display: "inline-block" }}>
+                      ...
+                    </div>
+                  : <span style={{ color: T.inkFaint, fontSize: 12 }}>—</span>,
+              ];
+            })}
+          />
+        </Card>
+      )}
 
       {showViewModal && selectedRequest && (
         <div

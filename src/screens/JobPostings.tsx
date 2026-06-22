@@ -291,61 +291,178 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
         </div>
       )}
 
-      <Card>
-        <div style={{ padding: "16px", borderBottom: `1px solid ${T.border}`, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <Input
-            placeholder="Search role..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ maxWidth: isMobile ? "100%" : 280 }}
-          />
-        </div>
+      {isMobile ? (
+        <div style={{ marginBottom: 4 }}>
+          <div style={{ fontSize: 12, color: T.inkFaint, fontWeight: 600, marginBottom: 8, textAlign: "center" }}>
+            {filtered.length} posting{filtered.length !== 1 ? "s" : ""}
+          </div>
 
-        <Table
-          cols={["Job ID", "Role", "Posted", "Expiry", "Applications", "Status", "Actions"]}
-          onRowClick={(i) => setSelectedJobForModal(filtered[i])}
-          rows={filtered.map((p) => [
-            <Mono v={p.id} />,
-            <div>
-              <div style={{ fontWeight: 800, color: T.ink }}>{p.role}</div>
-            </div>,
-            <span style={{ fontSize: 12, color: T.inkMid }}>{p.posted}</span>,
-            <span style={{ fontSize: 12, color: T.inkMid }}>{p.expiry}</span>,
-            <span style={{ fontWeight: 700, color: T.ink }}>{p.apps ?? 0}</span>,
-            <span
-              style={{
-                borderRadius: 999, padding: "4px 10px", fontSize: 11, fontWeight: 700, display: "inline-block",
-                ...(p.status === "Published"
-                  ? { background: T.greenLight, color: T.green, border: `1px solid ${T.green}` }
-                  : { background: T.amberLight, color: T.amber, border: `1px solid ${T.amber}` }),
-              }}
-            >
-              {p.status || "Unpublished"}
-            </span>,
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }} onClick={(e) => e.stopPropagation()}>
-              {p.status === "Published" && (
-                <button
-                  onClick={() => shareJob(p)}
-                  style={{ border: "none", background: T.blueLight, color: T.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+          <div
+            style={{
+              display: "flex",
+              overflowX: "auto",
+              scrollSnapType: "x mandatory",
+              WebkitOverflowScrolling: "touch",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              gap: 12,
+              paddingBottom: 4,
+            }}
+          >
+            {filtered.map((p, idx) => {
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => setSelectedJobForModal(p)}
+                  style={{
+                    flexShrink: 0,
+                    width: "100%",
+                    scrollSnapAlign: "center",
+                    background: T.surface,
+                    borderRadius: 18,
+                    border: `1.5px solid ${T.border}`,
+                    overflow: "hidden",
+                    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                    cursor: "pointer",
+                  }}
                 >
-                  Share
-                </button>
-              )}
-              <button
-                onClick={() => toggleStatus(p.id, p.status)}
+                  {/* Header */}
+                  <div
+                    style={{
+                      background: `linear-gradient(135deg, ${T.primaryPale} 0%, ${T.canvas} 100%)`,
+                      padding: "16px 18px 14px",
+                      borderBottom: `1px solid ${T.border}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.role}</div>
+                      <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 4 }}>{p.channel}</div>
+                    </div>
+                    <div style={{ fontSize: 11, color: T.inkFaint, flexShrink: 0 }}>
+                      {idx + 1}/{filtered.length}
+                    </div>
+                  </div>
+
+                  {/* Details */}
+                  <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 8, borderBottom: `1px solid ${T.border}` }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Job ID</span>
+                      <Mono v={p.id} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Posted</span>
+                      <span style={{ fontSize: 13, color: T.ink }}>{p.posted || "—"}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Expiry</span>
+                      <span style={{ fontSize: 13, color: T.ink }}>{p.expiry || "—"}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Applications</span>
+                      <span style={{ fontSize: 13, color: T.ink, fontWeight: 700 }}>{p.apps ?? 0}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</span>
+                      <span
+                        style={{
+                          borderRadius: 999, padding: "4px 10px", fontSize: 11, fontWeight: 700,
+                          ...(p.status === "Published"
+                            ? { background: T.greenLight, color: T.green, border: `1px solid ${T.green}` }
+                            : { background: T.amberLight, color: T.amber, border: `1px solid ${T.amber}` }),
+                        }}
+                      >
+                        {p.status || "Unpublished"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ padding: "12px 18px", display: "flex", justifyContent: "flex-end", gap: 8 }} onClick={(e) => e.stopPropagation()}>
+                    {p.status === "Published" && (
+                      <button
+                        onClick={() => shareJob(p)}
+                        style={{ border: "none", background: T.blueLight, color: T.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+                      >
+                        Share
+                      </button>
+                    )}
+                    <button
+                      onClick={() => toggleStatus(p.id, p.status)}
+                      style={{
+                        border: "none",
+                        background: p.status === "Published" ? "#FEE2E2" : T.greenLight,
+                        color: p.status === "Published" ? "#DC2626" : T.green,
+                        borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12,
+                      }}
+                    >
+                      {p.status === "Published" ? "Unpublish" : "Publish"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <Card>
+          <div style={{ padding: "16px", borderBottom: `1px solid ${T.border}`, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <Input
+              placeholder="Search role..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ maxWidth: isMobile ? "100%" : 280 }}
+            />
+          </div>
+
+          <Table
+            cols={["Job ID", "Role", "Posted", "Expiry", "Applications", "Status", "Actions"]}
+            onRowClick={(i) => setSelectedJobForModal(filtered[i])}
+            rows={filtered.map((p) => [
+              <Mono v={p.id} />,
+              <div>
+                <div style={{ fontWeight: 800, color: T.ink }}>{p.role}</div>
+              </div>,
+              <span style={{ fontSize: 12, color: T.inkMid }}>{p.posted}</span>,
+              <span style={{ fontSize: 12, color: T.inkMid }}>{p.expiry}</span>,
+              <span style={{ fontWeight: 700, color: T.ink }}>{p.apps ?? 0}</span>,
+              <span
                 style={{
-                  border: "none",
-                  background: p.status === "Published" ? "#FEE2E2" : T.greenLight,
-                  color: p.status === "Published" ? "#DC2626" : T.green,
-                  borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12,
+                  borderRadius: 999, padding: "4px 10px", fontSize: 11, fontWeight: 700, display: "inline-block",
+                  ...(p.status === "Published"
+                    ? { background: T.greenLight, color: T.green, border: `1px solid ${T.green}` }
+                    : { background: T.amberLight, color: T.amber, border: `1px solid ${T.amber}` }),
                 }}
               >
-                {p.status === "Published" ? "Unpublish" : "Publish"}
-              </button>
-            </div>,
-          ])}
-        />
-      </Card>
+                {p.status || "Unpublished"}
+              </span>,
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }} onClick={(e) => e.stopPropagation()}>
+                {p.status === "Published" && (
+                  <button
+                    onClick={() => shareJob(p)}
+                    style={{ border: "none", background: T.blueLight, color: T.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+                  >
+                    Share
+                  </button>
+                )}
+                <button
+                  onClick={() => toggleStatus(p.id, p.status)}
+                  style={{
+                    border: "none",
+                    background: p.status === "Published" ? "#FEE2E2" : T.greenLight,
+                    color: p.status === "Published" ? "#DC2626" : T.green,
+                    borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12,
+                  }}
+                >
+                  {p.status === "Published" ? "Unpublish" : "Publish"}
+                </button>
+              </div>,
+            ])}
+          />
+        </Card>
+      )}
 
       {selectedJobForModal && (() => {
         const details = getJobDetails(selectedJobForModal);

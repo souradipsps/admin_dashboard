@@ -453,14 +453,119 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
         </div>
       )}
 
-      {/* Onboarding Candidate List */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {filteredRecords.length === 0 ? (
-          <Card style={{ padding: 32, textAlign: "center", color: T.inkFaint }}>
-            No onboarding candidates found for this role.
-          </Card>
-        ) : (
-          filteredRecords.map((o) => {
+      {filteredRecords.length === 0 ? (
+        <Card style={{ padding: 32, textAlign: "center", color: T.inkFaint }}>
+          No onboarding candidates found for this role.
+        </Card>
+      ) : isMobile ? (
+        <div style={{ marginBottom: 4 }}>
+          <div style={{ fontSize: 12, color: T.inkFaint, fontWeight: 600, marginBottom: 8, textAlign: "center" }}>
+            {filteredRecords.length} candidate{filteredRecords.length !== 1 ? "s" : ""}
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              overflowX: "auto",
+              scrollSnapType: "x mandatory",
+              WebkitOverflowScrolling: "touch",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              gap: 12,
+              paddingBottom: 4,
+            }}
+          >
+            {filteredRecords.map((o, idx) => {
+              const done = TASK_KEYS.filter((k) => isTaskDone(k, o.tasks[k])).length;
+              const pct = Math.round((done / TASK_KEYS.length) * 100);
+              return (
+                <div
+                  key={o.id}
+                  onClick={() => setSelectedRecord(o)}
+                  style={{
+                    flexShrink: 0,
+                    width: "100%",
+                    scrollSnapAlign: "center",
+                    background: T.surface,
+                    borderRadius: 18,
+                    border: `1.5px solid ${T.border}`,
+                    overflow: "hidden",
+                    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                    cursor: "pointer",
+                  }}
+                >
+                  {/* Header */}
+                  <div
+                    style={{
+                      background: `linear-gradient(135deg, ${T.primaryPale} 0%, ${T.canvas} 100%)`,
+                      padding: "16px 18px 14px",
+                      borderBottom: `1px solid ${T.border}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.name}</div>
+                      <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 4 }}>
+                        {o.role} · Joining: <strong>{o.joining}</strong>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 11, color: T.inkFaint, flexShrink: 0 }}>
+                      {idx + 1}/{filteredRecords.length}
+                    </div>
+                  </div>
+
+                  {/* Details */}
+                  <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 8, borderBottom: `1px solid ${T.border}` }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Candidate ID</span>
+                      <Mono v={o.id} />
+                    </div>
+                    {o.empId !== "—" && (
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Employee ID</span>
+                        <Mono v={o.empId} />
+                      </div>
+                    )}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</span>
+                      <Badge label={o.status} variant={statusVariant(o.status)} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Progress</span>
+                      <div style={{ fontSize: 16, fontWeight: 900, color: pct === 100 ? T.green : T.blue }}>{pct}%</div>
+                    </div>
+                  </div>
+
+                  {/* Step indicators */}
+                  <div style={{ padding: "12px 18px", display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {TASK_LABELS.map((t, i) => {
+                      const { icon, color, bg, border } = getTaskIconAndColor(TASK_KEYS[i], o.tasks[TASK_KEYS[i]]);
+                      return (
+                        <div
+                          key={t}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 6,
+                            background: bg,
+                            border: `1.5px solid ${border}`,
+                            borderRadius: 8, padding: "4px 8px",
+                          }}
+                        >
+                          <span style={{ color: color, fontSize: 11 }}>{icon}</span>
+                          <span style={{ fontSize: 10, fontWeight: 600, color: color === T.inkFaint ? T.inkMid : color }}>{t}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {filteredRecords.map((o) => {
             const done = TASK_KEYS.filter((k) => isTaskDone(k, o.tasks[k])).length;
             const pct = Math.round((done / TASK_KEYS.length) * 100);
             return (
@@ -530,9 +635,9 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
                 </Card>
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
 
       {/* Candidate Details Popup Modal */}
       <Modal open={!!selectedRecord} onClose={() => setSelectedRecord(null)} maxWidth={640}>

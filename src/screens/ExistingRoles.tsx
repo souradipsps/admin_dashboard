@@ -145,6 +145,138 @@ function RolesTable({ cols, rows, onStatusChange }: { cols: string[]; rows: any[
     ];
   });
 
+  if (bp === "mobile") {
+    return (
+      <>
+        <div style={{ fontSize: 12, color: T.inkFaint, fontWeight: 600, marginBottom: 8, textAlign: "center" }}>
+          {rows.length} role{rows.length !== 1 ? "s" : ""}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            overflowX: "auto",
+            scrollSnapType: "x mandatory",
+            WebkitOverflowScrolling: "touch",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            gap: 12,
+            paddingBottom: 4,
+          }}
+        >
+          {rows.map((r: any, idx: number) => {
+            const sc = STATUS_COLORS[r.currentStatus] || STATUS_COLORS.Active;
+            return (
+              <div
+                key={r.id}
+                onClick={() => open(r)}
+                style={{
+                  flexShrink: 0,
+                  width: "100%",
+                  scrollSnapAlign: "center",
+                  background: T.surface,
+                  borderRadius: 18,
+                  border: `1.5px solid ${T.border}`,
+                  overflow: "hidden",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                  cursor: "pointer",
+                }}
+              >
+                {/* Header */}
+                <div
+                  style={{
+                    background: `linear-gradient(135deg, ${T.primaryPale} 0%, ${T.canvas} 100%)`,
+                    padding: "16px 18px 14px",
+                    borderBottom: `1px solid ${T.border}`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.role}</div>
+                    <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 4 }}>{r.dept}</div>
+                  </div>
+                  <div style={{ fontSize: 11, color: T.inkFaint, flexShrink: 0 }}>
+                    {idx + 1}/{rows.length}
+                  </div>
+                </div>
+
+                {/* Details */}
+                <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 8, borderBottom: `1px solid ${T.border}` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Role ID</span>
+                    <Mono v={r.id} />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Experience</span>
+                    <span style={{ fontSize: 13, color: T.ink }}>{r.experience ? `${r.experience} yrs` : "—"}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Salary Range</span>
+                    <span style={{ fontSize: 13, color: T.ink, fontWeight: 600 }}>{r.salaryRange ? `₹${r.salaryRange}` : "—"}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Type</span>
+                    <Badge label={r.type} variant={r.type === "Full-time" ? "blue" : "teal"} />
+                  </div>
+                </div>
+
+                {/* Status action row */}
+                <div style={{ padding: "12px 18px", display: "flex", justifyContent: "space-between", alignItems: "center" }} onClick={(e) => e.stopPropagation()}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</span>
+                  <select
+                    value={r.currentStatus}
+                    onChange={(e) => onStatusChange(r.id, e.target.value)}
+                    style={{
+                      background: sc.bg, color: sc.color, border: `1.5px solid ${sc.border}`,
+                      borderRadius: 99, padding: "3px 24px 3px 10px", fontSize: 11, fontWeight: 700,
+                      cursor: "pointer", outline: "none", appearance: "none",
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='${encodeURIComponent(sc.color)}' d='M5 7L1 3h8z'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: "no-repeat", backgroundPosition: "right 8px center",
+                    }}
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <Modal open={!!sel} onClose={close} maxWidth={720}>
+          {sel && (
+            <div>
+              <ModalHeader title="Role details" onClose={close} />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+                <div style={{ padding: 12, border: `1px solid ${T.border}`, borderRadius: 10, background: T.canvas }}>
+                  <div style={{ fontSize: 12, color: T.inkFaint }}>Role ID</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: T.ink, marginTop: 6 }}>{sel.id}</div>
+                  <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 10 }}>Department</div>
+                  <div style={{ fontSize: 13, color: T.ink, marginTop: 6 }}>{sel.dept}</div>
+                  <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 10 }}>Type</div>
+                  <div style={{ fontSize: 13, color: T.ink, marginTop: 6 }}>{sel.type}</div>
+                </div>
+                <div style={{ padding: 12, border: `1px solid ${T.border}`, borderRadius: 10, background: T.canvas }}>
+                  <div style={{ fontSize: 12, color: T.inkFaint }}>Role Name</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: T.ink, marginTop: 6 }}>{sel.role}</div>
+                  <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 10 }}>Experience</div>
+                  <div style={{ fontSize: 13, color: T.ink, marginTop: 6 }}>{sel.experience ? `${sel.experience} yrs` : "—"}</div>
+                  <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 10 }}>Salary Range</div>
+                  <div style={{ fontSize: 13, color: T.ink, fontWeight: 700, marginTop: 6 }}>{sel.salaryRange || "—"}</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 20 }}>
+                <Btn label="Close" onClick={close} />
+              </div>
+            </div>
+          )}
+        </Modal>
+      </>
+    );
+  }
+
   return (
     <>
       <Table

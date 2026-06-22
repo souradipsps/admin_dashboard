@@ -287,70 +287,185 @@ export default function OfferManagement({
         ))}
       </div>
 
-      <Card>
-        <div style={{
-          padding: "12px 14px",
-          borderBottom: `1px solid ${T.border}`,
-          display: "flex",
-          justifyContent: "flex-end",
-        }}>
-          <span style={{ fontSize: 12, color: T.inkFaint, fontWeight: 600, whiteSpace: "nowrap" }}>
+      {isMobile ? (
+        <div style={{ marginBottom: 4 }}>
+          <div style={{ fontSize: 12, color: T.inkFaint, fontWeight: 600, marginBottom: 8, textAlign: "center" }}>
             {filteredOffers.length} of {offers.length} offers
-          </span>
-        </div>
-        <Table
-          cols={["Offer ID", "Candidate", "Role", "Score", "Status", "Generate", "Actions"]}
-          onRowClick={(i) => setSelectedOfferForModal(filteredOffers[i])}
-          rows={filteredOffers.map((o) => {
-            const interview = INTERVIEWS.find(inv => inv.candidate === o.candidate && inv.role === o.role);
-            const score = interview && interview.score !== null ? (
-              <div style={{
-                display: "inline-flex", alignItems: "center", justifyContent: "center",
-                width: 34, height: 34, borderRadius: "50%",
-                background: "#E6F6ED", color: "#00796B", fontWeight: 800, fontSize: 13
-              }}>
-                {interview.score}
-              </div>
-            ) : "—";
-            return [
-              <Mono v={o.id} />,
-              <strong style={{ color: T.ink }}>{o.candidate}</strong>,
-              o.role,
-              score,
-              <Badge label={o.status} variant={statusVariant(o.status)} />,
-              <div onClick={(e) => e.stopPropagation()}>
-                <button
-                  onClick={() => {
-                    setGenForm({ candidate: o.candidate, role: o.role, ctc: "", expiry: "", joining: "" });
-                    setGenRange(getRoleRange(o.role));
-                    setShowGenerateModal(true);
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              overflowX: "auto",
+              scrollSnapType: "x mandatory",
+              WebkitOverflowScrolling: "touch",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              gap: 12,
+              paddingBottom: 4,
+            }}
+          >
+            {filteredOffers.map((o, idx) => {
+              const interview = INTERVIEWS.find(inv => inv.candidate === o.candidate && inv.role === o.role);
+              return (
+                <div
+                  key={o.id}
+                  onClick={() => setSelectedOfferForModal(o)}
+                  style={{
+                    flexShrink: 0,
+                    width: "100%",
+                    scrollSnapAlign: "center",
+                    background: T.surface,
+                    borderRadius: 18,
+                    border: `1.5px solid ${T.border}`,
+                    overflow: "hidden",
+                    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                    cursor: "pointer",
                   }}
-                  style={{ border: "none", background: T.blueLight, color: T.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
                 >
-                  Generate Offer
-                </button>
-              </div>,
-            <div onClick={(e) => e.stopPropagation()}>
-              {o.ctc && o.issued && o.expiry ? (
-                <button
-                  onClick={() => setViewOffer(o)}
-                  style={{ border: "none", background: T.blueLight, color: T.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
-                >
-                  View Letter
-                </button>
-              ) : (
-                <button
-                  disabled
-                  style={{ border: "none", background: "#E5E7EB", color: "#9CA3AF", borderRadius: 8, padding: "6px 12px", cursor: "not-allowed", fontWeight: 700, fontSize: 12, opacity: 0.6 }}
-                >
-                  View Letter
-                </button>
-              )}
-            </div>,
-            ];
-          })}
-        />
-      </Card>
+                  {/* Header */}
+                  <div
+                    style={{
+                      background: `linear-gradient(135deg, ${T.primaryPale} 0%, ${T.canvas} 100%)`,
+                      padding: "16px 18px 14px",
+                      borderBottom: `1px solid ${T.border}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.candidate}</div>
+                      <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 4 }}>{o.role}</div>
+                    </div>
+                    <div style={{ fontSize: 11, color: T.inkFaint, flexShrink: 0 }}>
+                      {idx + 1}/{filteredOffers.length}
+                    </div>
+                  </div>
+
+                  {/* Details */}
+                  <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 8, borderBottom: `1px solid ${T.border}` }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Offer ID</span>
+                      <Mono v={o.id} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Interview Score</span>
+                      {interview && interview.score !== null ? (
+                        <div style={{
+                          display: "inline-flex", alignItems: "center", justifyContent: "center",
+                          width: 32, height: 32, borderRadius: "50%",
+                          background: "#E6F6ED", color: "#00796B", fontWeight: 800, fontSize: 12
+                        }}>
+                          {interview.score}
+                        </div>
+                      ) : <span style={{ color: T.inkFaint }}>—</span>}
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</span>
+                      <Badge label={o.status} variant={statusVariant(o.status)} />
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ padding: "12px 18px", display: "flex", justifyContent: "flex-end", gap: 8 }} onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => {
+                        setGenForm({ candidate: o.candidate, role: o.role, ctc: "", expiry: "", joining: "" });
+                        setGenRange(getRoleRange(o.role));
+                        setShowGenerateModal(true);
+                      }}
+                      style={{ border: "none", background: T.blueLight, color: T.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+                    >
+                      Generate Offer
+                    </button>
+                    {o.ctc && o.issued && o.expiry ? (
+                      <button
+                        onClick={() => setViewOffer(o)}
+                        style={{ border: "none", background: T.blueLight, color: T.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+                      >
+                        View Letter
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        style={{ border: "none", background: "#E5E7EB", color: "#9CA3AF", borderRadius: 8, padding: "6px 12px", cursor: "not-allowed", fontWeight: 700, fontSize: 12, opacity: 0.6 }}
+                      >
+                        View Letter
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <Card>
+          <div style={{
+            padding: "12px 14px",
+            borderBottom: `1px solid ${T.border}`,
+            display: "flex",
+            justifyContent: "flex-end",
+          }}>
+            <span style={{ fontSize: 12, color: T.inkFaint, fontWeight: 600, whiteSpace: "nowrap" }}>
+              {filteredOffers.length} of {offers.length} offers
+            </span>
+          </div>
+          <Table
+            cols={["Offer ID", "Candidate", "Role", "Score", "Status", "Generate", "Actions"]}
+            onRowClick={(i) => setSelectedOfferForModal(filteredOffers[i])}
+            rows={filteredOffers.map((o) => {
+              const interview = INTERVIEWS.find(inv => inv.candidate === o.candidate && inv.role === o.role);
+              const score = interview && interview.score !== null ? (
+                <div style={{
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  width: 34, height: 34, borderRadius: "50%",
+                  background: "#E6F6ED", color: "#00796B", fontWeight: 800, fontSize: 13
+                }}>
+                  {interview.score}
+                </div>
+              ) : "—";
+              return [
+                <Mono v={o.id} />,
+                <strong style={{ color: T.ink }}>{o.candidate}</strong>,
+                o.role,
+                score,
+                <Badge label={o.status} variant={statusVariant(o.status)} />,
+                <div onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => {
+                      setGenForm({ candidate: o.candidate, role: o.role, ctc: "", expiry: "", joining: "" });
+                      setGenRange(getRoleRange(o.role));
+                      setShowGenerateModal(true);
+                    }}
+                    style={{ border: "none", background: T.blueLight, color: T.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+                  >
+                    Generate Offer
+                  </button>
+                </div>,
+                <div onClick={(e) => e.stopPropagation()}>
+                  {o.ctc && o.issued && o.expiry ? (
+                    <button
+                      onClick={() => setViewOffer(o)}
+                      style={{ border: "none", background: T.blueLight, color: T.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+                    >
+                      View Letter
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      style={{ border: "none", background: "#E5E7EB", color: "#9CA3AF", borderRadius: 8, padding: "6px 12px", cursor: "not-allowed", fontWeight: 700, fontSize: 12, opacity: 0.6 }}
+                    >
+                      View Letter
+                    </button>
+                  )}
+                </div>,
+              ];
+            })}
+          />
+        </Card>
+      )}
 
       {/* Offer Details Popup Modal */}
       <Modal open={!!selectedOfferForModal} onClose={() => setSelectedOfferForModal(null)} maxWidth={600}>
