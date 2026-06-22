@@ -152,32 +152,52 @@ export default function Panelist({
     scrollRef.current?.scrollBy({ left: dir === "left" ? -300 : 300, behavior: "smooth" });
   };
 
-  const openEval = (interview: any) => {
-    setSelectedInterview(interview);
+            const openEval = (interview: any) => {
+            setSelectedInterview(interview);
 
-    // Check if admin is editing an existing evaluation
-    const isAdmin = currentUser === "admin";
-    const alreadyEvaluated = interview.evaluations?.some((e: any) => e.panelist === currentUser);
+            setEvaluatorName(currentUser);
 
-    if (isAdmin && alreadyEvaluated && interview.evaluations?.length > 0) {
-      // Admin editing - if they haven't evaluated, pick first evaluation to edit
-      const firstEval = interview.evaluations[0];
-      setEvaluatorName(firstEval.panelist);
-      setScores(firstEval.scores || {});
-      setCustomFields(firstEval.customFields || []);
-      setNotes(firstEval.notes || "");
-      setRecommendation(firstEval.recommendation || "Strong Hire");
-    } else {
-      // Regular panelist - their own evaluation
-      setEvaluatorName(currentUser);
-      setScores({});
-      setCustomFields([]);
-      setNotes("");
-      setRecommendation("Strong Hire");
-    }
+            const existingEval = interview.evaluations?.find(
+              (e: any) => e.panelist === currentUser
+            );
 
-    setNewField("");
-  };
+            if (existingEval) {
+              setScores(existingEval.scores || {});
+              setCustomFields(existingEval.customFields || []);
+              setNotes(existingEval.notes || "");
+              setRecommendation(existingEval.recommendation || "Strong Hire");
+            } else {
+              setScores({});
+              setCustomFields([]);
+              setNotes("");
+              setRecommendation("Strong Hire");
+            }
+
+            setNewField("");
+          };
+
+          const handleEvaluatorChange = (
+              interview: any,
+              panelistName: string
+            ) => {
+              setEvaluatorName(panelistName);
+
+              const existingEval = interview.evaluations?.find(
+                (e: any) => e.panelist === panelistName
+              );
+
+              if (existingEval) {
+                setScores(existingEval.scores || {});
+                setCustomFields(existingEval.customFields || []);
+                setNotes(existingEval.notes || "");
+                setRecommendation(existingEval.recommendation || "Strong Hire");
+              } else {
+                setScores({});
+                setCustomFields([]);
+                setNotes("");
+                setRecommendation("Strong Hire");
+              }
+            };
 
   const updateScore = (field: string, value: number) =>
     setScores((prev) => ({ ...prev, [field]: value }));
@@ -188,12 +208,34 @@ export default function Panelist({
     setNewField("");
   };
 
+  const markAttendance = (
+          interview: any,
+          status: "Present" | "Absent"
+        ) => {
+          if (!setInterviews) return;
+
+          setInterviews((prev) =>
+            prev.map((i) =>
+              i.candidate === interview.candidate &&
+              i.role === interview.role &&
+              i.round === interview.round
+                ? {
+                    ...i,
+                    attendance: status,
+                  }
+                : i
+            )
+          );
+        };
+
   const handleSubmit = () => {
     if (!evaluatorName.trim()) {
       alert("Please enter your name before submitting.");
       return;
     }
     if (!setInterviews || !selectedInterview) return;
+
+    
 
     const newEval = {
       panelist: evaluatorName.trim(),
@@ -490,20 +532,82 @@ export default function Panelist({
                       </div>
                       <div>
                         <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Status</div>
-                        <div style={{ marginTop: 2 }}>
-                          <span style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            background: isCompleted ? T.greenLight : "#FEF3C7",
-                            color: isCompleted ? T.green : "#B45309",
-                            padding: "4px 10px",
-                            borderRadius: 99,
-                            fontSize: 10,
-                            fontWeight: 700
-                          }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "flex-end",
+                            gap: 10,
+                            minWidth: 130
+                          }}
+                        >
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              background: isCompleted ? T.greenLight : "#FEF3C7",
+                              color: isCompleted ? T.green : "#B45309",
+                              padding: "8px 18px",
+                              borderRadius: 999,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              border: `1px solid ${
+                                isCompleted ? T.green + "44" : "#FDE68A"
+                              }`,
+                            }}
+                          >
                             {isCompleted ? "✓ Completed" : "● Upcoming"}
                           </span>
+                          {interview.attendance && (
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                background:
+                                  interview.attendance === "Present"
+                                    ? "#DCFCE7"
+                                    : "#FEE2E2",
+                                color:
+                                  interview.attendance === "Present"
+                                    ? "#166534"
+                                    : "#991B1B",
+                                padding: "8px 18px",
+                                borderRadius: 999,
+                                fontSize: 11,
+                                fontWeight: 700,
+                              }}
+                            >
+                              {interview.attendance === "Present"
+                                ? "✓ Present"
+                                : "✕ Absent"}
+                            </span>
+                          )}
+                             {totalScore !== null && (
+                            <div
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 10,
+                                background: T.canvas,
+                                borderRadius: 999,
+                                padding: "10px 14px",
+                                border: `1px solid ${T.border}`,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  color: T.inkFaint,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                Score
+                              </span>
+                              <ScoreCircle score={totalScore} />
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -517,82 +621,89 @@ export default function Panelist({
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div style={{ display: "flex", gap: 8, width: "100%", flexWrap: "wrap" }}>
-                    {interview.meetingLink && (
-                      <a
-                        href={interview.meetingLink}
-                        target="_blank"
-                        rel="noreferrer"
+                  
+                  {/* ── Action buttons ──────────────────────────────── */}
+                      <div
                         style={{
-                          flex: 1,
-                          background: MAROON,
-                          color: "#fff",
-                          textDecoration: "none",
-                          padding: "10px 16px",
-                          borderRadius: 8,
-                          fontWeight: 700,
-                          fontSize: 13,
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 6,
-                          boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
-                          textAlign: "center"
+                          padding: "14px 24px",
+                          display: "flex",
+                          gap: 10,
+                          flexWrap: "wrap",
                         }}
                       >
-                        🔗 Join
-                      </a>
-                    )}
-                    {(() => {
-                      const evalCheck = canEvaluate(interview);
-                      const alreadyEvaluated = interview.evaluations?.some((e: any) => e.panelist === currentUser);
-                      const isAdmin = currentUser === "admin";
-
-                      if (!evalCheck.allowed) {
-                        return (
-                          <button
-                            disabled
-                            title={evalCheck.reason}
+                        {interview.meetingLink && (
+                          <a
+                            href={interview.meetingLink}
+                            target="_blank"
+                            rel="noreferrer"
                             style={{
-                              flex: 1,
-                              border: "none",
-                              background: "rgba(255,255,255,0.15)",
-                              color: "rgba(255,255,255,0.5)",
-                              padding: "10px 16px",
-                              borderRadius: 8,
-                              cursor: "not-allowed",
+                              background: MAROON,
+                              color: "#fff",
+                              textDecoration: "none",
+                              padding: "10px 18px",
+                              borderRadius: 10,
                               fontWeight: 700,
-                              fontSize: 12,
-                              opacity: 0.6
+                              fontSize: 13,
                             }}
                           >
-                            {evalCheck.reason ? (evalCheck.reason.includes("already") ? "Done" : "Lock") : "Disabled"}
-                          </button>
-                        );
-                      }
+                            🔗 Join Interview
+                          </a>
+                        )}
 
-                      return (
-                        <button
-                          onClick={() => openEval(interview)}
-                          style={{
-                            flex: 1,
-                            border: "none",
-                            background: GOLD,
-                            color: "#fff",
-                            padding: "10px 16px",
-                            borderRadius: 8,
-                            cursor: "pointer",
-                            fontWeight: 700,
-                            fontSize: 13,
-                            boxShadow: "0 4px 10px rgba(0,0,0,0.15)"
-                          }}
-                        >
-                          ⭐ {alreadyEvaluated && isAdmin ? "Edit" : alreadyEvaluated ? "Evaluated" : "Evaluate"}
-                        </button>
-                      );
-                    })()}
-                  </div>
+                        {/* Attendance buttons only before evaluation */}
+                        {(!interview.evaluations || interview.evaluations.length === 0) && (
+                          <>
+                            <button
+                              onClick={() => markAttendance(interview, "Present")}
+                              style={{
+                                background: "#16A34A",
+                                color: "#fff",
+                                border: "none",
+                                padding: "10px 18px",
+                                borderRadius: 10,
+                                cursor: "pointer",
+                                fontWeight: 700,
+                              }}
+                            >
+                              ✓ Present
+                            </button>
+
+                            <button
+                              onClick={() => markAttendance(interview, "Absent")}
+                              style={{
+                                background: "#DC2626",
+                                color: "#fff",
+                                border: "none",
+                                padding: "10px 18px",
+                                borderRadius: 10,
+                                cursor: "pointer",
+                                fontWeight: 700,
+                              }}
+                            >
+                              ✕ Absent
+                            </button>
+                          </>
+                        )}
+
+                        {/* Evaluate only if Present */}
+                        {interview.attendance === "Present" && (
+                          <button
+                            onClick={() => openEval(interview)}
+                            style={{
+                              border: "none",
+                              background: GOLD,
+                              color: "#fff",
+                              padding: "10px 20px",
+                              borderRadius: 10,
+                              cursor: "pointer",
+                              fontWeight: 700,
+                              fontSize: 13,
+                            }}
+                          >
+                            ⭐ Evaluate Candidate
+                          </button>
+                        )}
+                      </div>
                 </div>
               );
             }
@@ -778,43 +889,83 @@ export default function Panelist({
                 </div>
 
                 {/* ── Action buttons ──────────────────────────────── */}
-                <div style={{ padding: "14px 24px", display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <div
+                  style={{
+                    padding: "14px 24px",
+                    display: "flex",
+                    gap: 10,
+                    flexWrap: "wrap",
+                  }}
+                >
                   {interview.meetingLink && (
                     <a
                       href={interview.meetingLink}
                       target="_blank"
                       rel="noreferrer"
-                      style={{ background: MAROON, color: "#fff", textDecoration: "none", padding: "10px 18px", borderRadius: 10, fontWeight: 700, fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}
+                      style={{
+                        background: MAROON,
+                        color: "#fff",
+                        textDecoration: "none",
+                        padding: "10px 18px",
+                        borderRadius: 10,
+                        fontWeight: 700,
+                        fontSize: 13,
+                      }}
                     >
                       🔗 Join Interview
                     </a>
                   )}
-                  {(() => {
-                    const evalCheck = canEvaluate(interview);
-                    const alreadyEvaluated = interview.evaluations?.some((e: any) => e.panelist === currentUser);
-                    const isAdmin = currentUser === "admin";
 
-                    if (!evalCheck.allowed) {
-                      return (
-                        <button
-                          disabled
-                          title={evalCheck.reason}
-                          style={{ border: "none", background: "#E5E7EB", color: "#9CA3AF", padding: "10px 20px", borderRadius: 10, cursor: "not-allowed", fontWeight: 700, fontSize: 13, opacity: 0.6 }}
-                        >
-                          ⭐ {evalCheck.reason}
-                        </button>
-                      );
-                    }
+                  {/* Present Button */}
+                  <button
+                    onClick={() => markAttendance(interview, "Present")}
+                    style={{
+                      background: "#16A34A",
+                      color: "#fff",
+                      border: "none",
+                      padding: "10px 18px",
+                      borderRadius: 10,
+                      cursor: "pointer",
+                      fontWeight: 700,
+                    }}
+                  >
+                    ✓ Present
+                  </button>
 
-                    return (
-                      <button
-                        onClick={() => openEval(interview)}
-                        style={{ border: "none", background: GOLD, color: "#fff", padding: "10px 20px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13 }}
-                      >
-                        ⭐ {alreadyEvaluated && isAdmin ? "Edit Evaluation" : alreadyEvaluated ? "Already Evaluated" : "Evaluate Candidate"}
-                      </button>
-                    );
-                  })()}
+                  {/* Absent Button */}
+                  <button
+                    onClick={() => markAttendance(interview, "Absent")}
+                    style={{
+                      background: "#DC2626",
+                      color: "#fff",
+                      border: "none",
+                      padding: "10px 18px",
+                      borderRadius: 10,
+                      cursor: "pointer",
+                      fontWeight: 700,
+                    }}
+                  >
+                    ✕ Absent
+                  </button>
+
+                  {/* Show Evaluate only if Present */}
+                  {interview.attendance === "Present" && (
+                    <button
+                      onClick={() => openEval(interview)}
+                      style={{
+                        border: "none",
+                        background: GOLD,
+                        color: "#fff",
+                        padding: "10px 20px",
+                        borderRadius: 10,
+                        cursor: "pointer",
+                        fontWeight: 700,
+                        fontSize: 13,
+                      }}
+                    >
+                      ⭐ Evaluate Candidate
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -848,35 +999,36 @@ export default function Panelist({
                 <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 12, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   Evaluating as <span style={{ color: T.red }}>*</span>
                 </label>
-                {currentUser === "admin" ? (
-                  // Admin can select only assigned panelists
                   <select
                     value={evaluatorName}
-                    onChange={(e) => setEvaluatorName(e.target.value)}
-                    style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${T.border}`, fontSize: 14, fontWeight: 600, color: T.ink, background: "#fff" }}
-                  >
-                    <option value="">— Select assigned panelist —</option>
-                    {panelists
-                      .filter((p: any) => selectedInterview?.panel?.includes(p.name))
-                      .map((p: any) => (
-                        <option key={p.name} value={p.name}>{p.name}</option>
-                      ))}
-                    <option value="__custom">Other (type below)</option>
-                  </select>
-                ) : (
-                  // Regular panelist - locked to their name
-                  <div style={{ padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${T.border}`, fontSize: 14, fontWeight: 600, color: T.ink, background: T.canvas }}>
-                    {currentUser}
-                  </div>
-                )}
-                {(currentUser === "admin" && evaluatorName === "__custom") && (
-                  <input
-                    placeholder="Type panelist name..."
-                    value={evaluatorName === "__custom" ? "" : evaluatorName}
-                    onChange={(e) => setEvaluatorName(e.target.value)}
-                    style={{ width: "100%", marginTop: 8, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${T.border}`, fontSize: 14, color: T.ink, background: "#fff", boxSizing: "border-box" }}
-                  />
-                )}
+                    onChange={(e) =>
+                      handleEvaluatorChange(
+                        selectedInterview,
+                        e.target.value
+                      )
+                    }
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: 10,
+                        border: `1.5px solid ${T.border}`,
+                        fontSize: 14,
+                        background: "#fff",
+                      }}
+                    >
+                      {/* Current user/admin selected by default */}
+                      <option value={currentUser}>
+                        {currentUser}
+                      </option>
+
+                      {(selectedInterview.panel || [])
+                        .filter((name: string) => name !== currentUser)
+                        .map((name: string) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                    </select>
               </div>
 
               {/* Scorecard */}
