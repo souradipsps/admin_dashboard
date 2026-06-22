@@ -4,7 +4,7 @@ import { useBreakpoint } from "../hooks";
 import { Card, SectionTitle, Table, Mono, Badge, Input, Btn, Modal, ModalHeader, Select, FormField } from "../components/ui";
 
 const STATUS_OPTIONS = [
-  { value: "Applied", label: "Applied" },
+  { value: "Appliedddd", label: "Appliedddd" },
   { value: "Shortlisted", label: "Shortlisted" },
   { value: "Rejected", label: "Rejected" },
 ];
