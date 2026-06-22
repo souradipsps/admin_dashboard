@@ -75,15 +75,12 @@ export const POSTINGS = [
 export const JOB_APPLICATIONS = [
   { id: "JAPP-2026-0001", name: "Priya Sharma", email: "priya.sharma@email.com", phone: "9876543210", role: "Mathematics Teacher", jobPostingId: "JP-2026-0001", exp: "4 yrs", qualification: "M.Sc + B.Ed", applied: "2026-06-05", status: "Shortlisted", referredBy: "Dr. Roy", resume: "https://example.com/resumes/priya-sharma.pdf" },
   { id: "JAPP-2026-0002", name: "Arjun Das", email: "arjun.das@email.com", phone: "9876543211", role: "Mathematics Teacher", jobPostingId: "JP-2026-0001", exp: "3 yrs", qualification: "M.Sc + B.Ed", applied: "2026-06-06", status: "Applied", referredBy: "None", resume: "https://example.com/resumes/arjun-das.pdf" },
-  { id: "JAPP-2026-0003", name: "Meenakshi Rao", email: "meenakshi.rao@email.com", phone: "9876543212", role: "Mathematics Teacher", jobPostingId: "JP-2026-0001", exp: "5 yrs", qualification: "M.Sc + B.Ed", applied: "2026-06-07", status: "Screening", referredBy: "Ms. Nisha", resume: "https://example.com/resumes/meenakshi-rao.pdf" },
-  { id: "JAPP-2026-0004", name: "Karan Gupta", email: "karan.gupta@email.com", phone: "9876543213", role: "Office Coordinator", jobPostingId: "JP-2026-0002", exp: "2 yrs", qualification: "Graduate", applied: "2026-06-01", status: "Interview", referredBy: "None", resume: "https://example.com/resumes/karan-gupta.pdf" },
   { id: "JAPP-2026-0005", name: "Sonal Verma", email: "sonal.verma@email.com", phone: "9876543214", role: "Office Coordinator", jobPostingId: "JP-2026-0002", exp: "3 yrs", qualification: "MBA", applied: "2026-06-02", status: "Selected", referredBy: "Mr. Patel", resume: "https://example.com/resumes/sonal-verma.pdf" },
   { id: "JAPP-2026-0006", name: "Deepak Nair", email: "deepak.nair@email.com", phone: "9876543215", role: "Mathematics Teacher", jobPostingId: "JP-2026-0001", exp: "1 yr", qualification: "M.Sc", applied: "2026-06-08", status: "Rejected", referredBy: "None", resume: "https://example.com/resumes/deepak-nair.pdf" },
 ];
 
 export const GENERAL_APPLICATIONS = [
   { id: "GAPP-2026-0001", name: "Ritu Patel", email: "ritu.patel@email.com", phone: "9123456780", preferredRole: "Chemistry Teacher", preferredDept: "Science", exp: "6 yrs", qualification: "M.Sc + B.Ed", applied: "2026-06-03", status: "Applied", resume: "https://example.com/resumes/ritu-patel.pdf" },
-  { id: "GAPP-2026-0002", name: "Vikram Joshi", email: "vikram.joshi@email.com", phone: "9123456781", preferredRole: "Lab Assistant", preferredDept: "Science", exp: "2 yrs", qualification: "B.Sc", applied: "2026-06-04", status: "Screening", resume: "https://example.com/resumes/vikram-joshi.pdf" },
   { id: "GAPP-2026-0003", name: "Anita Deshmukh", email: "anita.d@email.com", phone: "9123456782", preferredRole: "English Teacher", preferredDept: "Languages", exp: "8 yrs", qualification: "M.A + B.Ed", applied: "2026-06-05", status: "Shortlisted", resume: "https://example.com/resumes/anita-deshmukh.pdf" },
   { id: "GAPP-2026-0004", name: "Suresh Menon", email: "suresh.m@email.com", phone: "9123456783", preferredRole: "Physical Education Teacher", preferredDept: "Sports", exp: "3 yrs", qualification: "B.P.Ed", applied: "2026-06-09", status: "Applied", resume: "https://example.com/resumes/suresh-menon.pdf" },
   { id: "GAPP-2026-0005", name: "Nisha Agarwal", email: "nisha.a@email.com", phone: "9123456784", preferredRole: "Music Teacher", preferredDept: "Arts", exp: "5 yrs", qualification: "M.A Music", applied: "2026-06-10", status: "Applied", resume: "https://example.com/resumes/nisha-agarwal.pdf" },
@@ -91,15 +88,12 @@ export const GENERAL_APPLICATIONS = [
 
 export const INTERVIEWS = [
   { id: "INT-2026-0001", candidate: "Priya Sharma", role: "Mathematics Teacher", date: "2026-06-12", time: "10:00 AM", panel: ["Dr. Roy", "Mr. Patel"], score: 87, rec: "Selected", status: "Completed", mode: "Online", meetingLink: "https://meet.google.com/abc-mnop-xyz", round: 1 },
-  { id: "INT-2026-0002", candidate: "Karan Gupta", role: "Office Coordinator", date: "2026-06-13", time: "2:00 PM", panel: ["Ms. Nisha"], score: null, rec: "—", status: "Pending", mode: "Online", meetingLink: "https://meet.google.com/def-qrst-uvw", round: 2 },
-  { id: "INT-2026-0003", candidate: "Meenakshi Rao", role: "Mathematics Teacher", date: "2026-06-14", time: "11:00 AM", panel: ["Dr. Roy", "Mr. Kumar"], score: 72, rec: "Hold", status: "Completed", mode: "In-Person", meetingLink: "", round: 1 },
 ];
 
 export const OFFERS = [
   { id: "OFR-2026-0001", candidate: "Priya Sharma", role: "Mathematics Teacher", ctc: "₹52,000/mo", issued: "2026-06-15", expiry: "2026-06-22", status: "Sent" },
   { id: "OFR-2026-0002", candidate: "Sonal Verma", role: "Office Coordinator", ctc: "₹30,000/mo", issued: "2026-06-10", expiry: "2026-06-17", status: "Accepted" },
   { id: "OFR-2026-0003", candidate: "Amit Joshi", role: "Hindi Teacher", ctc: "₹38,000/mo", issued: "2026-05-28", expiry: "2026-06-04", status: "Expired" },
-  { id: "OFR-2026-0004", candidate: "Vikram Joshi", role: "Lab Assistant", status: "Sent" },
 ];
 
 export const ONBOARDING = [

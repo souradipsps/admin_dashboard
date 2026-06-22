@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { T } from "../theme";
 import { STATUS_COLORS } from "../theme";
 import { useBreakpoint } from "../hooks";
-import { Card, SectionTitle, Table, Badge, Mono, Input, Modal, ModalHeader, Select } from "../components/ui";
+import { Card, SectionTitle, Table, Badge, Mono, Input, Modal, ModalHeader, Select, Btn } from "../components/ui";
 
 interface ExistingRolesProps {
   roles: any[];
@@ -175,6 +175,9 @@ function RolesTable({ cols, rows, onStatusChange }: { cols: string[]; rows: any[
               </div>
             </div>
             {/* Summary removed as requested */}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 20 }}>
+              <Btn label="Close" onClick={close} />
+            </div>
           </div>
         )}
       </Modal>

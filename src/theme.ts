@@ -73,7 +73,6 @@ export const statusVariant = (s: string): string => {
 
     // Pending states - gold/accent
     Pending: "accent",
-    Screening: "accent",
     Initiated: "accent",
     Draft: "accent",
     Hold: "accent",
@@ -90,7 +89,6 @@ export const statusVariant = (s: string): string => {
     // In progress states
     Shortlisted: "primary",
     Applied: "sky",
-    Interview: "violet",
     Sent: "teal",
 
     // Types

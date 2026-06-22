@@ -32,9 +32,7 @@ export default function Dashboard({ approvalRequests }: DashboardProps) {
 
   const pipeline = [
     { stage: "Applied", n: 47, prev: 30, color: T.sky },
-    { stage: "Screening", n: 31, prev: 20, color: T.primary },
     { stage: "Shortlisted", n: 18, prev: 12, color: T.violet },
-    { stage: "Interview", n: 9, prev: 7, color: T.accent },
     { stage: "Selected", n: 4, prev: 3, color: T.teal },
     { stage: "Offered", n: 3, prev: 2, color: T.green },
   ];
@@ -69,13 +67,9 @@ export default function Dashboard({ approvalRequests }: DashboardProps) {
     { dot: T.teal, text: "APP-2026-0006 — Deepak Nair rejected for Mathematics Teacher", time: "2h ago" },
     { dot: T.green, text: "OFR-2026-0002 accepted by Sonal Verma · Onboarding initiated", time: "4h ago" },
     { dot: T.accent, text: "JR-2026-0003 (Lab Assistant x3) submitted for approval", time: "Yesterday" },
-    { dot: T.violet, text: "Interview scheduled — Karan Gupta · 13 Jun, 2:00 PM", time: "Yesterday" },
   ];
 
-  const upcoming = [
-    { name: "Karan Gupta", role: "Office Coordinator", date: "Jun 13", time: "2:00 PM", panel: "Ms. Nisha" },
-    { name: "Meenakshi Rao", role: "Mathematics Teacher", date: "Jun 14", time: "11:00 AM", panel: "Dr. Roy" },
-  ];
+  const upcoming: any[] = [];
 
   const kpiCols = isMobile ? "repeat(2,1fr)" : isTablet ? "repeat(3,1fr)" : "repeat(6,1fr)";
   const analyticsCols = isMobile ? "1fr 1fr" : "repeat(4,1fr)";

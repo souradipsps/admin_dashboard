@@ -542,7 +542,18 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
           const pct = Math.round((done / TASK_KEYS.length) * 100);
           return (
             <>
-              <ModalHeader title="Onboarding Checklist & Details" onClose={() => setSelectedRecord(null)} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: T.ink }}>Onboarding Checklist & Details</h2>
+                <button
+                  onClick={() => setSelectedRecord(null)}
+                  style={{
+                    background: "none", border: "none", fontSize: 20, fontWeight: 700,
+                    color: T.inkFaint, cursor: "pointer", padding: 0
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
               
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
                 <div>

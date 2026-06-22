@@ -4,8 +4,8 @@ import { useBreakpoint } from "../hooks";
 import { Card, SectionTitle, Table, Mono, Badge, Input, Btn, Modal, ModalHeader, Select, FormField } from "../components/ui";
 
 const STATUS_OPTIONS = [
-  { value: "Applied", label: "Applied" },
   { value: "Shortlisted", label: "Shortlisted" },
+  { value: "Applied", label: "Applied" },
   { value: "Rejected", label: "Rejected" },
 ];
 
@@ -48,7 +48,7 @@ export default function Applications({
   // kept as empty ref so no other code breaks.
   const lastTapTimeRef = useRef<Record<string, number>>({});
 
-  const statuses = ["All", "Applied", "Shortlisted", "Rejected"];
+  const statuses = ["All", "Shortlisted", "Applied", "Rejected"];
   const isJob = tab === "job";
 
   // Enrich job postings with request details + per-tab app counts
