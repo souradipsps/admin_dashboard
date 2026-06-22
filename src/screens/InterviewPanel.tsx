@@ -581,6 +581,7 @@ export default function InterviewPanel({
       "Date & Time",
       "Meeting Link",
       "Score",
+      "Actions",
     ];
 
   const tableRows = filteredCandidates.map((c) => {
@@ -761,8 +762,6 @@ export default function InterviewPanel({
       ) : (
         <span style={{ color: T.inkFaint }}>—</span>
       ),
-      i.rec !== "—" ? <Badge label={i.rec} variant={statusVariant(i.rec)} /> : <span style={{ color: T.inkFaint }}>—</span>,
-      <Badge label={i.status} variant={statusVariant(i.status)} />,
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {!i.date ? (
           <button
@@ -1637,23 +1636,7 @@ export default function InterviewPanel({
                     (i) => i.candidate === selectedAppDetail.name && i.role === selectedAppDetail.role && i.round === r
                   );
                   if (!roundInv) {
-                    return (
-                      <div
-                        key={r}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          padding: "8px 12px",
-                          background: T.canvas,
-                          borderRadius: 8,
-                          border: `1.5px dashed ${T.border}`,
-                        }}
-                      >
-                        <span style={{ fontSize: 12, fontWeight: 700, color: T.inkLight }}>{getRoundOrdinal(r)}</span>
-                        <span style={{ fontSize: 11, color: T.inkFaint, fontStyle: "italic" }}>Not scheduled</span>
-                      </div>
-                    );
+                    return null;
                   }
                   return (
                     <div
