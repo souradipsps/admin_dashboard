@@ -100,7 +100,7 @@ export default function InterviewPanel({
         phone: a.phone || "",
         role: a.role,
         jobPostingId: a.jobPostingId,
-        referredBy: a.referredBy || "None",
+        
         exp: a.exp,
         qualification: a.qualification || "—",
         applied: a.applied,
@@ -223,7 +223,7 @@ export default function InterviewPanel({
       filteredCandidates.forEach((c) => {
         const key = candidateKey(c);
         if (selectedCandidateKeys.includes(key)) {
-          next[key] = Math.min(5, c.activeRound + 1);
+          next[key] = Math.min(10, c.activeRound + 1);
         }
       });
       return next;
@@ -231,7 +231,7 @@ export default function InterviewPanel({
   };
 
   const handleIncrementCandidateRound = (c: any, currentRound: number) => {
-    const newRound = Math.min(5, currentRound + 1);
+    const newRound = Math.min(10, currentRound + 1);
     setActiveRoundOverrides((prev) => ({
       ...prev,
       [`${c.name}-${c.role}`]: newRound,
@@ -581,9 +581,6 @@ export default function InterviewPanel({
       "Date & Time",
       "Meeting Link",
       "Score",
-      "Rec",
-      "Status",
-      "Actions",
     ];
 
   const tableRows = filteredCandidates.map((c) => {
@@ -630,11 +627,11 @@ export default function InterviewPanel({
           </span>
           <button
             onClick={() => handleIncrementCandidateRound(c, rnd)}
-            disabled={rnd >= 5}
+            disabled={rnd >= 10}
             style={{
               width: 18, height: 18, borderRadius: 4, border: "none",
-              background: rnd >= 5 ? T.border : T.primary, color: "#fff",
-              cursor: rnd >= 5 ? "not-allowed" : "pointer",
+              background: rnd >= 10 ? T.border : T.primary, color: "#fff",
+              cursor: rnd >= 10 ? "not-allowed" : "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: "bold"
             }}
           >
@@ -718,11 +715,11 @@ export default function InterviewPanel({
         </span>
         <button
           onClick={() => handleIncrementCandidateRound(c, rnd)}
-          disabled={rnd >= 5}
+          disabled={rnd >= 10}
           style={{
             width: 20, height: 20, borderRadius: 4, border: "none",
-            background: rnd >= 5 ? T.border : T.primary,
-            color: "#fff", fontWeight: "bold", cursor: rnd >= 5 ? "not-allowed" : "pointer",
+            background: rnd >= 10 ? T.border : T.primary,
+            color: "#fff", fontWeight: "bold", cursor: rnd >= 10 ? "not-allowed" : "pointer",
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11
           }}
         >
@@ -1231,11 +1228,11 @@ export default function InterviewPanel({
                             </span>
                             <button
                               onClick={(e) => { e.stopPropagation(); handleIncrementCandidateRound(c, rnd); }}
-                              disabled={rnd >= 5}
+                              disabled={rnd >= 10}
                               style={{
                                 width: 24, height: 24, borderRadius: 6, border: "none",
-                                background: rnd >= 5 ? T.border : T.primary, color: "#fff",
-                                cursor: rnd >= 5 ? "not-allowed" : "pointer",
+                                background: rnd >= 10 ? T.border : T.primary, color: "#fff",
+                                cursor: rnd >= 10 ? "not-allowed" : "pointer",
                                 display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: "bold",
                               }}
                             >+</button>
@@ -1746,7 +1743,7 @@ export default function InterviewPanel({
                 <div key={c} style={{ background: T.canvas, borderRadius: 10, padding: "12px 14px", border: `1px solid ${T.border}` }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: T.inkMid, marginBottom: 10 }}>{c}</div>
                   <div style={{ display: "flex", gap: 6 }}>
-                    {[1, 2, 3, 4, 5].map((n) => (
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                       <div
                         key={n}
                         onClick={() => setScores((prev) => ({ ...prev, [c]: n }))}

@@ -4,7 +4,7 @@ import { useBreakpoint } from "../hooks";
 import { Card, SectionTitle, Table, Mono, Badge, Input, Btn, Modal, ModalHeader, Select, FormField } from "../components/ui";
 
 const STATUS_OPTIONS = [
-  { value: "Appliedddd", label: "Appliedddd" },
+  { value: "Applied", label: "Applied" },
   { value: "Shortlisted", label: "Shortlisted" },
   { value: "Rejected", label: "Rejected" },
 ];
@@ -720,32 +720,7 @@ export default function Applications({
                   <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 8, marginTop: 4 }}>
                     <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Email</div>
                     <div style={{ fontSize: 12, overflow: "hidden", textOverflow: "ellipsis" }}>{a.email}</div>
-                    <a
-                      href={a.resume || "#"}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(e) => {
-                        if (!a.resume) {
-                          e.preventDefault();
-                          alert("Resume not available.");
-                        }
-                      }}
-                      style={{
-                        display: "inline-flex",
-                        marginTop: 10,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        padding: "6px 10px",
-                        borderRadius: 999,
-                        background: "rgba(255,255,255,0.12)",
-                        color: "#fff",
-                        textDecoration: "none",
-                        fontSize: 12,
-                        fontWeight: 700,
-                      }}
-                    >
-                      View Resume
-                    </a>
+                    
                   </div>
                 </div>
 
@@ -842,7 +817,7 @@ export default function Applications({
 
           {isJob ? (
             <Table
-              cols={["App ID", "Candidate", "Role", "Job Post", "Experience", "Qualification", "Referred By", "Applied Date", "Status", "View Resume", "Actions"]}
+              cols={["App ID", "Candidate", "Role", "Job Post", "Experience", "Qualification", "Referred By", "Applied Date", "Status", "Actions"]}
               onRowClick={(index) => setSelectedApp(filtered[index])}
               onRowDoubleClick={(index) => updateStatus(filtered[index], "Shortlisted")}
               rows={filtered.map((a) => [
@@ -861,20 +836,7 @@ export default function Applications({
                 <span style={{ fontWeight: 600, color: a.referredBy && a.referredBy !== "None" ? T.accentDark : T.inkLight }}>{a.referredBy || "—"}</span>,
                 a.applied,
                 <Badge label={a.status} variant={statusVariant(a.status)} />,
-                <a
-                  href={a.resume || "#"}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={(e) => {
-                    if (!a.resume) {
-                      e.preventDefault();
-                      alert("Resume not available.");
-                    }
-                  }}
-                  style={{ color: T.blue, fontWeight: 700, textDecoration: "none" }}
-                >
-                  View Resume
-                </a>,
+                
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   <button
                     onClick={(e) => {
@@ -899,7 +861,7 @@ export default function Applications({
             />
           ) : (
             <Table
-              cols={["App ID", "Candidate", "Preferred Role", "Department", "Experience", "Qualification", "Applied Date", "Status", "View Resume", "Actions"]}
+              cols={["App ID", "Candidate", "Preferred Role", "Department", "Experience", "Qualification", "Applied Date", "Status", "Actions"]}
               onRowClick={(index) => setSelectedApp(filtered[index])}
               onRowDoubleClick={(index) => updateStatus(filtered[index], "Shortlisted")}
               rows={filtered.map((a) => [
@@ -917,20 +879,7 @@ export default function Applications({
                 a.qualification || "—",
                 a.applied,
                 <Badge label={a.status} variant={statusVariant(a.status)} />,
-                <a
-                  href={a.resume || "#"}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={(e) => {
-                    if (!a.resume) {
-                      e.preventDefault();
-                      alert("Resume not available.");
-                    }
-                  }}
-                  style={{ color: T.tealDark, fontWeight: 700, textDecoration: "none" }}
-                >
-                  View Resume
-                </a>,
+                
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   <button
                     onClick={(e) => {
@@ -1037,7 +986,31 @@ export default function Applications({
                   <Badge label={selectedApp.status} variant={statusVariant(selectedApp.status)} />
                 </div>
               </div>
-              <Btn label="Update Status" small variant="amber" onClick={() => { setStatusModalApp(selectedApp); setNewStatus(selectedApp.status); }} />
+              <a
+                href={selectedApp.resume || "#"}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => {
+                  if (!selectedApp.resume) {
+                    e.preventDefault();
+                    alert("Resume not available.");
+                  }
+                }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "8px 14px",
+                  borderRadius: 8,
+                  background: T.blue,
+                  color: "#fff",
+                  textDecoration: "none",
+                  fontWeight: 700,
+                  fontSize: 13,
+                }}
+              >
+                View Resume
+              </a>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16, marginBottom: 20 }}>
