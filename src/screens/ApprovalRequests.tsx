@@ -42,7 +42,7 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
   const openModal = (r: any) => { setSel(r); setComment(""); setFieldErrors({}); };
   const closeModal = () => { setSel(null); setComment(""); setFieldErrors({}); };
 
-  const performAction = (r: any, action: "Approved" | "Rejected" | "Send Back", customComment?: string) => {
+  const performAction = (r: any, action: "Approved" | "Rejected" | "Sent Back", customComment?: string) => {
     const now = new Date().toLocaleDateString();
     const entry = { act: action, by: "HR Admin", date: now, note: customComment || "" };
     const updated = { ...r, status: action, comment: customComment || "", history: [...(r.history || []), entry] };
@@ -115,7 +115,7 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
     }
   };
 
-  const takeAction = (action: "Approved" | "Rejected" | "Send Back") => {
+  const takeAction = (action: "Approved" | "Rejected" | "Sent Back") => {
     if (!sel) return;
     let updatedSel = { ...sel };
     if (sel.type === "Role Request") {
@@ -435,7 +435,7 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
               {isPending ? (
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 700, color: T.inkLight, display: "block", marginBottom: 6 }}>
-                    Comment <span style={{ color: T.inkFaint, fontWeight: 400 }}>(required for Send Back)</span>
+                    Comment <span style={{ color: T.inkFaint, fontWeight: 400 }}>(required for Sent Back)</span>
                   </label>
                   <textarea
                     placeholder="Add a comment or reason…"
@@ -482,12 +482,12 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                   }}
                 />
                 <Btn
-                  label="Send Back"
+                  label="Sent Back"
                   variant="amber"
                   small
                   onClick={() => {
                     if (!comment.trim()) { alert("Please add a comment before sending back."); return; }
-                    takeAction("Send Back");
+                    takeAction("Sent Back");
                   }}
                 />
                 <Btn label="Accept" variant="success" small onClick={() => takeAction("Approved")} />
@@ -510,7 +510,7 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
             onChange={(e) => setStatusFilter(e.target.value)}
             style={{ border: `1.5px solid ${T.border}`, borderRadius: 8, padding: "8px 12px", fontSize: 13, color: T.inkMid, background: "#fff", cursor: "pointer" }}
           >
-            {["All", "Pending", "Approved", "Rejected", "Send Back"].map((s) => <option key={s}>{s}</option>)}
+            {["All", "Pending", "Approved", "Rejected", "Sent Back"].map((s) => <option key={s}>{s}</option>)}
           </select>
           {pendingCount > 0 && (
             <span style={{ marginLeft: "auto", background: T.amberLight, border: `1px solid #FDE68A`, borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 700, color: T.amber }}>

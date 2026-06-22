@@ -58,7 +58,7 @@ export const APPROVALS = [
   },
   {
     id: "RR-2026-0001", type: "Role Request", title: "Mathematics Teacher Role", dept: "Science",
-    by: "Dr. Ananya Roy", date: "2026-06-01", status: "Send Back",
+    by: "Dr. Ananya Roy", date: "2026-06-01", status: "Sent Back",
     history: [
       { act: "Submitted", by: "Dr. Ananya Roy", date: "2026-06-01", note: "" },
       { act: "Sent Back", by: "Principal", date: "2026-06-03", note: "Please attach resignation letter copy." },

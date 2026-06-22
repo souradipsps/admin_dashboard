@@ -17,7 +17,7 @@ const getStatusStyle = (status: string) => {
     case "Approved": return { border: `1.5px solid ${T.green}`, background: T.greenLight, color: T.green };
     case "Rejected": return { border: "1.5px solid #DC2626", background: "#FEE2E2", color: "#DC2626" };
     case "Cancelled": return { border: "1.5px solid #6B7280", background: "#F3F4F6", color: "#6B7280" };
-    case "Send Back": return { border: `1.5px solid ${T.amber}`, background: T.amberLight, color: T.amber };
+    case "Sent Back": return { border: `1.5px solid ${T.amber}`, background: T.amberLight, color: T.amber };
     default: return { border: `1.5px solid ${T.blue}`, background: T.blueLight, color: T.blue };
   }
 };
@@ -243,7 +243,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
         action={<Btn label="+ New Role Request" onClick={openNew} />}
       />
 
-      {roleRequests.filter((r) => r.status === "Send Back").map((r) => (
+      {roleRequests.filter((r) => r.status === "Sent Back").map((r) => (
         <div
           key={r.id}
           style={{
@@ -432,7 +432,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                 {/* Department */}
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Department</div>
-                  {selectedRequest.status === "Pending" || selectedRequest.status === "Send Back" ? (
+                  {selectedRequest.status === "Pending" || selectedRequest.status === "Sent Back" ? (
                     <input
                       value={selectedRequest.dept || ""}
                       onChange={(e) => setSelectedRequest({ ...selectedRequest, dept: e.target.value })}
@@ -447,7 +447,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                 {/* Role Name */}
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Role Name</div>
-                  {selectedRequest.status === "Pending" || selectedRequest.status === "Send Back" ? (
+                  {selectedRequest.status === "Pending" || selectedRequest.status === "Sent Back" ? (
                     <input
                       value={selectedRequest.role || ""}
                       onChange={(e) => setSelectedRequest({ ...selectedRequest, role: e.target.value })}
@@ -462,7 +462,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                 {/* Salary Range */}
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Salary Range</div>
-                  {selectedRequest.status === "Pending" || selectedRequest.status === "Send Back" ? (
+                  {selectedRequest.status === "Pending" || selectedRequest.status === "Sent Back" ? (
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                       <div>
                         <div style={{ fontSize: 10, color: T.inkFaint, marginBottom: 3 }}>Min (₹)</div>
@@ -491,7 +491,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                 {/* Experience */}
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Experience</div>
-                  {selectedRequest.status === "Pending" || selectedRequest.status === "Send Back" ? (
+                  {selectedRequest.status === "Pending" || selectedRequest.status === "Sent Back" ? (
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                       <div>
                         <div style={{ fontSize: 10, color: T.inkFaint, marginBottom: 3 }}>Min (yrs)</div>
@@ -520,7 +520,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                 {/* Justification */}
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Justification</div>
-                  {selectedRequest.status === "Pending" || selectedRequest.status === "Send Back" ? (
+                  {selectedRequest.status === "Pending" || selectedRequest.status === "Sent Back" ? (
                     <textarea
                       value={selectedRequest.just || ""}
                       onChange={(e) => setSelectedRequest({ ...selectedRequest, just: e.target.value })}
@@ -542,7 +542,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
             </div>
 
             {/* Modal footer */}
-            {(selectedRequest.status === "Pending" || selectedRequest.status === "Send Back") ? (
+            {(selectedRequest.status === "Pending" || selectedRequest.status === "Sent Back") ? (
               <div style={{
                 padding: "16px 24px",
                 borderTop: `1px solid ${T.border}`,

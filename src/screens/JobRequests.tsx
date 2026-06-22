@@ -20,7 +20,7 @@ const getStatusStyle = (status: string) => {
     case "Approved": return { border: `1.5px solid ${T.green}`, background: T.greenLight, color: T.green };
     case "Rejected": return { border: "1.5px solid #DC2626", background: "#FEE2E2", color: "#DC2626" };
     case "Cancelled": return { border: "1.5px solid #6B7280", background: "#F3F4F6", color: "#6B7280" };
-    case "Send Back": return { border: `1.5px solid ${T.amber}`, background: T.amberLight, color: T.amber };
+    case "Sent Back": return { border: `1.5px solid ${T.amber}`, background: T.amberLight, color: T.amber };
     default: return { border: `1.5px solid ${T.blue}`, background: T.blueLight, color: T.blue };
   }
 };
@@ -201,7 +201,7 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
         action={<Btn label="+ New Job Request" onClick={openNew} />}
       />
 
-      {jobRequests.filter((r) => r.status === "Send Back").map((r) => (
+      {jobRequests.filter((r) => r.status === "Sent Back").map((r) => (
         <div
           key={r.id}
           style={{
@@ -380,7 +380,7 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
             {/* Modal body */}
             <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ background: T.canvas, borderRadius: 10, padding: 16, border: `1px solid ${T.border}`, display: "flex", flexDirection: "column", gap: 12 }}>
-                {selectedRequest.status === "Pending" || selectedRequest.status === "Send Back" ? (
+                {selectedRequest.status === "Pending" || selectedRequest.status === "Sent Back" ? (
                   <>
                     <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14 }}>
                       {/* Role */}
@@ -533,7 +533,7 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
             </div>
 
             {/* Modal footer */}
-            {(selectedRequest.status === "Pending" || selectedRequest.status === "Send Back") ? (
+            {(selectedRequest.status === "Pending" || selectedRequest.status === "Sent Back") ? (
               <div style={{
                 padding: "16px 24px",
                 borderTop: `1px solid ${T.border}`,
