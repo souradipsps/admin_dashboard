@@ -62,21 +62,35 @@ export default function ExistingRoles({ roles, setRoles }: ExistingRolesProps) {
             onChange={(e) => setSearch(e.target.value)}
             style={{ maxWidth: isMobile ? "100%" : 240 }}
           />
-          <div style={{ width: isMobile ? '100%' : 220 }}>
-            <Select
-              value={deptFilter}
-              onChange={(e) => setDeptFilter(e.target.value)}
-              options={depts.map((d) => ({ value: d, label: d }))}
-              placeholder="Department"
-            />
-          </div>
-          <div style={{ width: isMobile ? '100%' : 160 }}>
-            <Select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              options={statuses.map((s) => ({ value: s, label: s }))}
-              placeholder="Status"
-            />
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", width: isMobile ? "100%" : "auto" }}>
+            <div style={{ minWidth: isMobile ? "100%" : 220 }}>
+              <Select
+                value={deptFilter}
+                onChange={(e) => setDeptFilter(e.target.value)}
+                options={depts.map((d) => ({ value: d, label: d }))}
+                placeholder="All departments"
+              />
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              {statuses.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStatusFilter(s)}
+                  style={{
+                    border: `1px solid ${statusFilter === s ? T.primary : T.border}`,
+                    background: statusFilter === s ? T.primary : T.surface,
+                    color: statusFilter === s ? "#fff" : T.ink,
+                    borderRadius: 999,
+                    padding: "6px 12px",
+                    fontSize: 12,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
           <span style={{ fontSize: 12, color: T.inkFaint, marginLeft: "auto" }}>{filtered.length} roles</span>
         </div>
