@@ -99,8 +99,6 @@ export const statusVariant = (s: string): string => {
     Internal: "primary",
     External: "teal",
 
-    // Other
-    Inactive: "accent",
   };
   return map[s] || "gray";
 };

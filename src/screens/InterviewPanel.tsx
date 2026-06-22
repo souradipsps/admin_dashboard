@@ -610,10 +610,7 @@ export default function InterviewPanel({
       "Date & Time",
       "Meeting Link",
       "Score",
-<<<<<<< HEAD
-=======
       "Actions",
->>>>>>> 58797b4e7f2df4dee3cc6db314e262b2ee031afe
     ];
 
   const tableRows = filteredCandidates.map((c) => {
