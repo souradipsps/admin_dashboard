@@ -288,6 +288,10 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
 
       <Card>
         <Table
+          onRowClick={(index) => {
+            setSelectedRequest(roleRequests[index]);
+            setShowViewModal(true);
+          }}
           cols={["Request ID", "Department", "Role", "Experience", "Salary Range", "Justification", "Date", "Status", "Admin Comment", "Actions"]}
           rows={roleRequests.map((r) => {
             const ss = getStatusStyle(r.status);
@@ -306,15 +310,12 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                   </div>
                 : <span style={{ color: T.inkFaint, fontSize: 12 }}>—</span>,
               <div style={{ display: "flex", gap: 6 }}>
-                <button
-                  onClick={() => { setSelectedRequest(r); setShowViewModal(true); }}
-                  style={{ border: "none", background: T.blueLight, color: T.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
-                >
-                  View
-                </button>
                 {(r.status === "Pending" || r.status === "Send Back") && (
                   <button
-                    onClick={() => openEdit(r)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEdit(r);
+                    }}
                     style={{ border: "none", background: T.greenLight, color: T.green, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
                   >
                     Edit
