@@ -28,10 +28,16 @@ export default function ExistingRoles({ roles, setRoles }: ExistingRolesProps) {
     );
   };
 
+  const handleDeleteRole = (roleId: string) => {
+    if (window.confirm("Are you sure you want to delete this role?")) {
+      setRoles((prev) => prev.filter((r) => r.id !== roleId));
+    }
+  };
+
   const filtered = roles
     .filter((r) => deptFilter === "All" || r.dept === deptFilter)
     .filter((r) => statusFilter === "All" || r.currentStatus === statusFilter)
-    .filter((r) => r.role.toLowerCase().includes(search.toLowerCase()) || r.dept.toLowerCase().includes(search.toLowerCase()));
+    .filter((r) => r.role.toLowerCase().includes(search.toLowerCase()) || r.dept.toLowerCase().includes(search.toLowerCase()) || String(r.id).toLowerCase().includes(search.toLowerCase()));
 
   const totalRoles = roles.length;
   const activeRoles = roles.filter((r) => r.currentStatus === "Active").length;
@@ -80,7 +86,7 @@ export default function ExistingRoles({ roles, setRoles }: ExistingRolesProps) {
                     border: `1px solid ${statusFilter === s ? T.primary : T.border}`,
                     background: statusFilter === s ? T.primary : T.surface,
                     color: statusFilter === s ? "#fff" : T.ink,
-                    borderRadius: 999,
+                    borderRadius: 99,
                     padding: "6px 12px",
                     fontSize: 12,
                     cursor: "pointer",
@@ -96,9 +102,10 @@ export default function ExistingRoles({ roles, setRoles }: ExistingRolesProps) {
         </div>
 
         <RolesTable
-          cols={["Role ID", "Department", "Role Name", "Experience", "Salary Range", "Type", "Status"]}
+          cols={["Role ID", "Department", "Role Name", "Experience", "Salary Range", "Type", "Status", "Action"]}
           rows={filtered}
           onStatusChange={handleStatusChange}
+          onDelete={handleDeleteRole}
         />
       </Card>
 
@@ -109,7 +116,17 @@ export default function ExistingRoles({ roles, setRoles }: ExistingRolesProps) {
 }
 
 // Extracted small table wrapper to handle row clicks and open modal
-function RolesTable({ cols, rows, onStatusChange }: { cols: string[]; rows: any[]; onStatusChange: (id: string, s: string) => void }) {
+function RolesTable({
+  cols,
+  rows,
+  onStatusChange,
+  onDelete,
+}: {
+  cols: string[];
+  rows: any[];
+  onStatusChange: (id: string, s: string) => void;
+  onDelete: (id: string) => void;
+}) {
   const [sel, setSel] = useState<any>(null);
   const bp = useBreakpoint();
 
@@ -140,8 +157,15 @@ function RolesTable({ cols, rows, onStatusChange }: { cols: string[]; rows: any[
         <option value="Active">Active</option>
         <option value="Inactive">Inactive</option>
       </select>,
-      // attach original row data as last column for mobile rendering
-      <span style={{ display: "none" }} data-row={JSON.stringify(r)} />,
+      <Btn
+        label="Delete"
+        variant="danger"
+        small
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete(r.id);
+        }}
+      />,
     ];
   });
 
@@ -224,21 +248,29 @@ function RolesTable({ cols, rows, onStatusChange }: { cols: string[]; rows: any[
 
                 {/* Status action row */}
                 <div style={{ padding: "12px 18px", display: "flex", justifyContent: "space-between", alignItems: "center" }} onClick={(e) => e.stopPropagation()}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</span>
-                  <select
-                    value={r.currentStatus}
-                    onChange={(e) => onStatusChange(r.id, e.target.value)}
-                    style={{
-                      background: sc.bg, color: sc.color, border: `1.5px solid ${sc.border}`,
-                      borderRadius: 99, padding: "3px 24px 3px 10px", fontSize: 11, fontWeight: 700,
-                      cursor: "pointer", outline: "none", appearance: "none",
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='${encodeURIComponent(sc.color)}' d='M5 7L1 3h8z'/%3E%3C/svg%3E")`,
-                      backgroundRepeat: "no-repeat", backgroundPosition: "right 8px center",
-                    }}
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</span>
+                    <select
+                      value={r.currentStatus}
+                      onChange={(e) => onStatusChange(r.id, e.target.value)}
+                      style={{
+                        background: sc.bg, color: sc.color, border: `1.5px solid ${sc.border}`,
+                        borderRadius: 99, padding: "3px 24px 3px 10px", fontSize: 11, fontWeight: 700,
+                        cursor: "pointer", outline: "none", appearance: "none",
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='${encodeURIComponent(sc.color)}' d='M5 7L1 3h8z'/%3E%3C/svg%3E")`,
+                        backgroundRepeat: "no-repeat", backgroundPosition: "right 8px center",
+                      }}
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
+                  <Btn
+                    label="Delete"
+                    variant="danger"
+                    small
+                    onClick={() => onDelete(r.id)}
+                  />
                 </div>
               </div>
             );
@@ -267,7 +299,15 @@ function RolesTable({ cols, rows, onStatusChange }: { cols: string[]; rows: any[
                   <div style={{ fontSize: 13, color: T.ink, fontWeight: 700, marginTop: 6 }}>{sel.salaryRange || "—"}</div>
                 </div>
               </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 20 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20 }}>
+                <Btn
+                  label="Delete Role"
+                  variant="danger"
+                  onClick={() => {
+                    onDelete(sel.id);
+                    close();
+                  }}
+                />
                 <Btn label="Close" onClick={close} />
               </div>
             </div>
@@ -307,7 +347,15 @@ function RolesTable({ cols, rows, onStatusChange }: { cols: string[]; rows: any[
               </div>
             </div>
             {/* Summary removed as requested */}
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20 }}>
+              <Btn
+                label="Delete Role"
+                variant="danger"
+                onClick={() => {
+                  onDelete(sel.id);
+                  close();
+                }}
+              />
               <Btn label="Close" onClick={close} />
             </div>
           </div>

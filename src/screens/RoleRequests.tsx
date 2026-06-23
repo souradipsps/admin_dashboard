@@ -43,6 +43,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
   const [showForm, setShowForm] = useState(false);
   const [roleForms, setRoleForms] = useState([emptyForm()]);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [originalRequest, setOriginalRequest] = useState<any>(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingId, setEditingId] = useState<any>(null);
   const [formErrors, setFormErrors] = useState<Record<number, Record<string, string>>>({});
@@ -70,8 +71,28 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
       const errs: Record<string, string> = {};
       const minExp = parseFloat(f.minExperience);
       const maxExp = parseFloat(f.maxExperience);
+      
+      if (f.minExperience && isNaN(minExp)) {
+        errs.minExperience = "Must be a number";
+        valid = false;
+      }
+      if (f.maxExperience && isNaN(maxExp)) {
+        errs.maxExperience = "Must be a number";
+        valid = false;
+      }
       if (f.minExperience && f.maxExperience && !isNaN(minExp) && !isNaN(maxExp) && minExp >= maxExp) {
         errs.minExperience = "Min experience must be less than max experience";
+        valid = false;
+      }
+
+      const parsedMinSal = parseFloat(f.minSalary.replace(/,/g, ""));
+      const parsedMaxSal = parseFloat(f.maxSalary.replace(/,/g, ""));
+      if (f.minSalary && isNaN(parsedMinSal)) {
+        errs.minSalary = "Must be a number";
+        valid = false;
+      }
+      if (f.maxSalary && isNaN(parsedMaxSal)) {
+        errs.maxSalary = "Must be a number";
         valid = false;
       }
       const minSal = parseSalary(f.minSalary);
@@ -149,6 +170,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
         ...f,
         id: `RR-${Date.now()}-${i}`,
         requestType: "Role",
+        history: [{ act: "Submitted", by: "Current User", date: f.date || new Date().toLocaleDateString(), note: "" }],
       }));
       setRoleRequests((prev) => [...prev, ...newRequests]);
       setApprovalRequests((prev) => [
@@ -220,6 +242,66 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
 
     setShowViewModal(false);
     setSelectedRequest(null);
+    setOriginalRequest(null);
+  };
+
+  // Detect if user changed any field vs what was originally opened
+  const hasChanges = () => {
+    if (!selectedRequest || !originalRequest) return false;
+    const currMinSal = selectedRequest.minSalary ?? selectedRequest.salaryRange?.split("-")[0]?.trim() ?? "";
+    const currMaxSal = selectedRequest.maxSalary ?? selectedRequest.salaryRange?.split("-")[1]?.trim() ?? "";
+    const currMinExp = selectedRequest.minExperience ?? selectedRequest.experience?.split("-")[0]?.trim() ?? "";
+    const currMaxExp = selectedRequest.maxExperience ?? selectedRequest.experience?.split("-")[1]?.trim() ?? "";
+    const origMinSal = originalRequest.salaryRange?.split("-")[0]?.trim() ?? "";
+    const origMaxSal = originalRequest.salaryRange?.split("-")[1]?.trim() ?? "";
+    const origMinExp = originalRequest.experience?.split("-")[0]?.trim() ?? "";
+    const origMaxExp = originalRequest.experience?.split("-")[1]?.trim() ?? "";
+    return (
+      selectedRequest.dept !== originalRequest.dept ||
+      selectedRequest.role !== originalRequest.role ||
+      selectedRequest.just !== originalRequest.just ||
+      currMinSal !== origMinSal ||
+      currMaxSal !== origMaxSal ||
+      currMinExp !== origMinExp ||
+      currMaxExp !== origMaxExp
+    );
+  };
+
+  // No changes → approve directly and create the role
+  const approveDirectly = () => {
+    if (!selectedRequest) return;
+    const now = new Date().toLocaleDateString();
+    const entry = { act: "Approved", by: "HR Admin", date: now, note: "" };
+    const updated = {
+      ...selectedRequest,
+      status: "Approved",
+      history: [...(selectedRequest.history || []), entry],
+    };
+    delete updated.minSalary;
+    delete updated.maxSalary;
+    delete updated.minExperience;
+    delete updated.maxExperience;
+
+    setRoleRequests((prev) => prev.map((r) => r.id === selectedRequest.id ? updated : r));
+    setApprovalRequests((prev) =>
+      prev.map((apr) =>
+        String(apr.sourceId) === String(selectedRequest.id)
+          ? { ...apr, status: "Approved", history: updated.history }
+          : apr
+      )
+    );
+    setShowViewModal(false);
+    setSelectedRequest(null);
+    setOriginalRequest(null);
+  };
+
+  // Accept: direct approval if unchanged, else resubmit as new Pending
+  const handleAccept = () => {
+    if (hasChanges()) {
+      saveRoleRequestEdits(true);
+    } else {
+      approveDirectly();
+    }
   };
 
   const cancelRoleRequest = (reqId: any) => {
@@ -233,6 +315,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
     );
     setShowViewModal(false);
     setSelectedRequest(null);
+    setOriginalRequest(null);
   };
 
   return (
@@ -306,7 +389,17 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                     )}
                   </FormField>
                   <FormField label="Max Experience (Yrs)" required>
-                    <Input placeholder="e.g. 5" value={form.maxExperience} onChange={(e) => updateForm(index, "maxExperience", e.target.value)} />
+                    <Input
+                      placeholder="e.g. 5"
+                      value={form.maxExperience}
+                      onChange={(e) => updateForm(index, "maxExperience", e.target.value)}
+                      style={formErrors[index]?.maxExperience ? { borderColor: T.red } : {}}
+                    />
+                    {formErrors[index]?.maxExperience && (
+                      <div style={{ color: T.red, fontSize: 11, marginTop: 4, fontWeight: 600 }}>
+                        {formErrors[index].maxExperience}
+                      </div>
+                    )}
                   </FormField>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -324,7 +417,17 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                     )}
                   </FormField>
                   <FormField label="Max Salary (₹)" required>
-                    <Input placeholder="e.g. 60,000" value={form.maxSalary} onChange={(e) => updateForm(index, "maxSalary", e.target.value)} />
+                    <Input
+                      placeholder="e.g. 60,000"
+                      value={form.maxSalary}
+                      onChange={(e) => updateForm(index, "maxSalary", e.target.value)}
+                      style={formErrors[index]?.maxSalary ? { borderColor: T.red } : {}}
+                    />
+                    {formErrors[index]?.maxSalary && (
+                      <div style={{ color: T.red, fontSize: 11, marginTop: 4, fontWeight: 600 }}>
+                        {formErrors[index].maxSalary}
+                      </div>
+                    )}
                   </FormField>
                 </div>
               </div>
@@ -370,7 +473,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
               return (
                 <div
                   key={r.id}
-                  onClick={() => { setSelectedRequest(r); setShowViewModal(true); }}
+                  onClick={() => { setSelectedRequest(r); setOriginalRequest(r); setShowViewModal(true); }}
                   style={{
                     flexShrink: 0,
                     width: "100%",
@@ -431,15 +534,10 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                     )}
                   </div>
 
-                  {/* Status / Comment Row */}
+                  {/* Status Row */}
                   <div style={{ padding: "12px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
                     <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</span>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      {r.comment && (
-                        <div style={{ background: T.amberLight, border: `1px solid #FDE68A`, borderRadius: 7, padding: "4px 8px", fontSize: 11, color: T.amber, fontWeight: 600 }}>
-                          Has Comment
-                        </div>
-                      )}
                       <span style={{ ...ss, borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{r.status}</span>
                     </div>
                   </div>
@@ -453,9 +551,10 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
           <Table
             onRowClick={(index) => {
               setSelectedRequest(roleRequests[index]);
+              setOriginalRequest(roleRequests[index]);
               setShowViewModal(true);
             }}
-            cols={["Request ID", "Department", "Role", "Experience", "Salary Range", "Justification", "Date", "Status", "Admin Comment"]}
+            cols={["Request ID", "Department", "Role", "Experience", "Salary Range", "Justification", "Date", "Status"]}
             rows={roleRequests.map((r) => {
               const ss = getStatusStyle(r.status);
               return [
@@ -467,11 +566,6 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                 <span style={{ fontSize: 12, color: T.inkLight, maxWidth: 180, display: "inline-block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.just || "—"}</span>,
                 r.date || "—",
                 <span style={{ ...ss, borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 700, display: "inline-block" }}>{r.status}</span>,
-                r.comment
-                  ? <div style={{ background: T.amberLight, border: `1px solid #FDE68A`, borderRadius: 7, padding: "4px 10px", fontSize: 12, color: T.amber, fontWeight: 600, display: "inline-block" }}>
-                      ...
-                    </div>
-                  : <span style={{ color: T.inkFaint, fontSize: 12 }}>—</span>,
               ];
             })}
           />
@@ -480,7 +574,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
 
       {showViewModal && selectedRequest && (
         <div
-          onClick={() => { setShowViewModal(false); setSelectedRequest(null); }}
+          onClick={() => { setShowViewModal(false); setSelectedRequest(null); setOriginalRequest(null); }}
           style={{
             position: "fixed", inset: 0, zIndex: 200,
             background: "rgba(15,23,42,0.45)",
@@ -519,7 +613,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                 </div>
               </div>
               <button
-                onClick={() => { setShowViewModal(false); setSelectedRequest(null); }}
+                onClick={() => { setShowViewModal(false); setSelectedRequest(null); setOriginalRequest(null); }}
                 style={{
                   background: T.canvas, border: `1px solid ${T.border}`, borderRadius: 8,
                   width: 32, height: 32, fontSize: 18, color: T.inkMid, cursor: "pointer",
@@ -636,12 +730,33 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                 </div>
               </div>
 
-              {selectedRequest.comment && (
-                <div style={{ background: T.amberLight, border: `1px solid #FDE68A`, borderRadius: 8, padding: "10px 14px" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: T.amber, marginBottom: 4 }}>Admin Comment</div>
-                  <div style={{ fontSize: 13, color: T.inkMid }}>{selectedRequest.comment}</div>
+              {selectedRequest.history?.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>Activity History</div>
+                  {selectedRequest.history.map((h: any, i: number) => (
+                    <div key={i} style={{ display: "flex", gap: 12, marginBottom: 10 }}>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: i === selectedRequest.history.length - 1 ? T.blue : T.border, marginTop: 3, flexShrink: 0 }} />
+                        {i < selectedRequest.history.length - 1 && <div style={{ width: 2, flex: 1, background: T.border, margin: "3px 0" }} />}
+                      </div>
+                      <div style={{ paddingBottom: i < selectedRequest.history.length - 1 ? 4 : 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: T.ink }}>
+                          {h.act} <span style={{ fontWeight: 400, color: T.inkLight }}>by {h.by}</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: T.inkFaint }}>{h.date}</div>
+                        {h.note && (
+                          <div style={{ marginTop: 4, fontSize: 12, color: T.amber, background: T.amberLight, padding: "6px 10px", borderRadius: 7, border: `1px solid #FDE68A` }}>
+                            {h.note}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
+
+
+
             </div>
 
             {/* Modal footer */}
@@ -652,8 +767,22 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                 display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap",
                 background: T.canvas, borderRadius: "0 0 16px 16px",
               }}>
-                <Btn label="Cancel Request" variant="danger" small onClick={() => cancelRoleRequest(selectedRequest.id)} />
-                <Btn label="Accept" variant="success" small onClick={() => saveRoleRequestEdits(true)} />
+                <Btn
+                  label="Cancel Request"
+                  variant="danger"
+                  small
+                  onClick={() => {
+                    if (window.confirm("Are you sure you want to cancel this request? This action cannot be undone.")) {
+                      cancelRoleRequest(selectedRequest.id);
+                    }
+                  }}
+                />
+                <Btn
+                  label={hasChanges() ? "Resubmit as New Request" : "Accept"}
+                  variant="success"
+                  small
+                  onClick={handleAccept}
+                />
               </div>
             )}
           </div>

@@ -40,13 +40,14 @@ const emptyForm = () => ({
   comment: "",
 });
 
-export default function JobRequests({ jobRequests, setJobRequests, approvalRequests, setApprovalRequests, existingRoles }: JobRequestsProps) {
+export default function JobRequests({ jobRequests, setJobRequests, approvalRequests, setApprovalRequests, jobPostings, setJobPostings, existingRoles }: JobRequestsProps) {
   const bp = useBreakpoint();
   const isMobile = bp === "mobile";
 
   const [showForm, setShowForm] = useState(false);
   const [jobForms, setJobForms] = useState([emptyForm()]);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [originalRequest, setOriginalRequest] = useState<any>(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingId, setEditingId] = useState<any>(null);
 
@@ -108,6 +109,80 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
 
     setShowViewModal(false);
     setSelectedRequest(null);
+    setOriginalRequest(null);
+  };
+
+  // Detect if user changed any editable field vs what was originally opened
+  const hasChanges = () => {
+    if (!selectedRequest || !originalRequest) return false;
+    return (
+      selectedRequest.role !== originalRequest.role ||
+      selectedRequest.location !== originalRequest.location ||
+      selectedRequest.vacancies !== originalRequest.vacancies ||
+      selectedRequest.exp !== originalRequest.exp ||
+      selectedRequest.qual !== originalRequest.qual ||
+      selectedRequest.type !== originalRequest.type ||
+      selectedRequest.salary !== originalRequest.salary ||
+      selectedRequest.description !== originalRequest.description ||
+      selectedRequest.justification !== originalRequest.justification
+    );
+  };
+
+  // No changes → directly approve and create job posting
+  const approveDirectly = () => {
+    if (!selectedRequest) return;
+    const now = new Date().toLocaleDateString();
+    const entry = { act: "Approved", by: "HR Admin", date: now, note: "" };
+    const updated = {
+      ...selectedRequest,
+      status: "Approved",
+      history: [...(selectedRequest.history || []), entry],
+    };
+    setJobRequests((prev) => prev.map((r) => r.id === selectedRequest.id ? updated : r));
+    setApprovalRequests((prev) =>
+      prev.map((apr) =>
+        String(apr.sourceId) === String(selectedRequest.id)
+          ? { ...apr, status: "Approved", history: updated.history }
+          : apr
+      )
+    );
+    // Add to Job Postings with default status "Unpublished"
+    setJobPostings((prev: any[]) => {
+      const alreadyExists = prev.some((p) => p.role === selectedRequest.role);
+      if (alreadyExists) return prev;
+      return [
+        ...prev,
+        {
+          id: `POST-${Date.now()}`,
+          role: selectedRequest.role,
+          channel: "Career Page",
+          status: "Unpublished",
+          posted: now,
+          expiry: "30 Days",
+          apps: 0,
+          location: selectedRequest.location || "",
+          salary: selectedRequest.salary || "",
+          vacancies: selectedRequest.vacancies || "",
+          exp: selectedRequest.exp || "",
+          qual: selectedRequest.qual || "",
+          type: selectedRequest.type || "",
+          description: selectedRequest.description || "",
+        },
+      ];
+    });
+    setShowViewModal(false);
+    setSelectedRequest(null);
+    setOriginalRequest(null);
+  };
+
+
+  // Accept: direct approval if unchanged, else resubmit as new Pending
+  const handleAccept = () => {
+    if (hasChanges()) {
+      saveJobRequestEdits(true);
+    } else {
+      approveDirectly();
+    }
   };
 
   const cancelJobRequest = (reqId: any) => {
@@ -121,6 +196,7 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
     );
     setShowViewModal(false);
     setSelectedRequest(null);
+    setOriginalRequest(null);
   };
 
   const openNew = () => {
@@ -163,6 +239,7 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
         status: "Pending",
         comment: "",
         date: now,
+        history: [{ act: "Submitted", by: "Current User", date: now, note: "" }],
       }));
       setJobRequests((prev) => [...prev, ...newRequests]);
       setApprovalRequests((prev) => [
@@ -223,7 +300,7 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
               Job Request for <strong>{r.role}</strong> was returned with comment: <em>...</em>
             </span>
           </div>
-          <Btn label="View Request" small variant="amber" onClick={() => { setSelectedRequest(r); setShowViewModal(true); }} />
+          <Btn label="View Request" small variant="amber" onClick={() => { setSelectedRequest(r); setOriginalRequest(r); setShowViewModal(true); }} />
         </div>
       ))}
 
@@ -319,7 +396,7 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
               return (
                 <div
                   key={r.id}
-                  onClick={() => { setSelectedRequest(r); setShowViewModal(true); }}
+                  onClick={() => { setSelectedRequest(r); setOriginalRequest(r); setShowViewModal(true); }}
                   style={{
                     flexShrink: 0,
                     width: "100%",
@@ -380,15 +457,10 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
                     </div>
                   </div>
 
-                  {/* Status / Comment Row */}
+                  {/* Status Row */}
                   <div style={{ padding: "12px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
                     <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</span>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      {r.comment && (
-                        <div style={{ background: T.amberLight, border: `1px solid #FDE68A`, borderRadius: 7, padding: "4px 8px", fontSize: 11, color: T.amber, fontWeight: 600 }}>
-                          Has Comment
-                        </div>
-                      )}
                       <span style={{ ...ss, borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{r.status}</span>
                     </div>
                   </div>
@@ -402,9 +474,10 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
           <Table
             onRowClick={(index) => {
               setSelectedRequest(jobRequests[index]);
+              setOriginalRequest(jobRequests[index]);
               setShowViewModal(true);
             }}
-            cols={["Request ID", "Role", "Location", "Vacancies", "Experience", "Qualification", "Type", "Salary", "Status", "Admin Comment"]}
+            cols={["Request ID", "Role", "Location", "Vacancies", "Experience", "Qualification", "Type", "Salary", "Status"]}
             rows={jobRequests.map((r) => {
               const ss = getStatusStyle(r.status);
               return [
@@ -417,11 +490,6 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
                 r.type || "—",
                 r.salary || "—",
                 <span style={{ ...ss, borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 700, display: "inline-block" }}>{r.status}</span>,
-                r.comment
-                  ? <div style={{ background: T.amberLight, border: `1px solid #FDE68A`, borderRadius: 7, padding: "4px 10px", fontSize: 12, color: T.amber, fontWeight: 600, display: "inline-block" }}>
-                      ...
-                    </div>
-                  : <span style={{ color: T.inkFaint, fontSize: 12 }}>—</span>,
               ];
             })}
           />
@@ -430,7 +498,7 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
 
       {showViewModal && selectedRequest && (
         <div
-          onClick={() => { setShowViewModal(false); setSelectedRequest(null); }}
+          onClick={() => { setShowViewModal(false); setSelectedRequest(null); setOriginalRequest(null); }}
           style={{
             position: "fixed", inset: 0, zIndex: 200,
             background: "rgba(15,23,42,0.45)",
@@ -470,7 +538,7 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
                 </div>
               </div>
               <button
-                onClick={() => { setShowViewModal(false); setSelectedRequest(null); }}
+                onClick={() => { setShowViewModal(false); setSelectedRequest(null); setOriginalRequest(null); }}
                 style={{
                   background: T.canvas, border: `1px solid ${T.border}`, borderRadius: 8,
                   width: 32, height: 32, fontSize: 18, color: T.inkMid, cursor: "pointer",
@@ -627,12 +695,31 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
                 )}
               </div>
 
-              {selectedRequest.comment && (
-                <div style={{ background: T.amberLight, border: `1px solid #FDE68A`, borderRadius: 8, padding: "10px 14px" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: T.amber, marginBottom: 4 }}>Admin Comment</div>
-                  <div style={{ fontSize: 13, color: T.inkMid }}>{selectedRequest.comment}</div>
+              {selectedRequest.history?.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>Activity History</div>
+                  {selectedRequest.history.map((h: any, i: number) => (
+                    <div key={i} style={{ display: "flex", gap: 12, marginBottom: 10 }}>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: i === selectedRequest.history.length - 1 ? T.blue : T.border, marginTop: 3, flexShrink: 0 }} />
+                        {i < selectedRequest.history.length - 1 && <div style={{ width: 2, flex: 1, background: T.border, margin: "3px 0" }} />}
+                      </div>
+                      <div style={{ paddingBottom: i < selectedRequest.history.length - 1 ? 4 : 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: T.ink }}>
+                          {h.act} <span style={{ fontWeight: 400, color: T.inkLight }}>by {h.by}</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: T.inkFaint }}>{h.date}</div>
+                        {h.note && (
+                          <div style={{ marginTop: 4, fontSize: 12, color: T.amber, background: T.amberLight, padding: "6px 10px", borderRadius: 7, border: `1px solid #FDE68A` }}>
+                            {h.note}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
+
             </div>
 
             {/* Modal footer */}
@@ -644,7 +731,12 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
                 background: T.canvas, borderRadius: "0 0 16px 16px",
               }}>
                 <Btn label="Cancel Request" variant="danger" small onClick={() => cancelJobRequest(selectedRequest.id)} />
-                <Btn label="Accept" variant="success" small onClick={() => saveJobRequestEdits(true)} />
+                <Btn
+                  label={hasChanges() ? "Resubmit as New Request" : "Accept"}
+                  variant="success"
+                  small
+                  onClick={handleAccept}
+                />
               </div>
             )}
           </div>

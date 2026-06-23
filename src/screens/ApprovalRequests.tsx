@@ -35,10 +35,16 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
 
   const filtered = requests
     .filter((r) => statusFilter === "All" || r.status === statusFilter)
-    .filter((r) =>
-      (r.role || "").toLowerCase().includes(search.toLowerCase()) ||
-      (r.dept || "").toLowerCase().includes(search.toLowerCase()),
-    );
+    .filter((r) => {
+      const q = search.toLowerCase();
+      return (
+        (r.role || "").toLowerCase().includes(q) ||
+        (r.dept || "").toLowerCase().includes(q) ||
+        (String(r.sourceId) || "").toLowerCase().includes(q) ||
+        (r.requestedBy || "").toLowerCase().includes(q) ||
+        (r.date || "").toLowerCase().includes(q)
+      );
+    });
 
   const pendingCount = requests.filter((r) => r.status === "Pending").length;
 
@@ -54,34 +60,40 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
 
     if (r.type === "Role Request") {
       setRoleRequests((prev) =>
-        prev.map((item) =>
-          String(item.id) === String(r.sourceId)
-            ? {
-                ...item,
-                status: action,
-                comment: customComment || "",
-                salaryRange: r.salary ? r.salary.replace(/^₹/, "") : item.salaryRange,
-                experience: r.experience || item.experience,
-              }
-            : item
-        ),
+        prev.map((item) => {
+          if (String(item.id) !== String(r.sourceId)) return item;
+          const updated2 = {
+            ...item,
+            status: action,
+            comment: customComment || "",
+            history: updated.history,
+            salaryRange: r.salary ? r.salary.replace(/^₹/, "") : item.salaryRange,
+            experience: r.experience || item.experience,
+          };
+          // Clear stale temp split-fields so popup reads the fresh combined values
+          delete updated2.minSalary;
+          delete updated2.maxSalary;
+          delete updated2.minExperience;
+          delete updated2.maxExperience;
+          return updated2;
+        }),
       );
     }
     if (r.type === "Job Request") {
       setJobRequests((prev) =>
-        prev.map((item) =>
-          String(item.id) === String(r.sourceId)
-            ? {
-                ...item,
-                status: action,
-                comment: customComment || "",
-                vacancies: r.vacancies,
-                qual: r.qual,
-                type: r.empType,
-                description: r.description,
-              }
-            : item
-        ),
+        prev.map((item) => {
+          if (String(item.id) !== String(r.sourceId)) return item;
+          return {
+            ...item,
+            status: action,
+            comment: customComment || "",
+            history: updated.history,
+            vacancies: r.vacancies !== undefined ? r.vacancies : item.vacancies,
+            qual: r.qual !== undefined ? r.qual : item.qual,
+            type: r.empType !== undefined ? r.empType : item.type,
+            description: r.description !== undefined ? r.description : item.description,
+          };
+        }),
       );
     }
 
@@ -144,7 +156,8 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
     }
     setFieldErrors({});
     performAction(updatedSel, action, comment);
-    closeModal();
+    // Close modal only for Approved or Rejected; keep open for Sent Back so edits remain visible
+    if (action !== "Sent Back") closeModal();
   };
 
   const saveEdits = () => {
@@ -473,19 +486,9 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                 display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap",
                 background: T.canvas, borderRadius: "0 0 16px 16px",
               }}>
+                {/* Sent Back button first */}
                 <Btn
-                  label="Cancel Request"
-                  variant="ghost"
-                  small
-                  onClick={() => {
-                    if (!sel) return;
-                    if (confirm("Are you sure you want to cancel this request?")) {
-                      takeAction("Rejected");
-                    }
-                  }}
-                />
-                <Btn
-                  label="Sent Back"
+                  label="Sendback"
                   variant="amber"
                   small
                   onClick={() => {
@@ -493,6 +496,19 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                     takeAction("Sent Back");
                   }}
                 />
+                {/* Reject button second */}
+                <Btn
+                  label="Reject"
+                  variant="danger"
+                  small
+                  onClick={() => {
+                    if (!sel) return;
+                    if (confirm("Are you sure you want to reject this request?")) {
+                      takeAction("Rejected");
+                    }
+                  }}
+                />
+                {/* Accept button third */}
                 <Btn label="Accept" variant="success" small onClick={() => takeAction("Approved")} />
               </div>
             )}
@@ -501,25 +517,27 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
       )}
 
       <Card>
-        <div style={{ padding: "14px 16px", borderBottom: `1px solid ${T.border}`, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ padding: "14px 16px", borderBottom: `1px solid ${T.border}`, display: "flex", flexDirection: isMobile ? "column" : "row", gap: 10, alignItems: isMobile ? "stretch" : "center" }}>
           <Input
-            placeholder="Search requests…"
+            placeholder="Search id, dept, role, user, date…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ maxWidth: 280 }}
+            style={isMobile ? { width: "100%" } : { flex: 1, minWidth: 200, maxWidth: 300 }}
           />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            style={{ border: `1.5px solid ${T.border}`, borderRadius: 8, padding: "8px 12px", fontSize: 13, color: T.inkMid, background: "#fff", cursor: "pointer" }}
-          >
-            {["All", "Pending", "Approved", "Rejected", "Sent Back"].map((s) => <option key={s}>{s}</option>)}
-          </select>
-          {pendingCount > 0 && (
-            <span style={{ marginLeft: "auto", background: T.amberLight, border: `1px solid #FDE68A`, borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 700, color: T.amber }}>
-              {pendingCount} pending
-            </span>
-          )}
+          <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between", width: isMobile ? "100%" : "auto", marginLeft: isMobile ? 0 : "auto" }}>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{ border: `1.5px solid ${T.border}`, borderRadius: 8, padding: "8px 12px", fontSize: 13, color: T.inkMid, background: "#fff", cursor: "pointer", flex: isMobile ? 1 : "none" }}
+            >
+              {["All", "Pending", "Approved", "Rejected", "Sent Back"].map((s) => <option key={s}>{s}</option>)}
+            </select>
+            {pendingCount > 0 && (
+              <span style={{ background: T.amberLight, border: `1px solid #FDE68A`, borderRadius: 99, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: T.amber, whiteSpace: "nowrap" }}>
+                {pendingCount} pending
+              </span>
+            )}
+          </div>
         </div>
 
         {filtered.length === 0 ? (
@@ -588,7 +606,7 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                   <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 8, borderBottom: `1px solid ${T.border}` }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Request ID</span>
-                      <Mono v={String(r.id).substring(0, 16)} />
+                      <Mono v={String(r.sourceId).substring(0, 16)} />
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Type</span>
@@ -663,7 +681,7 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
-                    <Mono v={String(r.id).substring(0, 16)} />
+                    <Mono v={String(r.sourceId).substring(0, 16)} />
                     <Badge label={r.type || "Request"} variant="blue" />
                     <Badge label={r.status} variant={statusVariant(r.status)} />
                   </div>
