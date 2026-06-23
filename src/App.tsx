@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { T } from "./theme";
+import { T, font, radius, shadow, transition } from "./theme";
 import { useBreakpoint } from "./hooks";
 import { NAV, EXISTING_ROLES, POSTINGS, JOB_APPLICATIONS, GENERAL_APPLICATIONS, INTERVIEWS, OFFERS } from "./data";
 
@@ -203,49 +203,69 @@ export default function App() {
 
   const SidebarContent = () => (
     <>
-      <div style={{ padding: "20px 18px 16px", borderBottom: "1px solid rgba(255,255,255,0.12)" }}>
+      {/* Logo & brand */}
+      <div style={{ padding: "22px 20px 18px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div
             style={{
-              width: 36, height: 36, borderRadius: 10, background: T.accent,
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 900, color: "#fff",
+              width: 38, height: 38, borderRadius: radius.lg - 2, 
+              background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`,
+              display: "flex", alignItems: "center", justifyContent: "center", 
+              fontSize: 17, fontWeight: font.black, color: "#fff",
+              boxShadow: shadow.accent,
             }}
           >
             S
           </div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em" }}>South Point</div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.65)", textTransform: "uppercase", letterSpacing: "0.08em" }}>School · HR</div>
+            <div style={{ fontSize: font.base, fontWeight: font.extrabold, fontFamily: font.heading, color: "#fff", letterSpacing: "-0.01em" }}>South Point</div>
+            <div style={{ fontSize: font.xs, fontFamily: font.body, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.1em" }}>School · HR Portal</div>
           </div>
         </div>
       </div>
 
-      <nav style={{ flex: 1, overflowY: "auto", padding: "10px 8px" }}>
-        {NAV.map((item) => {
+      {/* Navigation */}
+      <nav style={{ flex: 1, overflowY: "auto", padding: "12px 10px" }}>
+        {NAV.map((item, idx) => {
           const isActive = active === item.id;
           const itemPending = item.id === "approval-requests" ? pendingCount : 0;
           return (
             <button
               key={item.id}
               onClick={() => handleNav(item.id)}
+              className={`sidebar-item ${isActive ? "active" : ""} animate-slide-in`}
               style={{
-                display: "flex", alignItems: "center", gap: 10, width: "100%",
-                padding: "9px 12px", borderRadius: 9, border: "none",
+                display: "flex", alignItems: "center", gap: 11, width: "100%",
+                padding: "10px 14px", borderRadius: radius.md + 1, border: "none",
                 background: isActive ? "rgba(255,255,255,0.15)" : "transparent",
-                color: "#fff", fontWeight: isActive ? 700 : 400, fontSize: 13,
+                color: "#fff", 
+                fontWeight: isActive ? font.bold : font.medium, 
+                fontSize: font.base,
+                fontFamily: font.body,
                 cursor: "pointer", textAlign: "left",
-                transition: "background 0.15s",
+                marginBottom: 2,
+                letterSpacing: "-0.01em",
+                animationDelay: `${idx * 0.03}s`,
               }}
-              onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
-              onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
             >
-              <span style={{ fontSize: 14, opacity: 0.85 }}>{item.icon}</span>
+              <span style={{ 
+                fontSize: font.md, 
+                opacity: isActive ? 1 : 0.7, 
+                transition: transition.fast,
+                transform: isActive ? "scale(1.15)" : "scale(1)",
+                display: "inline-block",
+              }}>
+                {item.icon}
+              </span>
               <span style={{ flex: 1 }}>{item.label}</span>
               {itemPending > 0 && (
                 <span
+                  className="badge-pulse"
                   style={{
-                    background: T.accent, color: "#fff", borderRadius: 99,
-                    padding: "1px 7px", fontSize: 10, fontWeight: 800,
+                    background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`,
+                    color: "#fff", borderRadius: radius.full,
+                    padding: "2px 8px", fontSize: font.xs, fontWeight: font.extrabold,
+                    minWidth: 20, textAlign: "center",
                   }}
                 >
                   {itemPending}
@@ -256,19 +276,23 @@ export default function App() {
         })}
       </nav>
 
-      <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+      {/* User profile */}
+      <div style={{ padding: "14px 18px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div
             style={{
-              width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.2)",
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff",
+              width: 32, height: 32, borderRadius: "50%", 
+              background: "linear-gradient(135deg, rgba(255,255,255,0.25), rgba(255,255,255,0.1))",
+              display: "flex", alignItems: "center", justifyContent: "center", 
+              fontSize: font.sm, fontWeight: font.bold, fontFamily: font.body, color: "#fff",
+              border: "1px solid rgba(255,255,255,0.2)",
             }}
           >
             HR
           </div>
           <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>HR Admin</div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.55)" }}>hr@southpoint.edu</div>
+            <div style={{ fontSize: font.sm + 1, fontWeight: font.bold, fontFamily: font.body, color: "#fff" }}>HR Admin</div>
+            <div style={{ fontSize: font.xs, fontFamily: font.body, color: "rgba(255,255,255,0.5)" }}>hr@southpoint.edu</div>
           </div>
         </div>
       </div>
@@ -276,10 +300,15 @@ export default function App() {
   );
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: T.canvas, fontFamily: "system-ui, -apple-system, sans-serif" }}>
+    <div style={{ display: "flex", height: "100vh", background: T.canvas, fontFamily: font.body }}>
       {/* Desktop sidebar */}
       {!isCompact && (
-        <div style={{ width: 230, background: T.primary, display: "flex", flexDirection: "column", flexShrink: 0 }}>
+        <div style={{ 
+          width: 240, 
+          background: `linear-gradient(180deg, ${T.primary} 0%, ${T.primaryDark} 100%)`, 
+          display: "flex", flexDirection: "column", flexShrink: 0,
+          boxShadow: "4px 0 20px rgba(0,0,0,0.15)",
+        }}>
           <SidebarContent />
         </div>
       )}
@@ -288,13 +317,17 @@ export default function App() {
       {isCompact && sidebarOpen && (
         <>
           <div
-            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 200 }}
+            className="modal-backdrop"
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200 }}
             onClick={() => setSidebarOpen(false)}
           />
           <div
+            className="sidebar-slide-in"
             style={{
-              position: "fixed", top: 0, left: 0, bottom: 0, width: 260,
-              background: T.blue, display: "flex", flexDirection: "column", zIndex: 201,
+              position: "fixed", top: 0, left: 0, bottom: 0, width: 270,
+              background: `linear-gradient(180deg, ${T.primary} 0%, ${T.primaryDark} 100%)`, 
+              display: "flex", flexDirection: "column", zIndex: 201,
+              boxShadow: "8px 0 32px rgba(0,0,0,0.25)",
             }}
           >
             <SidebarContent />
@@ -304,22 +337,30 @@ export default function App() {
 
       {/* Main content */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        {/* Top bar */}
+        {/* Top bar — glassmorphism style */}
         <div
           style={{
-            background: T.primary,
+            background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryMid} 100%)`,
             borderBottom: `2px solid ${T.accent}`,
-            padding: "0 20px", height: 58, display: "flex", alignItems: "center",
+            padding: "0 24px", height: 60, display: "flex", alignItems: "center",
             justifyContent: "space-between", flexShrink: 0,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.22)",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
           }}
         >
           {/* Left: hamburger (mobile) + school branding */}
-          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 10 : 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 10 : 16 }}>
             {isCompact && (
               <button
                 onClick={() => setSidebarOpen(true)}
-                style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: T.canvas, fontSize: 20, lineHeight: 1 }}
+                className="btn-hover"
+                style={{ 
+                  background: "rgba(255,255,255,0.08)", 
+                  border: "1px solid rgba(255,255,255,0.15)", 
+                  borderRadius: radius.md,
+                  cursor: "pointer", padding: "6px 8px", 
+                  color: T.canvas, fontSize: 18, lineHeight: 1,
+                  transition: transition.fast,
+                }}
               >
                 ☰
               </button>
@@ -331,15 +372,20 @@ export default function App() {
             />
             <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <div style={{
-                fontSize: isMobile ? 13 : 15, fontWeight: 800, color: T.accent,
-                letterSpacing: "0.01em", lineHeight: 1.2,
+                fontSize: isMobile ? font.base : font.lg,
+                fontWeight: font.extrabold, 
+                fontFamily: font.heading,
+                color: T.accent,
+                letterSpacing: "-0.01em", lineHeight: 1.2,
               }}>
                 South Point School
               </div>
               <div style={{
-                fontSize: isMobile ? 9 : 10, fontWeight: 600, color: T.canvas,
+                fontSize: isMobile ? 9 : font.xs,
+                fontWeight: font.semibold,
+                fontFamily: font.body,
+                color: "rgba(255,255,255,0.7)",
                 textTransform: "uppercase", letterSpacing: "0.12em", lineHeight: 1.3, marginTop: 1,
-                opacity: 0.85,
               }}>
                 Guwahati, Assam
               </div>
@@ -347,17 +393,28 @@ export default function App() {
           </div>
 
           {/* Right: page label + pending */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             {!isMobile && (
-              <span style={{ fontSize: 13, fontWeight: 600, color: T.canvas, opacity: 0.85 }}>{pageLabel}</span>
+              <span style={{ 
+                fontSize: font.base, fontWeight: font.semibold, fontFamily: font.body,
+                color: "rgba(255,255,255,0.75)", letterSpacing: "-0.01em",
+              }}>
+                {pageLabel}
+              </span>
             )}
             {pendingCount > 0 && (
               <button
                 onClick={() => handleNav("approval-requests")}
+                className="btn-hover badge-pulse"
                 style={{
-                  background: "rgba(201,168,76,0.18)", border: `1px solid ${T.accent}`,
-                  borderRadius: 99, padding: "4px 12px", fontSize: 11, fontWeight: 700, color: T.accent,
+                  background: "rgba(201,168,76,0.15)", 
+                  border: `1px solid rgba(201,168,76,0.4)`,
+                  borderRadius: radius.full, padding: "5px 14px", 
+                  fontSize: font.sm, fontWeight: font.bold, 
+                  fontFamily: font.body,
+                  color: T.accent,
                   cursor: "pointer",
+                  transition: transition.fast,
                 }}
               >
                 {pendingCount} Pending
@@ -366,8 +423,12 @@ export default function App() {
           </div>
         </div>
 
-        {/* Page content */}
-        <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "16px 12px" : "24px 28px" }}>
+        {/* Page content — with entrance animation on tab switch */}
+        <div 
+          key={active}
+          className="animate-fade-in-up"
+          style={{ flex: 1, overflowY: "auto", padding: isMobile ? "18px 14px" : "28px 32px" }}
+        >
           {renderScreen()}
         </div>
       </div>

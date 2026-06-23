@@ -1,8 +1,8 @@
 import React, { useState, useRef } from "react";
-import { T } from "../theme";
+import { T, font } from "../theme";
 import { statusVariant } from "../theme";
 import { useBreakpoint, useHorizontalScroll } from "../hooks";
-import { Card, SectionTitle, Table, Badge, Btn, Modal, ModalHeader, FormField, Select, Input } from "../components/ui";
+import { Card, SectionTitle, Badge, Btn, Modal, ModalHeader, FormField, Select, Input } from "../components/ui";
 
 const TIME_OPTIONS = [
   { value: "9:00 AM", label: "9:00 AM" },
@@ -362,10 +362,8 @@ export default function InterviewPanel({
   };
 
   const handleGiveOffer = (c: any) => {
-    if (window.confirm(`Are you sure you want to give an offer to ${c.name} for the "${c.role}" role?`)) {
-      if (onGiveOffer) {
-        onGiveOffer(c);
-      }
+    if (onGiveOffer) {
+      onGiveOffer(c);
     }
   };
 
@@ -609,10 +607,10 @@ export default function InterviewPanel({
               ? "#E65100"
               : T.sky,
     borderRadius: 8,
-    padding: "6px 10px",
+    padding: "5px 8px",
     cursor: disabled ? "not-allowed" : "pointer",
     fontWeight: 700 as const,
-    fontSize: 11,
+    fontSize: 10.5,
     whiteSpace: "nowrap" as const,
     opacity: disabled ? 0.6 : 1,
   });
@@ -639,367 +637,9 @@ export default function InterviewPanel({
     );
   };
 
-  const meetingLinkCell = (link: string, mode: string) => {
-    if (mode === "In-Person") {
-      return <span style={{ fontSize: 12, color: T.inkFaint, fontStyle: "italic" }}>On-site</span>;
-    }
-    if (link) {
-      return (
-        <a
-          href={link}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            fontSize: 16,
-            color: T.primary,
-            textDecoration: "none",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 32,
-            height: 32,
-            borderRadius: 8,
-            cursor: "pointer",
-            transition: "all 0.2s",
-            background: "transparent",
-            border: `1.5px solid ${T.primary}44`,
-          }}
-          title="Open meeting link"
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = T.primaryLight;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-          }}
-        >
-          🔗
-        </a>
-      );
-    }
-    return <span style={{ fontSize: 11, color: T.inkFaint }}>—</span>;
-  };
 
-  const tableCols = isMobile
-    ? ["Select", "Candidate", "Round", "Date & Time", "Actions"]
-    : [
-      "Select",
-      "Candidate",
-      "Role",
-      "Round",
-      "Assigned Panelists",
-      "Mode",
-      "Date & Time",
-      "Meeting Link",
-      "Score",
-      "Actions",
-    ];
 
-  const tableRows = filteredCandidates.map((c) => {
-    const i = c.interview;
-    const rnd = c.displayRound;
-    const isPreviousRound = c.displayRound < c.activeRound;
 
-    if (isMobile) {
-      return [
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <input
-            type="checkbox"
-            checked={selectedCandidateKeys.includes(candidateKey(c))}
-            disabled={isPreviousRound}
-            onChange={(e) => {
-              e.stopPropagation();
-              toggleSelectCandidate(c);
-            }}
-            onClick={(e) => e.stopPropagation()}
-            style={{ width: 16, height: 16, cursor: isPreviousRound ? "not-allowed" : "pointer" }}
-          />
-          {avatar(c.name, 28, 10)}
-          <div>
-            <strong style={{ color: T.ink, fontSize: 13 }}>{c.name}</strong>
-            <div style={{ fontSize: 10, color: T.inkFaint }}>{c.role}</div>
-          </div>
-        </div>,
-        <div
-          onClick={(e) => e.stopPropagation()}
-          style={{ display: "flex", alignItems: "center", gap: 4 }}
-        >
-          <button
-            onClick={() => handleDecrementCandidateRound(c, rnd)}
-            disabled={rnd <= 1 || isPreviousRound}
-            style={{
-              width: 18, height: 18, borderRadius: 4, border: "none",
-              background: (rnd <= 1 || isPreviousRound) ? T.border : T.primary,
-              color: (rnd <= 1 || isPreviousRound) ? T.inkFaint : "#fff",
-              cursor: (rnd <= 1 || isPreviousRound) ? "not-allowed" : "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: "bold"
-            }}
-          >
-            -
-          </button>
-          <span style={{ fontSize: 11, fontWeight: 700, minWidth: 50, textAlign: "center" }}>
-            {getRoundOrdinal(rnd)}
-          </span>
-          <button
-            onClick={() => handleIncrementCandidateRound(c, rnd)}
-            disabled={rnd >= 10 || isPreviousRound}
-            style={{
-              width: 18, height: 18, borderRadius: 4, border: "none",
-              background: (rnd >= 10 || isPreviousRound) ? T.border : T.primary,
-              color: (rnd >= 10 || isPreviousRound) ? T.inkFaint : "#fff",
-              cursor: (rnd >= 10 || isPreviousRound) ? "not-allowed" : "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: "bold"
-            }}
-          >
-            +
-          </button>
-        </div>,
-        <div
-          onClick={(e) => {
-            if (isPreviousRound) return;
-            e.stopPropagation();
-            handleOpenSchedule(c);
-          }}
-          style={{
-            cursor: isPreviousRound ? "default" : "pointer",
-            padding: "4px 8px",
-            borderRadius: 6,
-            transition: "background-color 0.15s ease",
-            display: "inline-block",
-          }}
-          onMouseEnter={(e) => {
-            if (!isPreviousRound) e.currentTarget.style.background = T.primaryLight;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-          }}
-          title={isPreviousRound ? "" : (i.date ? "Click to reschedule interview" : "Click to schedule interview")}
-        >
-          {i.date ? (
-            <>
-              <div style={{ fontSize: 11, fontWeight: 600, color: T.ink }}>{i.date}</div>
-              <div style={{ fontSize: 10, color: T.inkFaint }}>{i.time}</div>
-            </>
-          ) : (
-            <span style={{ fontSize: 11, color: T.inkFaint, fontStyle: "italic" }}>Not scheduled</span>
-          )}
-        </div>,
-        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-          {!i.date ? (
-            <button
-              onClick={(e) => { e.stopPropagation(); handleOpenSchedule(c); }}
-              disabled={isPreviousRound}
-              style={actionBtnStyle("primary", isPreviousRound)}
-              className={isPreviousRound ? "" : "btn-action-hover"}
-            >
-              📅 Schedule
-            </button>
-          ) : (
-            <button
-              onClick={(e) => { e.stopPropagation(); handleOpenSchedule(c); }}
-              disabled={isPreviousRound}
-              style={actionBtnStyle("reschedule", isPreviousRound)}
-              className={isPreviousRound ? "" : "btn-action-hover"}
-              title={isPreviousRound ? "" : `Currently: ${i.date} at ${i.time}`}
-            >
-              🔄 Reschedule
-            </button>
-          )}
-          <button
-            onClick={(e) => { e.stopPropagation(); setAssigningCandidate(c); }}
-            disabled={isPreviousRound}
-            style={actionBtnStyle("amber", isPreviousRound)}
-            className={isPreviousRound ? "" : "btn-action-hover"}
-          >
-            Panelist
-          </button>
-          {i.date && (
-            <button
-              onClick={(e) => { e.stopPropagation(); setReminderCandidate(c); }}
-              disabled={isPreviousRound}
-              style={actionBtnStyle("secondary", isPreviousRound)}
-              className={isPreviousRound ? "" : "btn-action-hover"}
-              title={isPreviousRound ? "" : "Send reminder to panelists and candidate"}
-            >
-              🔔 Reminder
-            </button>
-          )}
-          <button
-            onClick={(e) => { e.stopPropagation(); handleGiveOffer(c); }}
-            disabled={isPreviousRound}
-            style={actionBtnStyle("success", isPreviousRound)}
-            className={isPreviousRound ? "" : "btn-action-hover"}
-          >
-            📜 Give Offer
-          </button>
-        </div>,
-      ];
-    }
-
-    return [
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <input
-          type="checkbox"
-          checked={selectedCandidateKeys.includes(candidateKey(c))}
-          disabled={isPreviousRound}
-          onChange={(e) => {
-            e.stopPropagation();
-            toggleSelectCandidate(c);
-          }}
-          onClick={(e) => e.stopPropagation()}
-          style={{ width: 16, height: 16, cursor: isPreviousRound ? "not-allowed" : "pointer" }}
-        />
-      </div>,
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        {avatar(c.name, 32, 11)}
-        <div>
-          <strong style={{ color: T.ink }}>{c.name}</strong>
-          <div style={{ fontSize: 11, color: T.inkFaint }}>{c.email}</div>
-        </div>
-      </div>,
-      c.role,
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
-      >
-        <button
-          onClick={() => handleDecrementCandidateRound(c, rnd)}
-          disabled={rnd <= 1 || isPreviousRound}
-          style={{
-            width: 20, height: 20, borderRadius: 4, border: "none",
-            background: (rnd <= 1 || isPreviousRound) ? T.border : T.primary,
-            color: (rnd <= 1 || isPreviousRound) ? T.inkFaint : "#fff", fontWeight: "bold",
-            cursor: (rnd <= 1 || isPreviousRound) ? "not-allowed" : "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11
-          }}
-        >
-          -
-        </button>
-        <span style={{ fontSize: 12, fontWeight: 700, minWidth: 65, textAlign: "center" }}>
-          {getRoundOrdinal(rnd)}
-        </span>
-        <button
-          onClick={() => handleIncrementCandidateRound(c, rnd)}
-          disabled={rnd >= 10 || isPreviousRound}
-          style={{
-            width: 20, height: 20, borderRadius: 4, border: "none",
-            background: (rnd >= 10 || isPreviousRound) ? T.border : T.primary,
-            color: (rnd >= 10 || isPreviousRound) ? T.inkFaint : "#fff", fontWeight: "bold",
-            cursor: (rnd >= 10 || isPreviousRound) ? "not-allowed" : "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11
-          }}
-        >
-          +
-        </button>
-      </div>,
-      <div style={{ fontSize: 12, color: T.inkMid }}>
-        {i.panel && i.panel.length > 0 ? i.panel.join(", ") : <span style={{ color: T.inkFaint, fontStyle: "italic" }}>TBD</span>}
-      </div>,
-      modeCell(i.mode || "In-Person"),
-      <div
-        onClick={(e) => {
-          if (isPreviousRound) return;
-          e.stopPropagation();
-          handleOpenSchedule(c);
-        }}
-        style={{
-          cursor: isPreviousRound ? "default" : "pointer",
-          padding: "4px 8px",
-          borderRadius: 6,
-          transition: "background-color 0.15s ease",
-          display: "inline-block",
-        }}
-        onMouseEnter={(e) => {
-          if (!isPreviousRound) e.currentTarget.style.background = T.primaryLight;
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = "transparent";
-        }}
-        title={isPreviousRound ? "" : (i.date ? "Click to reschedule interview" : "Click to schedule interview")}
-      >
-        {i.date ? (
-          <>
-            <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{i.date}</div>
-            <div style={{ fontSize: 11, color: T.inkFaint }}>{i.time}</div>
-          </>
-        ) : (
-          <span style={{ fontSize: 12, color: T.inkFaint, fontStyle: "italic" }}>Not scheduled</span>
-        )}
-      </div>,
-      meetingLinkCell(i.meetingLink || "", i.mode),
-      i.score !== null ? (
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: "50%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 11,
-            fontWeight: 800,
-            background: i.score >= 80 ? T.greenLight : i.score >= 60 ? T.amberLight : T.redLight,
-            color: i.score >= 80 ? T.green : i.score >= 60 ? T.amber : T.red,
-          }}
-        >
-          {i.score}
-        </div>
-      ) : (
-        <span style={{ color: T.inkFaint }}>—</span>
-      ),
-      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "nowrap", whiteSpace: "nowrap" }}>
-        {!i.date ? (
-          <button
-            onClick={(e) => { e.stopPropagation(); handleOpenSchedule(c); }}
-            disabled={isPreviousRound}
-            style={actionBtnStyle("primary", isPreviousRound)}
-            className={isPreviousRound ? "" : "btn-action-hover"}
-          >
-            📅 Schedule
-          </button>
-        ) : (
-          <button
-            onClick={(e) => { e.stopPropagation(); handleOpenSchedule(c); }}
-            disabled={isPreviousRound}
-            style={{
-              ...actionBtnStyle("reschedule", isPreviousRound),
-              display: "flex", alignItems: "center", gap: 4,
-            }}
-            className={isPreviousRound ? "" : "btn-action-hover"}
-            title={isPreviousRound ? "" : `Currently scheduled: ${i.date} at ${i.time}${i.mode ? " · " + i.mode : ""}`}
-          >
-            🔄 Reschedule
-          </button>
-        )}
-        <button
-          onClick={(e) => { e.stopPropagation(); setAssigningCandidate(c); }}
-          disabled={isPreviousRound}
-          style={actionBtnStyle("amber", isPreviousRound)}
-          className={isPreviousRound ? "" : "btn-action-hover"}
-        >
-          Panelist
-        </button>
-        {i.date && (
-          <button
-            onClick={(e) => { e.stopPropagation(); setReminderCandidate(c); }}
-            disabled={isPreviousRound}
-            style={actionBtnStyle("secondary", isPreviousRound)}
-            className={isPreviousRound ? "" : "btn-action-hover"}
-            title={isPreviousRound ? "" : "Send reminder to panelists and candidate"}
-          >
-            🔔 Reminder
-          </button>
-        )}
-        <button
-          onClick={(e) => { e.stopPropagation(); handleGiveOffer(c); }}
-          disabled={isPreviousRound}
-          style={actionBtnStyle("success", isPreviousRound)}
-          className={isPreviousRound ? "" : "btn-action-hover"}
-        >
-          📜 Give Offer
-        </button>
-      </div>,
-    ];
-  });
 
   return (
     <div>
@@ -1250,12 +890,12 @@ export default function InterviewPanel({
                 onMouseMove={hScroll.onMouseMove}
                 onMouseUp={hScroll.onMouseUp}
                 onMouseLeave={hScroll.onMouseLeave}
-                style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", paddingBottom: 8, WebkitOverflowScrolling: "touch", cursor: "grab", userSelect: "none" }}
+                style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 8, WebkitOverflowScrolling: "touch", cursor: "grab", userSelect: "none" }}
               >
               <div
                 onClick={() => selectPosting(null)}
                 style={{
-                  flexShrink: 0, width: 200, scrollSnapAlign: "start",
+                  flexShrink: 0, width: 200,
                   border: `2px solid ${!selectedPostingId ? T.primary : T.border}`,
                   borderRadius: 14, padding: "16px 18px", cursor: "pointer",
                   background: !selectedPostingId ? T.primaryLight : T.surface,
@@ -1275,7 +915,7 @@ export default function InterviewPanel({
                     key={p.id}
                     onClick={() => selectPosting(p.id)}
                     style={{
-                      flexShrink: 0, width: 280, scrollSnapAlign: "start",
+                      flexShrink: 0, width: 280,
                       border: `2px solid ${isSelected ? T.primary : T.border}`,
                       borderRadius: 14, padding: "14px 16px", cursor: "pointer",
                       background: isSelected ? T.primaryLight : T.surface,
@@ -1488,7 +1128,7 @@ export default function InterviewPanel({
                             }}
                           />
                           {avatar(c.name, 48, 16)}
-                          <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ flex: 1, minWidth: 0, paddingRight: 64 }}>
                             <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", lineHeight: 1.2 }}>{c.name}</div>
                             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>{c.role}</div>
                             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>{c.email}</div>
@@ -1775,13 +1415,268 @@ export default function InterviewPanel({
             </div>
           </div>
 
-          <Table
-            cols={tableCols}
-            onRowClick={(index) => setSelectedAppDetail(filteredCandidates[index])}
-            rows={tableRows}
-            bordered={true}
-            widths={["45px", "170px", "110px", "95px", "120px", "85px", "110px", "60px", "55px", "360px"]}
-          />
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: font.base, fontFamily: font.body }}>
+              <thead>
+                <tr style={{ background: T.canvas, borderBottom: `2px solid ${T.border}` }}>
+                  <th style={{ width: 44, padding: "12px 8px", textAlign: "center", verticalAlign: "middle" }}>
+                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                      <input
+                        type="checkbox"
+                        checked={isAllSelected}
+                        onChange={toggleSelectAll}
+                        style={{ width: 16, height: 16, cursor: "pointer" }}
+                      />
+                    </div>
+                  </th>
+                  <th style={{ padding: "12px 10px", textAlign: "left", fontSize: font.xs, fontWeight: font.bold, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", verticalAlign: "middle" }}>Candidate & Role</th>
+                  <th style={{ padding: "12px 10px", textAlign: "center", fontSize: font.xs, fontWeight: font.bold, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", verticalAlign: "middle", width: 120 }}>Round</th>
+                  <th style={{ padding: "12px 10px", textAlign: "left", fontSize: font.xs, fontWeight: font.bold, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", verticalAlign: "middle" }}>Panelists</th>
+                  <th style={{ padding: "12px 10px", textAlign: "left", fontSize: font.xs, fontWeight: font.bold, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", verticalAlign: "middle" }}>Schedule</th>
+                  <th style={{ padding: "12px 10px", textAlign: "left", fontSize: font.xs, fontWeight: font.bold, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", verticalAlign: "middle", width: 100 }}>Mode</th>
+                  <th style={{ padding: "12px 10px", textAlign: "left", fontSize: font.xs, fontWeight: font.bold, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", verticalAlign: "middle", width: 80 }}>Link</th>
+                  <th style={{ padding: "12px 10px", textAlign: "right", fontSize: font.xs, fontWeight: font.bold, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", verticalAlign: "middle" }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCandidates.map((c) => {
+                  const i = c.interview;
+                  const rnd = c.displayRound;
+                  const isPreviousRound = c.displayRound < c.activeRound;
+                  const isChecked = selectedCandidateKeys.includes(candidateKey(c));
+
+                  return (
+                    <tr
+                      key={candidateKey(c)}
+                      onClick={() => setSelectedAppDetail(c)}
+                      style={{
+                        borderBottom: `1px solid ${T.border}`,
+                        cursor: "pointer",
+                        background: isChecked ? `${T.primary}05` : "transparent",
+                        transition: "background-color 0.15s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = isChecked ? `${T.primary}09` : `${T.canvas}`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = isChecked ? `${T.primary}05` : "transparent";
+                      }}
+                    >
+                      {/* Checkbox */}
+                      <td style={{ padding: "12px 8px", textAlign: "center", verticalAlign: "middle" }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={isPreviousRound}
+                            onChange={() => {
+                              toggleSelectCandidate(c);
+                            }}
+                            style={{ width: 16, height: 16, cursor: isPreviousRound ? "not-allowed" : "pointer" }}
+                          />
+                        </div>
+                      </td>
+
+                      {/* Candidate & Role */}
+                      <td style={{ padding: "12px 10px", verticalAlign: "middle" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          {avatar(c.name, 36, 12)}
+                          <div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ fontWeight: 700, color: T.ink, fontSize: 13 }}>{c.name}</span>
+                              {i.score !== null && (
+                                <span style={{
+                                  fontSize: 9, fontWeight: 800,
+                                  background: i.score >= 80 ? T.greenLight : i.score >= 60 ? T.amberLight : T.redLight,
+                                  color: i.score >= 80 ? T.green : i.score >= 60 ? T.amber : T.red,
+                                  border: `1px solid ${i.score >= 80 ? "#A7F3D0" : i.score >= 60 ? "#FDE68A" : "#FCA5A5"}`,
+                                  padding: "1px 5px", borderRadius: 4
+                                }}>
+                                  ★ {i.score}
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: 11, color: T.inkMid, marginTop: 1 }}>{c.role}</div>
+                            <div style={{ fontSize: 10, color: T.inkFaint }}>{c.email}</div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Round */}
+                      <td style={{ padding: "12px 10px", textAlign: "center", verticalAlign: "middle" }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: T.canvas, border: `1px solid ${T.border}`, borderRadius: 8, padding: "2px 4px" }}>
+                          <button
+                            onClick={() => handleDecrementCandidateRound(c, rnd)}
+                            disabled={rnd <= 1 || isPreviousRound}
+                            style={{
+                              width: 20, height: 20, borderRadius: 5, border: "none",
+                              background: (rnd <= 1 || isPreviousRound) ? "transparent" : T.primaryLight,
+                              color: (rnd <= 1 || isPreviousRound) ? T.inkFaint : T.primary,
+                              fontWeight: "bold",
+                              cursor: (rnd <= 1 || isPreviousRound) ? "not-allowed" : "pointer",
+                              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11,
+                              transition: "all 0.15s"
+                            }}
+                          >
+                            -
+                          </button>
+                          <span style={{ fontSize: 11.5, fontWeight: 700, minWidth: 55, textAlign: "center", color: T.ink }}>
+                            {getRoundOrdinal(rnd)}
+                          </span>
+                          <button
+                            onClick={() => handleIncrementCandidateRound(c, rnd)}
+                            disabled={rnd >= 10 || isPreviousRound}
+                            style={{
+                              width: 20, height: 20, borderRadius: 5, border: "none",
+                              background: (rnd >= 10 || isPreviousRound) ? "transparent" : T.primaryLight,
+                              color: (rnd >= 10 || isPreviousRound) ? T.inkFaint : T.primary,
+                              fontWeight: "bold",
+                              cursor: (rnd >= 10 || isPreviousRound) ? "not-allowed" : "pointer",
+                              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11,
+                              transition: "all 0.15s"
+                            }}
+                          >
+                            +
+                          </button>
+                        </div>
+                      </td>
+
+                      {/* Panelists */}
+                      <td style={{ padding: "12px 10px", verticalAlign: "middle" }}>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                          {i.panel && i.panel.length > 0 ? (
+                            i.panel.map((pName: string) => (
+                              <span key={pName} style={{
+                                fontSize: 10, fontWeight: 700, color: T.inkMid,
+                                background: T.canvas, border: `1px solid ${T.border}`,
+                                borderRadius: 4, padding: "2px 6px", whiteSpace: "nowrap"
+                              }} title={pName}>
+                                {pName.split(" ").map((n: string) => n[0]).join("")}
+                              </span>
+                            ))
+                          ) : (
+                            <span style={{ fontSize: 11, color: T.inkFaint, fontStyle: "italic" }}>—</span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Schedule */}
+                      <td style={{ padding: "12px 10px", verticalAlign: "middle" }} onClick={(e) => e.stopPropagation()}>
+                        <div
+                          onClick={(e) => { if (!isPreviousRound) { e.stopPropagation(); handleOpenSchedule(c); } }}
+                          style={{
+                            cursor: isPreviousRound ? "default" : "pointer",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: i.date ? T.ink : T.inkFaint,
+                            textDecoration: i.date ? "none" : "underline",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {i.date ? (
+                            <span>{i.date} at {i.time}</span>
+                          ) : (
+                            <span>📅 Schedule</span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Mode */}
+                      <td style={{ padding: "12px 10px", verticalAlign: "middle" }} onClick={(e) => e.stopPropagation()}>
+                        {modeCell(i.mode || "In-Person")}
+                      </td>
+
+                      {/* Link */}
+                      <td style={{ padding: "12px 10px", verticalAlign: "middle" }} onClick={(e) => e.stopPropagation()}>
+                        {i.mode === "Online" && i.meetingLink ? (
+                          <a
+                            href={i.meetingLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              fontSize: 12, color: T.primary, textDecoration: "none",
+                              display: "inline-flex", alignItems: "center", justifyContent: "center",
+                              width: 24, height: 24, borderRadius: 6, background: T.primaryLight,
+                              border: `1px solid ${T.primary}44`,
+                              transition: "all 0.2s"
+                            }}
+                            className="btn-action-hover"
+                            title="Join Meeting"
+                          >
+                            🔗
+                          </a>
+                        ) : (
+                          <span style={{ fontSize: 11, color: T.inkFaint }}>—</span>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td style={{ padding: "12px 10px", textAlign: "right", verticalAlign: "middle" }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ display: "grid", gridTemplateColumns: "105px 75px 90px 65px", gap: 6, justifyContent: "flex-end", alignItems: "center" }}>
+                          {!i.date ? (
+                            <button
+                              onClick={() => handleOpenSchedule(c)}
+                              disabled={isPreviousRound}
+                              style={{ ...actionBtnStyle("primary", isPreviousRound), width: "100%", textAlign: "center" }}
+                              className={isPreviousRound ? "" : "btn-action-hover"}
+                            >
+                              📅 Schedule
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleOpenSchedule(c)}
+                              disabled={isPreviousRound}
+                              style={{ ...actionBtnStyle("reschedule", isPreviousRound), width: "100%", textAlign: "center" }}
+                              className={isPreviousRound ? "" : "btn-action-hover"}
+                              title={`Currently: ${i.date} at ${i.time}`}
+                            >
+                              🔄 Reschedule
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setAssigningCandidate(c)}
+                            disabled={isPreviousRound}
+                            style={{ ...actionBtnStyle("amber", isPreviousRound), width: "100%", textAlign: "center" }}
+                            className={isPreviousRound ? "" : "btn-action-hover"}
+                          >
+                            Panelist
+                          </button>
+                          {i.date ? (
+                            <button
+                              onClick={() => setReminderCandidate(c)}
+                              disabled={isPreviousRound}
+                              style={{ ...actionBtnStyle("secondary", isPreviousRound), width: "100%", textAlign: "center" }}
+                              className={isPreviousRound ? "" : "btn-action-hover"}
+                            >
+                              🔔 Reminder
+                            </button>
+                          ) : (
+                            <div style={{ width: 90 }} />
+                          )}
+                          <button
+                            onClick={() => handleGiveOffer(c)}
+                            disabled={isPreviousRound}
+                            style={{ ...actionBtnStyle("success", isPreviousRound), width: "100%", textAlign: "center" }}
+                            className={isPreviousRound ? "" : "btn-action-hover"}
+                          >
+                            📜 Offer
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {filteredCandidates.length === 0 && (
+                  <tr>
+                    <td colSpan={8} style={{ padding: "40px 24px", textAlign: "center", color: T.inkFaint, fontSize: 14 }}>
+                      No candidates found matching the filters.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </Card>
       )}
 

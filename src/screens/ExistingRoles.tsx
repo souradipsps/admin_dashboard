@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { T } from "../theme";
+import { T, font } from "../theme";
 import { STATUS_COLORS } from "../theme";
 import { useBreakpoint } from "../hooks";
 import { Card, SectionTitle, Table, Badge, Mono, Input, Modal, ModalHeader, Select, Btn } from "../components/ui";
@@ -29,9 +29,7 @@ export default function ExistingRoles({ roles, setRoles }: ExistingRolesProps) {
   };
 
   const handleDeleteRole = (roleId: string) => {
-    if (window.confirm("Are you sure you want to delete this role?")) {
-      setRoles((prev) => prev.filter((r) => r.id !== roleId));
-    }
+    setRoles((prev) => prev.filter((r) => r.id !== roleId));
   };
 
   const filtered = roles
@@ -52,11 +50,13 @@ export default function ExistingRoles({ roles, setRoles }: ExistingRolesProps) {
           { label: "Total Roles", value: totalRoles, color: T.blue },
           { label: "Active Roles", value: activeRoles, color: T.green },
           { label: "Inactive", value: inactiveRoles, color: T.amber },
-        ].map((card) => (
-          <Card key={card.label} style={{ padding: isMobile ? 14 : 18 }}>
-            <div style={{ fontSize: isMobile ? 22 : 26, fontWeight: 900, color: card.color }}>{card.value}</div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: T.ink, marginTop: 4 }}>{card.label}</div>
-          </Card>
+        ].map((card, idx) => (
+          <div key={card.label} className="animate-fade-in-up" style={{ animationDelay: `${idx * 0.06}s` }}>
+            <Card style={{ padding: isMobile ? 14 : 18 }}>
+              <div className="animate-count-up" style={{ fontSize: isMobile ? font['2xl'] : font['3xl'], fontWeight: font.black, fontFamily: font.heading, color: card.color, animationDelay: `${idx * 0.06 + 0.1}s` }}>{card.value}</div>
+              <div style={{ fontSize: font.sm + 1, fontWeight: font.bold, fontFamily: font.body, color: T.ink, marginTop: 4 }}>{card.label}</div>
+            </Card>
+          </div>
         ))}
       </div>
 
@@ -149,6 +149,104 @@ function RolesTable({
 
   const open = (r: any) => setSel(r);
   const close = () => setSel(null);
+
+  const renderRoleDetailsModal = () => {
+    if (!sel) return null;
+    return (
+      <Modal open={!!sel} onClose={close} maxWidth={520}>
+        <div>
+          <ModalHeader title="" onClose={close} />
+          
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20, borderBottom: `1px solid ${T.border}`, paddingBottom: 16 }}>
+            <div style={{
+              width: 50, height: 50, borderRadius: 12,
+              background: sel.currentStatus === "Active" ? T.greenLight : T.inkFaint + "15",
+              color: sel.currentStatus === "Active" ? T.green : T.inkLight,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 22, fontWeight: 800, flexShrink: 0
+            }}>
+              💼
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: font.xs, fontWeight: font.bold, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {sel.dept} · {sel.type}
+              </div>
+              <h3 style={{ margin: "4px 0 0", fontSize: font.lg, fontWeight: font.bold, fontFamily: font.heading, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {sel.role}
+              </h3>
+            </div>
+            <div style={{ flexShrink: 0 }}>
+              <span style={{
+                fontSize: 10.5, fontWeight: 700, borderRadius: 99, padding: "3px 10px",
+                background: sel.currentStatus === "Active" ? T.greenLight : T.inkFaint + "1a",
+                color: sel.currentStatus === "Active" ? T.green : T.inkFaint,
+                border: `1px solid ${sel.currentStatus === "Active" ? "#A7F3D0" : T.border}`
+              }}>
+                {sel.currentStatus}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: bp === "mobile" ? "1fr" : "1fr 1fr", gap: 12 }}>
+            {[
+              { label: "Role ID", value: <span style={{ fontFamily: font.mono, fontWeight: 700 }}>{sel.id}</span> },
+              { label: "Department", value: sel.dept },
+              { label: "Employment Type", value: sel.type },
+              { label: "Work Experience Required", value: sel.experience ? `${sel.experience} years` : "No experience required" },
+              { label: "Salary Budget (Annual)", value: <strong style={{ color: T.tealDark }}>{sel.salaryRange || "—"}</strong> },
+              {
+                label: "Status Toggle",
+                value: (
+                  <select
+                    value={sel.currentStatus}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      onStatusChange(sel.id, val);
+                      setSel((prev: any) => prev ? { ...prev, currentStatus: val } : null);
+                    }}
+                    style={{
+                      background: sel.currentStatus === "Active" ? T.greenLight : T.canvas,
+                      color: sel.currentStatus === "Active" ? T.green : T.inkLight,
+                      border: `1.5px solid ${sel.currentStatus === "Active" ? "#34D399" : T.border}`,
+                      borderRadius: 8, padding: "3px 10px", fontSize: 11, fontWeight: 700,
+                      cursor: "pointer", outline: "none", width: "100%"
+                    }}
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                )
+              }
+            ].map((item, idx) => (
+              <div key={idx} style={{
+                padding: 10, background: T.canvas, border: `1px solid ${T.border}`,
+                borderRadius: 8, display: "flex", flexDirection: "column", gap: 3
+              }}>
+                <span style={{ fontSize: 9.5, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {item.label}
+                </span>
+                <div style={{ fontSize: 12.5, color: T.ink, fontWeight: 600 }}>
+                  {item.value}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20, borderTop: `1px solid ${T.border}`, paddingTop: 14 }}>
+            <Btn
+              label="Delete Role"
+              variant="danger"
+              onClick={() => {
+                onDelete(sel.id);
+                close();
+              }}
+            />
+            <Btn label="Close Details" onClick={close} />
+          </div>
+        </div>
+      </Modal>
+    );
+  };
 
   const renderRows = () => rows.map((r: any) => {
     const sc = STATUS_COLORS[r.currentStatus] || STATUS_COLORS.Active;
@@ -373,42 +471,7 @@ function RolesTable({
           </div>
         )}
 
-        <Modal open={!!sel} onClose={close} maxWidth={720}>
-          {sel && (
-            <div>
-              <ModalHeader title="Role details" onClose={close} />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
-                <div style={{ padding: 12, border: `1px solid ${T.border}`, borderRadius: 10, background: T.canvas }}>
-                  <div style={{ fontSize: 12, color: T.inkFaint }}>Role ID</div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: T.ink, marginTop: 6 }}>{sel.id}</div>
-                  <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 10 }}>Department</div>
-                  <div style={{ fontSize: 13, color: T.ink, marginTop: 6 }}>{sel.dept}</div>
-                  <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 10 }}>Type</div>
-                  <div style={{ fontSize: 13, color: T.ink, marginTop: 6 }}>{sel.type}</div>
-                </div>
-                <div style={{ padding: 12, border: `1px solid ${T.border}`, borderRadius: 10, background: T.canvas }}>
-                  <div style={{ fontSize: 12, color: T.inkFaint }}>Role Name</div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: T.ink, marginTop: 6 }}>{sel.role}</div>
-                  <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 10 }}>Experience</div>
-                  <div style={{ fontSize: 13, color: T.ink, marginTop: 6 }}>{sel.experience ? `${sel.experience} yrs` : "—"}</div>
-                  <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 10 }}>Salary Range</div>
-                  <div style={{ fontSize: 13, color: T.ink, fontWeight: 700, marginTop: 6 }}>{sel.salaryRange || "—"}</div>
-                </div>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20 }}>
-                <Btn
-                  label="Delete Role"
-                  variant="danger"
-                  onClick={() => {
-                    onDelete(sel.id);
-                    close();
-                  }}
-                />
-                <Btn label="Close" onClick={close} />
-              </div>
-            </div>
-          )}
-        </Modal>
+        {renderRoleDetailsModal()}
       </>
     );
   }
@@ -420,43 +483,7 @@ function RolesTable({
         rows={renderRows()}
         onRowClick={(i) => open(rows[i])}
       />
-      <Modal open={!!sel} onClose={close} maxWidth={720}>
-        {sel && (
-          <div>
-            <ModalHeader title="Role details" onClose={close} />
-            <div style={{ display: "grid", gridTemplateColumns: bp === "mobile" ? "1fr" : "1fr 1fr", gap: 12 }}>
-              <div style={{ padding: 12, border: `1px solid ${T.border}`, borderRadius: 10, background: T.canvas }}>
-                <div style={{ fontSize: 12, color: T.inkFaint }}>Role ID</div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: T.ink, marginTop: 6 }}>{sel.id}</div>
-                <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 10 }}>Department</div>
-                <div style={{ fontSize: 13, color: T.ink, marginTop: 6 }}>{sel.dept}</div>
-                <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 10 }}>Type</div>
-                <div style={{ fontSize: 13, color: T.ink, marginTop: 6 }}>{sel.type}</div>
-              </div>
-              <div style={{ padding: 12, border: `1px solid ${T.border}`, borderRadius: 10, background: T.canvas }}>
-                <div style={{ fontSize: 12, color: T.inkFaint }}>Role Name</div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: T.ink, marginTop: 6 }}>{sel.role}</div>
-                <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 10 }}>Experience</div>
-                <div style={{ fontSize: 13, color: T.ink, marginTop: 6 }}>{sel.experience ? `${sel.experience} yrs` : "—"}</div>
-                <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 10 }}>Salary Range</div>
-                <div style={{ fontSize: 13, color: T.ink, fontWeight: 700, marginTop: 6 }}>{sel.salaryRange || "—"}</div>
-              </div>
-            </div>
-            {/* Summary removed as requested */}
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20 }}>
-              <Btn
-                label="Delete Role"
-                variant="danger"
-                onClick={() => {
-                  onDelete(sel.id);
-                  close();
-                }}
-              />
-              <Btn label="Close" onClick={close} />
-            </div>
-          </div>
-        )}
-      </Modal>
+      {renderRoleDetailsModal()}
     </>
   );
 }

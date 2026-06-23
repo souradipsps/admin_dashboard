@@ -56,10 +56,73 @@ export const T = {
   amberLight: "#FFF7ED",
 };
 
+/* ── Shadow System ── */
 export const shadow = {
   sm: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
   md: "0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.03)",
   lg: "0 8px 24px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.04)",
+  xl: "0 16px 48px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.05)",
+  // Colored shadows for premium feel
+  primary: "0 8px 24px rgba(114, 16, 42, 0.15), 0 4px 8px rgba(114, 16, 42, 0.08)",
+  accent: "0 8px 24px rgba(201, 168, 76, 0.2), 0 4px 8px rgba(201, 168, 76, 0.1)",
+  teal: "0 8px 24px rgba(0, 139, 139, 0.15), 0 4px 8px rgba(0, 139, 139, 0.08)",
+  inner: "inset 0 2px 4px rgba(0,0,0,0.04)",
+};
+
+/* ── Font System ── */
+export const font = {
+  heading: "'Outfit', 'Inter', system-ui, sans-serif",
+  body: "'Inter', system-ui, -apple-system, sans-serif",
+  mono: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+  // Font sizes
+  xs: 10,
+  sm: 11,
+  base: 13,
+  md: 14,
+  lg: 16,
+  xl: 18,
+  '2xl': 22,
+  '3xl': 28,
+  '4xl': 34,
+  // Font weights
+  light: 300,
+  regular: 400,
+  medium: 500,
+  semibold: 600,
+  bold: 700,
+  extrabold: 800,
+  black: 900,
+};
+
+/* ── Border Radius ── */
+export const radius = {
+  sm: 6,
+  md: 8,
+  lg: 12,
+  xl: 16,
+  '2xl': 20,
+  full: 9999,
+};
+
+/* ── Transitions ── */
+export const transition = {
+  fast: "all 0.15s cubic-bezier(0.22, 1, 0.36, 1)",
+  medium: "all 0.25s cubic-bezier(0.22, 1, 0.36, 1)",
+  slow: "all 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
+  spring: "all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
+  bounce: "all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+};
+
+/* ── Spacing Scale ── */
+export const space = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  '2xl': 24,
+  '3xl': 32,
+  '4xl': 48,
 };
 
 export const statusVariant = (s: string): string => {

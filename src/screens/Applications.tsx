@@ -194,46 +194,7 @@ export default function Applications({
 
   return (
     <div>
-      <style>{`
-        .btn-shortlist {
-          transition: all 0.2s ease-in-out !important;
-        }
-        .btn-shortlist:hover {
-          background-color: #059669 !important;
-          color: #ffffff !important;
-          transform: translateY(-1.5px);
-          box-shadow: 0 4px 10px rgba(5, 150, 105, 0.25);
-        }
-        .btn-reject {
-          transition: all 0.2s ease-in-out !important;
-        }
-        .btn-reject:hover {
-          background-color: #DC2626 !important;
-          color: #ffffff !important;
-          transform: translateY(-1.5px);
-          box-shadow: 0 4px 10px rgba(220, 38, 38, 0.25);
-        }
-        .btn-shortlist-mobile {
-          transition: all 0.2s ease-in-out !important;
-        }
-        .btn-shortlist-mobile:hover {
-          transform: translateY(-1.5px);
-          box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
-        }
-        .btn-reject-mobile {
-          transition: all 0.2s ease-in-out !important;
-        }
-        .btn-reject-mobile:hover {
-          transform: translateY(-1.5px);
-          box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
-        }
-        .hscroll-track {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-        .hscroll-track::-webkit-scrollbar { display: none; }
-        .hscroll-track:active { cursor: grabbing !important; }
-      `}</style>
+      {/* Hover styles moved to global index.css */}
       <SectionTitle title="Applications" sub="Track every candidate from application to final decision" />
 
       {/* Unified carousel — always visible, filters both tabs */}
@@ -292,7 +253,6 @@ export default function Applications({
                 style={{
                   display: "flex",
                   overflowX: "auto",
-                  scrollSnapType: "x mandatory",
                   WebkitOverflowScrolling: "touch",
                   scrollbarWidth: "none",
                   msOverflowStyle: "none",
@@ -313,7 +273,6 @@ export default function Applications({
                   style={{
                     flexShrink: 0,
                     width: "100%",
-                    scrollSnapAlign: "center",
                     border: `2px solid ${!selectedPostingId ? accentColor : T.border}`,
                     borderRadius: 16,
                     padding: "18px 20px",
@@ -362,7 +321,6 @@ export default function Applications({
                       style={{
                         flexShrink: 0,
                         width: "100%",
-                        scrollSnapAlign: "center",
                         border: `2px solid ${isSelected ? accentColor : T.border}`,
                         borderRadius: 16,
                         padding: "18px 20px",
@@ -471,7 +429,6 @@ export default function Applications({
                 onMouseLeave={hScroll.onMouseLeave}
                 style={{
                   display: "flex", gap: 14, overflowX: "auto",
-                  scrollSnapType: "x mandatory",
                   paddingBottom: 8, WebkitOverflowScrolling: "touch",
                   cursor: "grab",
                   userSelect: "none",
@@ -481,8 +438,7 @@ export default function Applications({
               <div
                 onClick={() => selectPosting(null)}
                 style={{
-                  flexShrink: 0, width: 200, scrollSnapAlign: "start",
-                  border: `2px solid ${!selectedPostingId ? accentColor : T.border}`,
+                  flexShrink: 0, width: 200, border: `2px solid ${!selectedPostingId ? accentColor : T.border}`,
                   borderRadius: 14, padding: "16px 18px", cursor: "pointer",
                   background: !selectedPostingId ? accentPale : T.surface,
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -508,8 +464,7 @@ export default function Applications({
                     key={p.id}
                     onClick={() => selectPosting(p.id)}
                     style={{
-                      flexShrink: 0, width: 300, scrollSnapAlign: "start",
-                      border: `2px solid ${isSelected ? accentColor : T.border}`,
+                      flexShrink: 0, width: 300, border: `2px solid ${isSelected ? accentColor : T.border}`,
                       borderRadius: 14, overflow: "hidden", cursor: "pointer",
                       background: isSelected ? accentPale : T.surface,
                       transition: "all 0.18s",
@@ -636,7 +591,6 @@ export default function Applications({
           style={{
             display: "flex",
             overflowX: "auto",
-            scrollSnapType: "x mandatory",
             WebkitOverflowScrolling: "touch",
             scrollbarWidth: "none",
             msOverflowStyle: "none",
@@ -694,7 +648,6 @@ export default function Applications({
                 style={{
                   flexShrink: 0,
                   minWidth: "calc(100% - 32px)",
-                  scrollSnapAlign: "center",
                   borderRadius: 20,
                   background: cardBackground,
                   color: "#fff",
@@ -716,12 +669,12 @@ export default function Applications({
                   {/* Header info */}
                   <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                     {avatar(a.name, 56, 16)}
-                    <div>
-                      <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff", opacity: nameFade }}>{cardTitle}</h3>
-                      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 2, opacity: nameFade }}>
-                        {isJob ? a.role : a.preferredRole || "—"}
-                      </div>
-                    </div>
+                     <div style={{ paddingRight: 64 }}>
+                       <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff", opacity: nameFade }}>{cardTitle}</h3>
+                       <div style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 2, opacity: nameFade }}>
+                         {isJob ? a.role : a.preferredRole || "—"}
+                       </div>
+                     </div>
                   </div>
                 </div>
 

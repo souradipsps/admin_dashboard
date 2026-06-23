@@ -301,7 +301,6 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
                 style={{
                   display: "flex",
                   overflowX: "auto",
-                  scrollSnapType: "x mandatory",
                   WebkitOverflowScrolling: "touch",
                   scrollbarWidth: "none",
                   msOverflowStyle: "none",
@@ -319,8 +318,7 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
                     }
                   }}
                   style={{
-                    flexShrink: 0, width: "100%", scrollSnapAlign: "center",
-                    border: `2px solid ${!selectedPostingId ? accentColor : T.border}`,
+                    flexShrink: 0, width: "100%", border: `2px solid ${!selectedPostingId ? accentColor : T.border}`,
                     borderRadius: 16, padding: "18px 20px", cursor: "pointer",
                     background: !selectedPostingId ? accentPale : T.surface,
                     display: "flex", flexDirection: "row", alignItems: "center", gap: 16,
@@ -358,8 +356,7 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
                         }
                       }}
                       style={{
-                        flexShrink: 0, width: "100%", scrollSnapAlign: "center",
-                        border: `2px solid ${isSelected ? accentColor : T.border}`,
+                        flexShrink: 0, width: "100%", border: `2px solid ${isSelected ? accentColor : T.border}`,
                         borderRadius: 16, padding: "18px 20px", cursor: "pointer",
                         background: isSelected ? accentPale : T.surface,
                         transition: "all 0.2s",
@@ -435,13 +432,12 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
                 onMouseMove={hScroll.onMouseMove}
                 onMouseUp={hScroll.onMouseUp}
                 onMouseLeave={hScroll.onMouseLeave}
-                style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", paddingBottom: 8, WebkitOverflowScrolling: "touch", cursor: "grab", userSelect: "none" }}
+                style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 8, WebkitOverflowScrolling: "touch", cursor: "grab", userSelect: "none" }}
               >
               <div
                 onClick={() => selectPosting(null)}
                 style={{
-                  flexShrink: 0, width: 200, scrollSnapAlign: "start",
-                  border: `2px solid ${!selectedPostingId ? accentColor : T.border}`,
+                  flexShrink: 0, width: 200, border: `2px solid ${!selectedPostingId ? accentColor : T.border}`,
                   borderRadius: 14, padding: "16px 18px", cursor: "pointer",
                   background: !selectedPostingId ? accentPale : T.surface,
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -460,8 +456,7 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
                     key={p.id}
                     onClick={() => selectPosting(p.id)}
                     style={{
-                      flexShrink: 0, width: 280, scrollSnapAlign: "start",
-                      border: `2px solid ${isSelected ? accentColor : T.border}`,
+                      flexShrink: 0, width: 280, border: `2px solid ${isSelected ? accentColor : T.border}`,
                       borderRadius: 14, padding: "14px 16px", cursor: "pointer",
                       background: isSelected ? accentPale : T.surface,
                       transition: "all 0.18s",
@@ -510,7 +505,6 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
             style={{
               display: "flex",
               overflowX: "auto",
-              scrollSnapType: "x mandatory",
               WebkitOverflowScrolling: "touch",
               scrollbarWidth: "none",
               msOverflowStyle: "none",
@@ -530,7 +524,6 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
                   style={{
                     flexShrink: 0,
                     minWidth: "calc(100% - 32px)",
-                    scrollSnapAlign: "center",
                     borderRadius: 20,
                     background: cardBackground,
                     color: "#fff",

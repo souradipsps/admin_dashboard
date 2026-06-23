@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { T } from "../theme";
+import { T, font } from "../theme";
 import { statusVariant } from "../theme";
 import { useBreakpoint, useHorizontalScroll } from "../hooks";
 import { Card, SectionTitle, Table, Mono, Badge, Btn, Modal, ModalHeader, FormField, Input } from "../components/ui";
@@ -130,7 +130,6 @@ export default function OfferManagement({
                 style={{
                   display: "flex",
                   overflowX: "auto",
-                  scrollSnapType: "x mandatory",
                   WebkitOverflowScrolling: "touch",
                   scrollbarWidth: "none",
                   msOverflowStyle: "none",
@@ -148,8 +147,7 @@ export default function OfferManagement({
                     }
                   }}
                   style={{
-                    flexShrink: 0, width: "100%", scrollSnapAlign: "center",
-                    border: `2px solid ${!selectedPostingId ? accentColor : T.border}`,
+                    flexShrink: 0, width: "100%", border: `2px solid ${!selectedPostingId ? accentColor : T.border}`,
                     borderRadius: 16, padding: "18px 20px", cursor: "pointer",
                     background: !selectedPostingId ? accentPale : T.surface,
                     display: "flex", flexDirection: "row", alignItems: "center", gap: 16,
@@ -187,8 +185,7 @@ export default function OfferManagement({
                         }
                       }}
                       style={{
-                        flexShrink: 0, width: "100%", scrollSnapAlign: "center",
-                        border: `2px solid ${isSelected ? accentColor : T.border}`,
+                        flexShrink: 0, width: "100%", border: `2px solid ${isSelected ? accentColor : T.border}`,
                         borderRadius: 16, padding: "18px 20px", cursor: "pointer",
                         background: isSelected ? accentPale : T.surface,
                         transition: "all 0.2s",
@@ -265,13 +262,12 @@ export default function OfferManagement({
                 onMouseMove={hScroll.onMouseMove}
                 onMouseUp={hScroll.onMouseUp}
                 onMouseLeave={hScroll.onMouseLeave}
-                style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", paddingBottom: 8, WebkitOverflowScrolling: "touch", cursor: "grab", userSelect: "none" }}
+                style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 8, WebkitOverflowScrolling: "touch", cursor: "grab", userSelect: "none" }}
               >
               <div
                 onClick={() => selectPosting(null)}
                 style={{
-                  flexShrink: 0, width: 200, scrollSnapAlign: "start",
-                  border: `2px solid ${!selectedPostingId ? accentColor : T.border}`,
+                  flexShrink: 0, width: 200, border: `2px solid ${!selectedPostingId ? accentColor : T.border}`,
                   borderRadius: 14, padding: "16px 18px", cursor: "pointer",
                   background: !selectedPostingId ? accentPale : T.surface,
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -290,8 +286,7 @@ export default function OfferManagement({
                     key={p.id}
                     onClick={() => selectPosting(p.id)}
                     style={{
-                      flexShrink: 0, width: 280, scrollSnapAlign: "start",
-                      border: `2px solid ${isSelected ? accentColor : T.border}`,
+                      flexShrink: 0, width: 280, border: `2px solid ${isSelected ? accentColor : T.border}`,
                       borderRadius: 14, padding: "14px 16px", cursor: "pointer",
                       background: isSelected ? accentPale : T.surface,
                       transition: "all 0.18s",
@@ -320,11 +315,13 @@ export default function OfferManagement({
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(3,1fr)" : "repeat(5,1fr)", gap: 10, marginBottom: 18 }}>
-        {Object.entries(counts).map(([s, n]) => (
-          <Card key={s} style={{ padding: "12px 14px", textAlign: "center", borderTop: `3px solid ${statusColors[s]}` }}>
-            <div style={{ fontSize: isMobile ? 22 : 26, fontWeight: 900, color: statusColors[s] }}>{n}</div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: T.inkMid, marginTop: 4 }}>{s}</div>
-          </Card>
+        {Object.entries(counts).map(([s, n], idx) => (
+          <div key={s} className="animate-fade-in-up" style={{ animationDelay: `${idx * 0.05}s` }}>
+            <Card style={{ padding: "12px 14px", textAlign: "center", borderTop: `3px solid ${statusColors[s]}` }}>
+              <div className="animate-count-up" style={{ fontSize: isMobile ? font['2xl'] : font['3xl'], fontWeight: font.black, fontFamily: font.heading, color: statusColors[s], animationDelay: `${idx * 0.05 + 0.1}s` }}>{n}</div>
+              <div style={{ fontSize: font.sm + 1, fontWeight: font.bold, fontFamily: font.body, color: T.inkMid, marginTop: 4 }}>{s}</div>
+            </Card>
+          </div>
         ))}
       </div>
 
@@ -345,7 +342,6 @@ export default function OfferManagement({
             style={{
               display: "flex",
               overflowX: "auto",
-              scrollSnapType: "x mandatory",
               WebkitOverflowScrolling: "touch",
               scrollbarWidth: "none",
               msOverflowStyle: "none",
@@ -364,7 +360,6 @@ export default function OfferManagement({
                   style={{
                     flexShrink: 0,
                     minWidth: "calc(100% - 32px)",
-                    scrollSnapAlign: "center",
                     borderRadius: 20,
                     background: cardBackground,
                     color: "#fff",
@@ -396,7 +391,7 @@ export default function OfferManagement({
                       >
                         📄
                       </div>
-                      <div>
+                      <div style={{ paddingRight: 64 }}>
                         <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>{o.candidate}</h3>
                         <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 2 }}>
                           {o.role || "—"}

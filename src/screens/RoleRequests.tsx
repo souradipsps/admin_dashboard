@@ -325,9 +325,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
     if (hasChanges()) {
       saveRoleRequestEdits(true);
     } else {
-      if (confirm("Are you sure you want to accept this request?")) {
-        approveDirectly();
-      }
+      approveDirectly();
     }
   };
 
@@ -594,7 +592,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                       >
                         📂
                       </div>
-                      <div>
+                      <div style={{ paddingRight: 64 }}>
                         <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>{r.role || "—"}</h3>
                         <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 2 }}>
                           {r.dept || "—"}
@@ -909,9 +907,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                   variant="danger"
                   small
                   onClick={() => {
-                    if (window.confirm("Are you sure you want to cancel this request? This action cannot be undone.")) {
-                      cancelRoleRequest(selectedRequest.id);
-                    }
+                    cancelRoleRequest(selectedRequest.id);
                   }}
                 />
                 <Btn

@@ -1,5 +1,5 @@
 import React from "react";
-import { T, shadow } from "../theme";
+import { T, shadow, font, radius, transition } from "../theme";
 import { useBreakpoint } from "../hooks";
 
 export const Badge = ({ label, variant = "gray" }: { label: string; variant?: string }) => {
@@ -19,17 +19,20 @@ export const Badge = ({ label, variant = "gray" }: { label: string; variant?: st
   const s = styles[variant] || styles.gray;
   return (
     <span
+      className="animate-fade-in"
       style={{
         background: s.bg,
         color: s.color,
         border: `1px solid ${s.border}`,
-        borderRadius: 99,
+        borderRadius: radius.full,
         padding: "3px 10px",
-        fontSize: 11,
-        fontWeight: 700,
+        fontSize: font.sm,
+        fontWeight: font.bold,
         letterSpacing: "0.03em",
         whiteSpace: "nowrap",
         display: "inline-block",
+        fontFamily: font.body,
+        transition: transition.fast,
       }}
     >
       {label}
@@ -41,20 +44,26 @@ export const Card = ({
   children,
   style = {},
   onClick,
+  hover = true,
+  className,
 }: {
   children: React.ReactNode;
   style?: React.CSSProperties;
   onClick?: () => void;
+  hover?: boolean;
+  className?: string;
 }) => (
   <div
     onClick={onClick}
+    className={`${hover ? "card-hover" : ""} ${className || ""}`.trim() || undefined}
     style={{
       background: T.surface,
       border: `1px solid ${T.border}`,
-      borderRadius: 12,
+      borderRadius: radius.lg,
       boxShadow: shadow.sm,
       width: "100%",
       overflow: "hidden",
+      transition: transition.medium,
       ...style,
     }}
   >
@@ -92,20 +101,22 @@ export const Btn = ({
   return (
     <button
       onClick={onClick}
-      className={className}
+      className={`btn-hover ${className}`}
       style={{
         background: v.bg,
         color: v.color,
         border: `1.5px solid ${v.border}`,
-        borderRadius: 8,
+        borderRadius: radius.md,
         padding: small ? "5px 12px" : "8px 18px",
-        fontSize: small ? 12 : 13,
-        fontWeight: 700,
+        fontSize: small ? font.sm + 1 : font.base,
+        fontWeight: font.bold,
+        fontFamily: font.body,
         cursor: "pointer",
         whiteSpace: "nowrap",
         lineHeight: 1.4,
-        transition: "all 0.15s",
+        transition: transition.fast,
         minWidth: 0,
+        letterSpacing: "0.01em",
         ...style,
       }}
     >
@@ -132,16 +143,20 @@ export const Input = ({
     placeholder={placeholder}
     value={value}
     onChange={onChange}
+    className="input-focus"
     style={{
       border: `1.5px solid ${T.border}`,
-      borderRadius: 8,
-      padding: "8px 12px",
-      fontSize: 13,
+      borderRadius: radius.md,
+      padding: "9px 13px",
+      fontSize: font.base,
+      fontFamily: font.body,
       color: T.ink,
       background: "#fff",
       outline: "none",
       width: "100%",
       boxSizing: "border-box",
+      transition: transition.fast,
+      letterSpacing: "-0.01em",
       ...style,
     }}
   />
@@ -163,11 +178,13 @@ export const Select = ({
   <select
     value={value}
     onChange={onChange}
+    className="select-focus"
     style={{
       border: `1.5px solid ${T.border}`,
-      borderRadius: 8,
-      padding: "8px 12px",
-      fontSize: 13,
+      borderRadius: radius.md,
+      padding: "9px 13px",
+      fontSize: font.base,
+      fontFamily: font.body,
       color: value ? T.ink : T.inkFaint,
       background: "#fff",
       outline: "none",
@@ -179,6 +196,8 @@ export const Select = ({
       backgroundRepeat: "no-repeat",
       backgroundPosition: "right 12px center",
       paddingRight: 32,
+      transition: transition.fast,
+      letterSpacing: "-0.01em",
       ...style,
     }}
   >
@@ -215,6 +234,7 @@ export const Table = ({
             key={i}
             onClick={() => onRowClick && onRowClick(i)}
             onDoubleClick={() => onRowDoubleClick && onRowDoubleClick(i)}
+            className="animate-fade-in-up"
             style={{
               padding: "14px 16px",
               borderBottom: `1px solid ${T.border}`,
@@ -222,6 +242,8 @@ export const Table = ({
               flexDirection: "column",
               gap: 8,
               cursor: onRowClick ? "pointer" : "default",
+              animationDelay: `${i * 0.03}s`,
+              transition: transition.fast,
             }}
           >
             {cols.map(
@@ -230,8 +252,9 @@ export const Table = ({
                   <div key={j} style={{ display: "flex", gap: 8, alignItems: "flex-start", flexWrap: "wrap" }}>
                     <span
                       style={{
-                        fontSize: 10,
-                        fontWeight: 700,
+                        fontSize: font.xs,
+                        fontWeight: font.bold,
+                        fontFamily: font.body,
                         color: T.inkFaint,
                         textTransform: "uppercase",
                         letterSpacing: "0.05em",
@@ -241,14 +264,14 @@ export const Table = ({
                     >
                       {col}
                     </span>
-                    <span style={{ fontSize: 13, color: T.ink, flex: 1 }}>{row[j]}</span>
+                    <span style={{ fontSize: font.base, fontFamily: font.body, color: T.ink, flex: 1 }}>{row[j]}</span>
                   </div>
                 ),
             )}
           </div>
         ))}
         {rows.length === 0 && (
-          <div style={{ padding: "40px 24px", textAlign: "center", color: T.inkFaint, fontSize: 13 }}>
+          <div style={{ padding: "40px 24px", textAlign: "center", color: T.inkFaint, fontSize: font.base, fontFamily: font.body }}>
             No records found.
           </div>
         )}
@@ -257,7 +280,7 @@ export const Table = ({
   }
   return (
     <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, border: bordered ? `1px solid ${T.border}` : "none" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: font.base, fontFamily: font.body, border: bordered ? `1px solid ${T.border}` : "none" }}>
         <thead>
           <tr style={{ background: T.canvas, borderBottom: `1.5px solid ${T.border}` }}>
             {cols.map((c, j) => (
@@ -266,10 +289,11 @@ export const Table = ({
                 style={{
                   textAlign: j === 0 || j === 7 || j === 8 ? "center" : "left",
                   padding: "12px 16px",
-                  fontSize: 11,
-                  fontWeight: 700,
+                  fontSize: font.xs,
+                  fontWeight: font.bold,
+                  fontFamily: font.body,
                   color: T.inkLight,
-                  letterSpacing: "0.05em",
+                  letterSpacing: "0.06em",
                   textTransform: "uppercase",
                   whiteSpace: "normal",
                   wordBreak: "break-word",
@@ -288,13 +312,11 @@ export const Table = ({
               key={i}
               onClick={() => onRowClick && onRowClick(i)}
               onDoubleClick={() => onRowDoubleClick && onRowDoubleClick(i)}
+              className="row-hover"
               style={{
                 borderBottom: `1px solid ${T.border}`,
-                transition: "background 0.1s",
                 cursor: onRowClick ? "pointer" : "default",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = T.canvas)}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
               {row.map((cell, j) => (
                 <td
@@ -303,6 +325,7 @@ export const Table = ({
                     padding: "13px 16px",
                     verticalAlign: "middle",
                     color: T.ink,
+                    fontFamily: font.body,
                     whiteSpace: "normal",
                     wordBreak: "break-word",
                     maxWidth: widths ? undefined : 220,
@@ -319,7 +342,7 @@ export const Table = ({
         </tbody>
       </table>
       {rows.length === 0 && (
-        <div style={{ padding: "40px 24px", textAlign: "center", color: T.inkFaint, fontSize: 13 }}>
+        <div style={{ padding: "40px 24px", textAlign: "center", color: T.inkFaint, fontSize: font.base, fontFamily: font.body }}>
           No records found.
         </div>
       )}
@@ -339,6 +362,7 @@ export const SectionTitle = ({
   const bp = useBreakpoint();
   return (
     <div
+      className="animate-fade-in-up"
       style={{
         display: "flex",
         justifyContent: "space-between",
@@ -352,15 +376,27 @@ export const SectionTitle = ({
         <h2
           style={{
             margin: 0,
-            fontSize: bp === "mobile" ? 17 : 20,
-            fontWeight: 800,
+            fontSize: bp === "mobile" ? font.xl : font['2xl'],
+            fontWeight: font.extrabold,
+            fontFamily: font.heading,
             color: T.ink,
-            letterSpacing: "-0.02em",
+            letterSpacing: "-0.03em",
+            lineHeight: 1.2,
           }}
         >
           {title}
         </h2>
-        {sub && <p style={{ margin: "4px 0 0", fontSize: 13, color: T.inkLight }}>{sub}</p>}
+        {sub && (
+          <p style={{
+            margin: "6px 0 0",
+            fontSize: font.base,
+            fontFamily: font.body,
+            color: T.inkLight,
+            letterSpacing: "-0.01em",
+          }}>
+            {sub}
+          </p>
+        )}
       </div>
       {action && <div>{action}</div>}
     </div>
@@ -370,12 +406,14 @@ export const SectionTitle = ({
 export const Mono = ({ v }: { v: string }) => (
   <span
     style={{
-      fontFamily: "monospace",
-      fontSize: 12,
+      fontFamily: font.mono,
+      fontSize: font.sm + 1,
+      fontWeight: font.semibold,
       color: T.primary,
       background: T.primaryLight,
-      padding: "2px 6px",
-      borderRadius: 5,
+      padding: "2px 7px",
+      borderRadius: radius.sm,
+      letterSpacing: "0.02em",
     }}
   >
     {v}
@@ -400,17 +438,21 @@ export const Textarea = ({
     onChange={onChange}
     placeholder={placeholder}
     rows={rows}
+    className="input-focus"
     style={{
       border: `1.5px solid ${T.border}`,
-      borderRadius: 8,
-      padding: "8px 12px",
-      fontSize: 13,
+      borderRadius: radius.md,
+      padding: "9px 13px",
+      fontSize: font.base,
+      fontFamily: font.body,
       color: T.ink,
       background: "#fff",
       outline: "none",
       width: "100%",
       boxSizing: "border-box",
       resize: "vertical",
+      transition: transition.fast,
+      letterSpacing: "-0.01em",
       ...style,
     }}
   />
@@ -431,6 +473,7 @@ export const Modal = ({
   if (!open) return null;
   return (
     <div
+      className="modal-backdrop"
       style={{
         position: "fixed",
         inset: 0,
@@ -443,7 +486,19 @@ export const Modal = ({
       }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <Card style={{ width: "100%", maxWidth: bp === "mobile" ? "100%" : maxWidth, padding: bp === "mobile" ? 16 : 24, maxHeight: "90vh", overflowY: "auto" }}>
+      <Card
+        hover={false}
+        className="modal-content"
+        style={{
+          width: "100%",
+          maxWidth: bp === "mobile" ? "100%" : maxWidth,
+          padding: bp === "mobile" ? 16 : 24,
+          maxHeight: "90vh",
+          overflowY: "auto",
+          boxShadow: shadow.xl,
+          animation: "scaleIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both",
+        }}
+      >
         {children}
       </Card>
     </div>
@@ -452,18 +507,35 @@ export const Modal = ({
 
 export const ModalHeader = ({ title, onClose }: { title: string; onClose: () => void }) => (
   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-    <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: T.ink }}>{title}</h2>
+    <h2 style={{
+      margin: 0,
+      fontSize: font.xl,
+      fontWeight: font.extrabold,
+      fontFamily: font.heading,
+      color: T.ink,
+      letterSpacing: "-0.02em",
+    }}>
+      {title}
+    </h2>
     <button
       onClick={onClose}
+      className="close-btn"
       style={{
-        background: "none",
-        border: "none",
-        fontSize: 22,
+        background: T.canvas,
+        border: `1px solid ${T.border}`,
+        borderRadius: radius.md,
+        width: 34,
+        height: 34,
+        fontSize: 20,
         fontWeight: "bold",
         color: T.inkFaint,
         cursor: "pointer",
         lineHeight: 1,
-        padding: 4,
+        padding: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transition: transition.fast,
       }}
     >
       ×
@@ -497,11 +569,14 @@ export const FormField = ({
   <div>
     <label
       style={{
-        fontSize: 12,
-        fontWeight: 700,
+        fontSize: font.sm + 1,
+        fontWeight: font.bold,
+        fontFamily: font.body,
         color: T.inkLight,
         display: "block",
         marginBottom: 6,
+        letterSpacing: "0.02em",
+        textTransform: "uppercase" as const,
       }}
     >
       {label}

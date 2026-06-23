@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { T } from "../theme";
+import { T, font } from "../theme";
 import { useBreakpoint, useHorizontalScroll } from "../hooks";
 import { Card, SectionTitle, Table, Mono, Badge, Input, Modal, ModalHeader, Btn } from "../components/ui";
 
@@ -61,11 +61,7 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
 
   const toggleStatus = (id: any, currentStatus: string) => {
     const newStatus = currentStatus === "Published" ? "Unpublished" : "Published";
-    const label = currentStatus === "Published" ? "Unpublish" : "Publish";
-    const role = postings.find((p) => p.id === id)?.role;
-    if (window.confirm(`${label} "${role}"?`)) {
-      setPostings((prev) => prev.map((item) => item.id === id ? { ...item, status: newStatus } : item));
-    }
+    setPostings((prev) => prev.map((item) => item.id === id ? { ...item, status: newStatus } : item));
   };
 
   const stats = [
@@ -79,11 +75,13 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
       <SectionTitle title="Job Postings" sub="Manage and publish approved jobs to your career portal" />
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr 1fr" : "repeat(3,1fr)", gap: 12, marginBottom: 20 }}>
-        {stats.map((s) => (
-          <Card key={s.label} style={{ padding: isMobile ? 14 : 18 }}>
-            <div style={{ fontSize: isMobile ? 22 : 26, fontWeight: 900, color: s.color }}>{s.value}</div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: T.ink, marginTop: 4 }}>{s.label}</div>
-          </Card>
+        {stats.map((s, idx) => (
+          <div key={s.label} className="animate-fade-in-up" style={{ animationDelay: `${idx * 0.06}s` }}>
+            <Card style={{ padding: isMobile ? 14 : 18 }}>
+              <div className="animate-count-up" style={{ fontSize: isMobile ? font['2xl'] : font['3xl'], fontWeight: font.black, fontFamily: font.heading, color: s.color, animationDelay: `${idx * 0.06 + 0.1}s` }}>{s.value}</div>
+              <div style={{ fontSize: font.sm + 1, fontWeight: font.bold, fontFamily: font.body, color: T.ink, marginTop: 4 }}>{s.label}</div>
+            </Card>
+          </div>
         ))}
       </div>
 
@@ -130,7 +128,6 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
                 style={{
                   display: "flex",
                   overflowX: "auto",
-                  scrollSnapType: "x mandatory",
                   WebkitOverflowScrolling: "touch",
                   scrollbarWidth: "none",
                   msOverflowStyle: "none",
@@ -149,8 +146,7 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
                     }
                   }}
                   style={{
-                    flexShrink: 0, width: "100%", scrollSnapAlign: "center",
-                    border: `2px solid ${!selectedPostingId ? T.primary : T.border}`,
+                    flexShrink: 0, width: "100%", border: `2px solid ${!selectedPostingId ? T.primary : T.border}`,
                     borderRadius: 16, padding: "18px 20px", cursor: "pointer",
                     background: !selectedPostingId ? T.primaryLight : T.surface,
                     display: "flex", flexDirection: "row", alignItems: "center", gap: 16,
@@ -189,8 +185,7 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
                         }
                       }}
                       style={{
-                        flexShrink: 0, width: "100%", scrollSnapAlign: "center",
-                        border: `2px solid ${isSelected ? T.primary : T.border}`,
+                        flexShrink: 0, width: "100%", border: `2px solid ${isSelected ? T.primary : T.border}`,
                         borderRadius: 16, padding: "18px 20px", cursor: "pointer",
                         background: isSelected ? T.primaryLight : T.surface,
                         transition: "all 0.2s",
@@ -268,13 +263,12 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
                 onMouseMove={hScroll.onMouseMove}
                 onMouseUp={hScroll.onMouseUp}
                 onMouseLeave={hScroll.onMouseLeave}
-                style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", paddingBottom: 8, WebkitOverflowScrolling: "touch", cursor: "grab", userSelect: "none" }}
+                style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 8, WebkitOverflowScrolling: "touch", cursor: "grab", userSelect: "none" }}
               >
               <div
                 onClick={() => selectPosting(null)}
                 style={{
-                  flexShrink: 0, width: 200, scrollSnapAlign: "start",
-                  border: `2px solid ${!selectedPostingId ? T.primary : T.border}`,
+                  flexShrink: 0, width: 200, border: `2px solid ${!selectedPostingId ? T.primary : T.border}`,
                   borderRadius: 14, padding: "16px 18px", cursor: "pointer",
                   background: !selectedPostingId ? T.primaryLight : T.surface,
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -294,8 +288,7 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
                     key={p.id}
                     onClick={() => selectPosting(p.id)}
                     style={{
-                      flexShrink: 0, width: 280, scrollSnapAlign: "start",
-                      border: `2px solid ${isSelected ? T.primary : T.border}`,
+                      flexShrink: 0, width: 280, border: `2px solid ${isSelected ? T.primary : T.border}`,
                       borderRadius: 14, padding: "14px 16px", cursor: "pointer",
                       background: isSelected ? T.primaryLight : T.surface,
                       transition: "all 0.18s",
@@ -340,7 +333,6 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
             style={{
               display: "flex",
               overflowX: "auto",
-              scrollSnapType: "x mandatory",
               WebkitOverflowScrolling: "touch",
               scrollbarWidth: "none",
               msOverflowStyle: "none",
@@ -358,7 +350,6 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
                   style={{
                     flexShrink: 0,
                     minWidth: "calc(100% - 32px)",
-                    scrollSnapAlign: "center",
                     background: cardBackground,
                     color: "#fff",
                     borderRadius: 20,
@@ -390,7 +381,7 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
                       >
                         💼
                       </div>
-                      <div>
+                      <div style={{ paddingRight: 64 }}>
                         <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>{p.role}</h3>
                         <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 2 }}>
                           {p.channel}

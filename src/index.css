@@ -1,3 +1,8 @@
+/* ═══════════════════════════════════════════════════
+   SOUTH POINT SCHOOL — PREMIUM DESIGN SYSTEM
+   ═══════════════════════════════════════════════════ */
+
+/* ── Reset ── */
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -8,24 +13,38 @@ html, body, #root {
   padding: 0;
 }
 
+/* ── Typography ── */
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
-  background: #F4F6FA;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background: #faf8f5;
+  color: #1A1A1A;
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 
 button {
-  font-family: inherit;
+  font-family: 'Inter', inherit;
 }
 
 input, select, textarea {
-  font-family: inherit;
+  font-family: 'Inter', inherit;
 }
 
 textarea {
   box-sizing: border-box;
 }
 
+/* ── Custom Scrollbar ── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -38,6 +57,7 @@ textarea {
 ::-webkit-scrollbar-thumb {
   background: #CBD5E1;
   border-radius: 99px;
+  transition: background 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -51,3 +71,385 @@ textarea {
 .carousel-scroll {
   scrollbar-width: none;
 }
+
+/* ═══════════════════════════════════════════════════
+   KEYFRAME ANIMATIONS
+   ═══════════════════════════════════════════════════ */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(201, 168, 76, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(201, 168, 76, 0);
+  }
+}
+
+@keyframes progressFill {
+  from { width: 0%; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes borderGlow {
+  0%, 100% { border-color: rgba(201, 168, 76, 0.2); }
+  50% { border-color: rgba(201, 168, 76, 0.5); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 500px;
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.35;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   UTILITY ANIMATION CLASSES
+   ═══════════════════════════════════════════════════ */
+
+/* Page entrance */
+.animate-fade-in-up {
+  animation: fadeInUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.35s ease both;
+}
+
+/* Sidebar entrance */
+.animate-slide-in {
+  animation: slideInLeft 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Modal entrance */
+.animate-scale-in {
+  animation: scaleIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Counter/number pop-in */
+.animate-count-up {
+  animation: countUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ═══════════════════════════════════════════════════
+   INTERACTIVE COMPONENT STYLES
+   ═══════════════════════════════════════════════════ */
+
+/* Card with premium hover effect */
+.card-hover {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.25s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1),
+              0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: rgba(201, 168, 76, 0.25);
+}
+
+/* Button with hover effect */
+.btn-hover {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+              filter 0.2s ease;
+}
+
+.btn-hover:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  filter: brightness(1.05);
+}
+
+.btn-hover:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Table row hover */
+.row-hover {
+  transition: background 0.18s ease,
+              box-shadow 0.18s ease;
+  position: relative;
+}
+
+.row-hover:hover {
+  background: rgba(201, 168, 76, 0.04) !important;
+  box-shadow: inset 3px 0 0 0 #c9a84c;
+}
+
+/* Input focus glow */
+.input-focus {
+  transition: border-color 0.2s ease,
+              box-shadow 0.2s ease,
+              background-color 0.2s ease;
+}
+
+.input-focus:focus {
+  border-color: #c9a84c !important;
+  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.12),
+              0 1px 3px rgba(0, 0, 0, 0.06);
+  background-color: #fff !important;
+  outline: none;
+}
+
+.input-focus:hover:not(:focus) {
+  border-color: #D4CCC0;
+}
+
+/* Select focus */
+.select-focus {
+  transition: border-color 0.2s ease,
+              box-shadow 0.2s ease;
+}
+
+.select-focus:focus {
+  border-color: #c9a84c !important;
+  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.12);
+  outline: none;
+}
+
+/* Pulsing badge */
+.badge-pulse {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* Sidebar nav item */
+.sidebar-item {
+  position: relative;
+  transition: background 0.2s ease,
+              padding-left 0.2s ease,
+              color 0.2s ease;
+}
+
+.sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  padding-left: 16px !important;
+}
+
+.sidebar-item.active {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.sidebar-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: #c9a84c;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  animation: fadeIn 0.2s ease both;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Modal content */
+.modal-content {
+  animation: scaleIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Progress bar with animation */
+.progress-animate {
+  animation: progressFill 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Close button */
+.close-btn {
+  transition: background 0.2s ease,
+              color 0.2s ease,
+              transform 0.2s ease;
+}
+
+.close-btn:hover {
+  background: #FEF2F2 !important;
+  color: #DC2626 !important;
+  transform: rotate(90deg);
+}
+
+/* Mobile sidebar slide */
+.sidebar-slide-in {
+  animation: slideInLeft 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Stagger children animation (use with JS) */
+.stagger-1 { animation-delay: 0.04s; }
+.stagger-2 { animation-delay: 0.08s; }
+.stagger-3 { animation-delay: 0.12s; }
+.stagger-4 { animation-delay: 0.16s; }
+.stagger-5 { animation-delay: 0.2s; }
+.stagger-6 { animation-delay: 0.24s; }
+.stagger-7 { animation-delay: 0.28s; }
+.stagger-8 { animation-delay: 0.32s; }
+.stagger-9 { animation-delay: 0.36s; }
+.stagger-10 { animation-delay: 0.4s; }
+
+/* KPI number shimmer */
+.kpi-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* Floating effect */
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════
+   SELECTION & MISC
+   ═══════════════════════════════════════════════════ */
+
+::selection {
+  background: rgba(114, 16, 42, 0.15);
+  color: #1A1A1A;
+}
+
+/* Smooth focus for accessibility */
+:focus-visible {
+  outline: 2px solid #c9a84c;
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════
+   EXISTING COMPONENT HOVER OVERRIDES
+   ═══════════════════════════════════════════════════ */
+
+/* Shortlist / reject button hovers from Applications */
+.btn-shortlist {
+  transition: all 0.2s ease-in-out !important;
+}
+.btn-shortlist:hover {
+  background-color: #059669 !important;
+  color: #ffffff !important;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 10px rgba(5, 150, 105, 0.25);
+}
+.btn-reject {
+  transition: all 0.2s ease-in-out !important;
+}
+.btn-reject:hover {
+  background-color: #DC2626 !important;
+  color: #ffffff !important;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.25);
+}
+.btn-shortlist-mobile {
+  transition: all 0.2s ease-in-out !important;
+}
+.btn-shortlist-mobile:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+.btn-reject-mobile {
+  transition: all 0.2s ease-in-out !important;
+}
+.btn-reject-mobile:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+.hscroll-track {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hscroll-track::-webkit-scrollbar { display: none; }
+.hscroll-track:active { cursor: grabbing !important; }

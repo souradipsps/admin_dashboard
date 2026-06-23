@@ -512,9 +512,7 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                   small
                   onClick={() => {
                     if (!sel) return;
-                    if (confirm("Are you sure you want to reject this request?")) {
-                      takeAction("Rejected");
-                    }
+                    takeAction("Rejected");
                   }}
                 />
                 {/* Accept button third */}
@@ -523,9 +521,7 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                   variant="success"
                   small
                   onClick={() => {
-                    if (confirm("Are you sure you want to accept this request?")) {
-                      takeAction("Approved");
-                    }
+                    takeAction("Approved");
                   }}
                 />
               </div>
@@ -715,9 +711,7 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                         <div style={{ display: "flex", gap: 6 }}>
                           <button
                             onClick={() => {
-                              if (confirm("Are you sure you want to accept this request?")) {
-                                performAction(r, "Approved");
-                              }
+                              performAction(r, "Approved");
                             }}
                             style={{
                               background: "rgba(16, 185, 129, 0.25)",
@@ -734,9 +728,7 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                           </button>
                           <button
                             onClick={() => {
-                              if (confirm("Are you sure you want to reject this request?")) {
-                                performAction(r, "Rejected");
-                              }
+                              performAction(r, "Rejected");
                             }}
                             style={{
                               background: "rgba(239, 68, 68, 0.25)",
@@ -836,9 +828,7 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (confirm("Are you sure you want to accept this request?")) {
-                          performAction(r, "Approved");
-                        }
+                        performAction(r, "Approved");
                       }}
                       style={{
                         background: T.greenLight, color: T.green, border: `1.5px solid #A7F3D0`,
@@ -853,9 +843,7 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (confirm("Are you sure you want to reject this request?")) {
-                          performAction(r, "Rejected");
-                        }
+                        performAction(r, "Rejected");
                       }}
                       style={{
                         background: T.redLight, color: T.red, border: `1.5px solid #FECACA`,

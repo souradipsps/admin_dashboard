@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { T } from "../theme";
+import { T, font } from "../theme";
 import { useBreakpoint, useHorizontalScroll } from "../hooks";
 
 const MAROON = T.primary;
@@ -413,10 +413,10 @@ export default function Panelist({
       `}</style>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: isMobile ? 20 : 26, fontWeight: 800, color: T.ink, margin: 0, letterSpacing: "-0.02em" }}>
+        <h1 style={{ fontSize: isMobile ? font.xl : font['3xl'], fontWeight: font.extrabold, fontFamily: font.heading, color: T.ink, margin: 0, letterSpacing: "-0.03em" }}>
           Panelist Dashboard
         </h1>
-        <p style={{ color: T.inkLight, margin: "4px 0 0", fontSize: 13 }}>
+        <p style={{ color: T.inkLight, margin: "4px 0 0", fontSize: font.base, fontFamily: font.body }}>
           Review interviews, submit evaluations, and see scorecard history.
         </p>
       </div>
@@ -427,19 +427,20 @@ export default function Panelist({
           { label: isMobile ? "Upcoming" : "Upcoming Interviews", value: upcomingCount, color: MAROON, bg: T.primaryLight },
           { label: isMobile ? "Evaluations" : "Evaluations Done", value: evaluatedCount, color: T.green, bg: T.greenLight },
           { label: isMobile ? "Scheduled" : "Total Scheduled", value: scheduledInterviews.length, color: T.teal, bg: T.tealLight },
-        ].map((k) => (
-          <div key={k.label} style={{
+        ].map((k, idx) => (
+          <div key={k.label} className="animate-fade-in-up" style={{
             background: k.bg,
             borderRadius: isMobile ? 12 : 14,
             padding: isMobile ? "12px 6px" : 20,
             border: `1px solid ${T.border}`,
             textAlign: "center",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+            animationDelay: `${idx * 0.06}s`,
           }}>
-            <div style={{ fontSize: isMobile ? 8.5 : 10, fontWeight: 700, color: k.color, textTransform: "uppercase", letterSpacing: "0.05em", opacity: 0.85, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <div style={{ fontSize: isMobile ? 8.5 : font.xs, fontWeight: font.bold, fontFamily: font.body, color: k.color, textTransform: "uppercase", letterSpacing: "0.05em", opacity: 0.85, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {k.label}
             </div>
-            <div style={{ fontSize: isMobile ? 22 : 32, fontWeight: 900, color: k.color, marginTop: 6, lineHeight: 1 }}>
+            <div className="animate-count-up" style={{ fontSize: isMobile ? font['2xl'] : font['4xl'], fontWeight: font.black, fontFamily: font.heading, color: k.color, marginTop: 6, lineHeight: 1, animationDelay: `${idx * 0.06 + 0.1}s` }}>
               {k.value}
             </div>
           </div>
@@ -493,7 +494,6 @@ export default function Panelist({
                 style={{
                   display: "flex",
                   overflowX: "auto",
-                  scrollSnapType: "x mandatory",
                   WebkitOverflowScrolling: "touch",
                   scrollbarWidth: "none",
                   msOverflowStyle: "none",
@@ -512,8 +512,7 @@ export default function Panelist({
                     }
                   }}
                   style={{
-                    flexShrink: 0, width: "100%", scrollSnapAlign: "center",
-                    border: `2px solid ${!selectedJobId ? MAROON : T.border}`,
+                    flexShrink: 0, width: "100%", border: `2px solid ${!selectedJobId ? MAROON : T.border}`,
                     borderRadius: 16, padding: "18px 20px", cursor: "pointer",
                     background: !selectedJobId ? T.primaryLight : T.surface,
                     display: "flex", flexDirection: "row", alignItems: "center", gap: 16,
@@ -551,8 +550,7 @@ export default function Panelist({
                         }
                       }}
                       style={{
-                        flexShrink: 0, width: "100%", scrollSnapAlign: "center",
-                        border: `2px solid ${isSelected ? MAROON : T.border}`,
+                        flexShrink: 0, width: "100%", border: `2px solid ${isSelected ? MAROON : T.border}`,
                         borderRadius: 16, padding: "18px 20px", cursor: "pointer",
                         background: isSelected ? T.primaryLight : T.surface,
                         transition: "all 0.2s",
@@ -643,7 +641,6 @@ export default function Panelist({
                   display: "flex",
                   gap: 14,
                   overflowX: "auto",
-                  scrollSnapType: "x mandatory",
                   paddingBottom: 8,
                   WebkitOverflowScrolling: "touch",
                   cursor: "grab",
@@ -657,8 +654,7 @@ export default function Panelist({
               <div
                 onClick={() => selectJob(null)}
                 style={{
-                  flexShrink: 0, width: isMobile ? "78vw" : 190, scrollSnapAlign: "start",
-                  border: `2px solid ${!selectedJobId ? MAROON : T.border}`, borderRadius: 14,
+                  flexShrink: 0, width: isMobile ? "78vw" : 190, border: `2px solid ${!selectedJobId ? MAROON : T.border}`, borderRadius: 14,
                   padding: "16px 18px", cursor: "pointer",
                   background: !selectedJobId ? T.primaryLight : T.surface,
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -679,8 +675,7 @@ export default function Panelist({
                     key={p.id}
                     onClick={() => selectJob(p.id)}
                     style={{
-                      flexShrink: 0, width: isMobile ? "78vw" : 250, scrollSnapAlign: "start",
-                      border: `2px solid ${isSelected ? MAROON : T.border}`, borderRadius: 14,
+                      flexShrink: 0, width: isMobile ? "78vw" : 250, border: `2px solid ${isSelected ? MAROON : T.border}`, borderRadius: 14,
                       padding: "14px 16px", cursor: "pointer",
                       background: isSelected ? T.primaryLight : T.surface,
                       transition: "all 0.18s",
@@ -763,7 +758,6 @@ export default function Panelist({
                     style={{
                       flexShrink: 0,
                       minWidth: "calc(100% - 24px)",
-                      scrollSnapAlign: "center",
                       borderRadius: 20,
                       background: cardBackground,
                       color: "#fff",
@@ -820,7 +814,7 @@ export default function Panelist({
                       {/* Card header */}
                       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                         {avatar(interview.candidate)}
-                        <div>
+                        <div style={{ paddingRight: 64 }}>
                           <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>{interview.candidate}</h3>
                           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 2 }}>{interview.role}</div>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
@@ -1354,167 +1348,214 @@ export default function Panelist({
         </>
       )}
 
-      {/* ── Evaluation Modal ─────────────────────────────────────────────────── */}
+      {/* ── Evaluation Drawer ─────────────────────────────────────────────────── */}
       {selectedInterview && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.52)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999, padding: isMobile ? 12 : 20 }}>
-          <div style={{ width: "100%", maxWidth: 880, maxHeight: isMobile ? "96vh" : "92vh", overflowY: "auto", background: "#faf8f5", borderRadius: 20, boxShadow: "0 24px 60px rgba(0,0,0,0.25)" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.3)", backdropFilter: "blur(4px)", display: "flex", justifyContent: "flex-end", zIndex: 9999 }}>
+          {/* Backdrop click to close */}
+          <div onClick={() => setSelectedInterview(null)} style={{ position: "absolute", inset: 0, zIndex: 1 }} />
 
-            {/* Modal header */}
-            <div style={{ background: MAROON, color: "#fff", padding: isMobile ? "16px 18px" : "22px 26px", borderRadius: "20px 20px 0 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          {/* Drawer container */}
+          <div
+            style={{
+              position: "relative",
+              zIndex: 2,
+              width: "100%",
+              maxWidth: 540,
+              height: "100%",
+              background: "#fff",
+              boxShadow: "-8px 0 32px rgba(15, 23, 42, 0.08)",
+              display: "flex",
+              flexDirection: "column",
+              animation: "slideInRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards"
+            }}
+          >
+            {/* Header */}
+            <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: T.canvas }}>
               <div>
-                <h2 style={{ margin: 0, fontSize: isMobile ? 16 : 20, fontWeight: 800 }}>
+                <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: T.ink, fontFamily: font.heading }}>
                   {currentUser === "admin" && evaluatorName && evaluatorName !== "__custom" ? "Edit Panelist Evaluation" : "Candidate Evaluation"}
                 </h2>
-                <div style={{ marginTop: 4, opacity: 0.85, fontSize: isMobile ? 12 : 14 }}>
-                  {selectedInterview.candidate} · {selectedInterview.role} · Round {selectedInterview.round || 1}
-                  {currentUser !== "admin" && <span style={{ marginLeft: 8, opacity: 0.7 }}>| Your evaluation</span>}
+                <div style={{ marginTop: 4, fontSize: 12, color: T.inkLight, fontFamily: font.body }}>
+                  <strong>{selectedInterview.candidate}</strong> · {selectedInterview.role} · Round {selectedInterview.round || 1}
                 </div>
               </div>
-              <button onClick={() => setSelectedInterview(null)} style={{ background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", borderRadius: 8, padding: "4px 10px", cursor: "pointer", fontSize: 20, lineHeight: 1 }}>×</button>
+              <button
+                onClick={() => setSelectedInterview(null)}
+                style={{
+                  background: T.border + "44", border: "none", color: T.inkMid,
+                  borderRadius: "50%", width: 30, height: 30, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 16, transition: "all 0.2s"
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = "rotate(90deg)"; e.currentTarget.style.color = T.primary; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = "rotate(0deg)"; e.currentTarget.style.color = T.inkMid; }}
+              >
+                ✕
+              </button>
             </div>
 
-            <div style={{ padding: isMobile ? 16 : 26 }}>
-
-              {/* Evaluator name */}
-              <div style={{ marginBottom: isMobile ? 18 : 24, padding: "14px 16px", background: T.primaryLight, borderRadius: 12, border: `1px solid ${MAROON}22` }}>
-                <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 11, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Evaluating as <span style={{ color: T.red }}>*</span>
+            {/* Content Body */}
+            <div style={{ flex: 1, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
+              
+              {/* Evaluator identity */}
+              <div style={{ padding: 14, background: T.canvas, borderRadius: 10, border: `1px solid ${T.border}` }}>
+                <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 10, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  Evaluating as
                 </label>
-                  <select
-                    value={evaluatorName}
-                    onChange={(e) =>
-                      handleEvaluatorChange(
-                        selectedInterview,
-                        e.target.value
-                      )
-                    }
-                      style={{
-                        width: "100%",
-                        padding: "10px 14px",
-                        borderRadius: 10,
-                        border: `1.5px solid ${T.border}`,
-                        fontSize: 13,
-                        background: "#fff",
-                      }}
-                    >
-                      {/* Current user/admin selected by default */}
-                      <option value={currentUser}>
-                        {currentUser}
-                      </option>
-
-                      {(selectedInterview.panel || [])
-                        .filter((name: string) => name !== currentUser)
-                        .map((name: string) => (
-                          <option key={name} value={name}>
-                            {name}
-                          </option>
-                        ))}
-                    </select>
+                <select
+                  value={evaluatorName}
+                  onChange={(e) => handleEvaluatorChange(selectedInterview, e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    borderRadius: 8,
+                    border: `1.5px solid ${T.border}`,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: T.inkMid,
+                    background: "#fff",
+                    cursor: "pointer",
+                    outline: "none"
+                  }}
+                >
+                  <option value={currentUser}>{currentUser}</option>
+                  {(selectedInterview.panel || [])
+                    .filter((name: string) => name !== currentUser)
+                    .map((name: string) => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                </select>
               </div>
 
               {/* Scorecard */}
-              <div style={{ fontSize: 11, fontWeight: 700, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 14 }}>Evaluation Scorecard</div>
-              {[...DEFAULT_FIELDS, ...customFields].map((field) => (
-                <div key={field} style={{ marginBottom: isMobile ? 14 : 18 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ fontWeight: 700, fontSize: isMobile ? 13 : 14, color: T.ink }}>{field}</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: scores[field] ? MAROON : T.inkFaint }}>{scores[field] ? `${scores[field]}/5` : "—"}</span>
-                  </div>
-                  <div style={{ display: "flex", gap: isMobile ? 6 : 10 }}>
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <button
-                        key={n}
-                        onClick={() => updateScore(field, n)}
-                        style={{
-                          flex: 1, height: isMobile ? 38 : 44, borderRadius: 10, border: "none", cursor: "pointer",
-                          fontWeight: 800, fontSize: isMobile ? 14 : 16, transition: "all 0.15s",
-                          background: (scores[field] || 0) >= n ? MAROON : "#F1F5F9",
-                          color: (scores[field] || 0) >= n ? "#fff" : T.inkMid,
-                          boxShadow: (scores[field] || 0) >= n ? `0 4px 12px ${MAROON}44` : "none",
-                        }}
-                      >
-                        {n}
-                      </button>
-                    ))}
-                  </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 12 }}>
+                  Evaluation Scorecard
                 </div>
-              ))}
+                
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  {[...DEFAULT_FIELDS, ...customFields].map((field) => (
+                    <div key={field} style={{ padding: "10px 12px", border: `1px solid ${T.border}`, borderRadius: 8, background: T.canvas }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <span style={{ fontWeight: 700, fontSize: 13, color: T.ink }}>{field}</span>
+                        <span style={{ fontSize: 11, fontWeight: 800, color: scores[field] ? MAROON : T.inkFaint }}>
+                          {scores[field] ? `${scores[field]} / 5` : "Not Rated"}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        {[1, 2, 3, 4, 5].map((n) => {
+                          const isSelected = scores[field] === n;
+                          const isFilled = (scores[field] || 0) >= n;
+                          return (
+                            <button
+                              key={n}
+                              onClick={() => updateScore(field, n)}
+                              style={{
+                                flex: 1, height: 32, borderRadius: 6, cursor: "pointer",
+                                fontWeight: 800, fontSize: 13, transition: "all 0.15s",
+                                background: isSelected ? MAROON : isFilled ? MAROON + "33" : "#fff",
+                                color: isSelected ? "#fff" : isFilled ? MAROON : T.inkMid,
+                                border: `1px solid ${isFilled ? MAROON + "66" : T.border}`,
+                                boxShadow: isSelected ? `0 2px 6px ${MAROON}33` : "none"
+                              }}
+                            >
+                              {n}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-              {/* Score preview */}
+              {/* Score Preview (if rated) */}
               {Object.keys(scores).length > 0 && (
-                <div style={{ margin: "16px 0", padding: "12px 16px", background: T.primaryLight, borderRadius: 12, display: "flex", justifyContent: "space-between", alignItems: "center", border: `1px solid ${MAROON}22` }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: T.ink }}>Your Score Preview</span>
+                <div style={{ padding: "12px 16px", background: T.greenLight, borderRadius: 10, display: "flex", justifyContent: "space-between", alignItems: "center", border: `1px solid ${T.green}33` }}>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: T.green }}>Overall Score</div>
+                    <div style={{ fontSize: 11, color: T.inkMid, marginTop: 2 }}>Average score based on criteria above</div>
+                  </div>
                   <ScoreCircle score={computeScore(scores) ?? 0} />
                 </div>
               )}
 
-              <hr style={{ margin: "20px 0", borderColor: T.border, borderStyle: "solid", borderWidth: "1px 0 0 0" }} />
-
-              {/* Custom field */}
-              <div style={{ fontSize: 11, fontWeight: 700, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>Add Custom Field</div>
-              <div style={{ display: "flex", gap: 10, marginBottom: 22 }}>
-                <input
-                  value={newField}
-                  onChange={(e) => setNewField(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addCustomField()}
-                  placeholder="e.g. Leadership, Punctuality..."
-                  style={{ flex: 1, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${T.border}`, fontSize: 13, color: T.ink, background: "#fff" }}
-                />
-                <button onClick={addCustomField} style={{ background: MAROON, color: "#fff", border: "none", padding: "10px 18px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>
-                  Add
-                </button>
+              {/* Add Custom criteria */}
+              <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 16 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>
+                  Add Custom Field
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    value={newField}
+                    onChange={(e) => setNewField(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && addCustomField()}
+                    placeholder="e.g. Technical Skills, Cultural fit..."
+                    style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: `1.5px solid ${T.border}`, fontSize: 12.5, color: T.ink, background: "#fff", outline: "none" }}
+                  />
+                  <button onClick={addCustomField} style={{ background: T.inkMid, color: "#fff", border: "none", padding: "8px 16px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12 }}>
+                    Add
+                  </button>
+                </div>
               </div>
 
               {/* Recommendation */}
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 11, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>Recommendation</label>
-                <div style={{ display: "flex", gap: isMobile ? 6 : 8, flexWrap: "wrap" }}>
-                  {["Strong Hire", "Hire", "Hold", "Reject"].map((r) => {
-                    const rc = REC_COLORS[r];
-                    const isActive = recommendation === r;
+              <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 16 }}>
+                <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 10, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  Recommendation <span style={{ color: T.red }}>*</span>
+                </label>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {["Strong Hire", "Hire", "Hold", "Reject"].map((rOption) => {
+                    const rc = REC_COLORS[rOption];
+                    const isActive = recommendation === rOption;
                     return (
                       <button
-                        key={r}
-                        onClick={() => setRecommendation(r)}
+                        key={rOption}
+                        onClick={() => setRecommendation(rOption)}
                         style={{
-                          padding: isMobile ? "8px 12px" : "8px 16px", borderRadius: 99, cursor: "pointer", fontWeight: 700, fontSize: isMobile ? 12 : 13, border: "none", transition: "all 0.15s",
+                          flex: 1, padding: "8px 0", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, transition: "all 0.15s",
                           background: isActive ? rc.color : T.canvas,
                           color: isActive ? "#fff" : T.inkMid,
-                          boxShadow: isActive ? `0 4px 12px ${rc.color}55` : "none",
+                          border: `1.5px solid ${isActive ? rc.color : T.border}`,
+                          boxShadow: isActive ? `0 2px 8px ${rc.color}44` : "none"
                         }}
                       >
-                        {r}
+                        {rOption}
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Notes */}
-              <div style={{ marginBottom: 24 }}>
-                <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 11, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>Interview Notes</label>
+              {/* Interview notes */}
+              <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 16 }}>
+                <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 10, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  Interview Notes
+                </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={4}
-                  style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${T.border}`, fontSize: 13, color: T.ink, background: "#fff", resize: "vertical", boxSizing: "border-box" }}
-                  placeholder="Enter detailed feedback about the candidate..."
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: `1.5px solid ${T.border}`, fontSize: 12.5, color: T.ink, background: "#fff", resize: "none", boxSizing: "border-box", outline: "none" }}
+                  placeholder="Provide detailed feedback on candidate performance, strengths, and areas of concern..."
                 />
               </div>
 
-              {/* Footer buttons */}
-              <div style={{ display: "flex", flexDirection: isMobile ? "column-reverse" : "row", justifyContent: "flex-end", gap: 10 }}>
-                <button onClick={() => setSelectedInterview(null)} style={{ width: isMobile ? "100%" : "auto", padding: "10px 20px", borderRadius: 10, border: `1.5px solid ${T.border}`, cursor: "pointer", fontWeight: 600, background: "#fff", color: T.inkMid, fontSize: 13 }}>
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  style={{ width: isMobile ? "100%" : "auto", background: MAROON, color: "#fff", border: "none", padding: "10px 26px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, boxShadow: `0 4px 14px ${MAROON}44` }}
-                >
-                  Submit Evaluation
-                </button>
-              </div>
             </div>
+
+            {/* Footer actions */}
+            <div style={{ padding: "16px 24px", borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "flex-end", gap: 10, background: T.canvas }}>
+              <button onClick={() => setSelectedInterview(null)} style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${T.border}`, cursor: "pointer", fontWeight: 600, background: "#fff", color: T.inkMid, fontSize: 12 }}>
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                style={{ background: MAROON, color: "#fff", border: "none", padding: "8px 20px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 13, boxShadow: `0 4px 12px ${MAROON}33` }}
+              >
+                Submit Evaluation
+              </button>
+            </div>
+
           </div>
         </div>
       )}

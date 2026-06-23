@@ -17,6 +17,7 @@ export const useBreakpoint = () => {
 /** Premium horizontal scroll hook — inertia + drag */
 export function useHorizontalScroll() {
   const ref = useRef<HTMLDivElement>(null);
+  const lastElement = useRef<HTMLDivElement | null>(null);
   const velocity = useRef(0);
   const raf = useRef<number | null>(null);
   const isDragging = useRef(false);
@@ -49,7 +50,7 @@ export function useHorizontalScroll() {
     raf.current = requestAnimationFrame(step);
   }, []);
 
-  const onWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+  const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
     cancelMomentum();
     // Normalize across trackpad vs. mouse-wheel
@@ -57,6 +58,32 @@ export function useHorizontalScroll() {
     velocity.current = delta * 1.8;
     runMomentum();
   }, [runMomentum]);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (el !== lastElement.current) {
+      if (lastElement.current) {
+        lastElement.current.removeEventListener("wheel", handleWheel);
+      }
+      lastElement.current = el;
+      if (el) {
+        el.addEventListener("wheel", handleWheel, { passive: false });
+      }
+    }
+  });
+
+  useEffect(() => {
+    return () => {
+      if (lastElement.current) {
+        lastElement.current.removeEventListener("wheel", handleWheel);
+        lastElement.current = null;
+      }
+    };
+  }, [handleWheel]);
+
+  // Keep a dummy onWheel callback to avoid breaking typescript compilation
+  // on JSX components that pass onWheel={hScroll.onWheel}
+  const onWheel = useCallback(() => {}, []);
 
   const onMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest("button,a,input")) return;
