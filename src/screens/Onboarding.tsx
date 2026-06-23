@@ -23,6 +23,9 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
   const accentPale = T.bluePale;
 
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [filterActiveIndex, setFilterActiveIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedPostingId, setSelectedPostingId] = useState<string | null>(null);
   const [previewDoc, setPreviewDoc] = useState<{ type: string; title: string; content: React.ReactNode } | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ id: string; key: typeof TASK_KEYS[number]; status: "Verified" | "Rejected" } | null>(null);
@@ -39,6 +42,8 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
             migratedTasks[k] = migratedTasks[k] ? "Verified" : "Pending";
           }
         });
+        // Auto fill document upload to Verified
+        migratedTasks.docsUpload = "Verified";
         // Force reset to Pending so you can test the verify/reject flow
         migratedTasks.docsVerify = "Pending";
         migratedTasks.bgc = "Pending";
@@ -51,6 +56,7 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
       tasks: {
         profile: "Verified",
         offer: "Verified",
+        docsUpload: "Verified",
         docsVerify: "Pending",
         bgc: "Pending",
         checkin: o.tasks?.checkin || false,
@@ -284,6 +290,14 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
             <>
               <div
                 ref={hScroll.ref}
+                onScroll={(e) => {
+                  const scrollLeft = e.currentTarget.scrollLeft;
+                  const cardWidth = e.currentTarget.clientWidth;
+                  if (cardWidth > 0) {
+                    const newIndex = Math.round(scrollLeft / cardWidth);
+                    setFilterActiveIndex(newIndex);
+                  }
+                }}
                 style={{
                   display: "flex",
                   overflowX: "auto",
@@ -296,7 +310,14 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
                 }}
               >
                 <div
-                  onClick={() => selectPosting(null)}
+                  onClick={() => {
+                    selectPosting(null);
+                    setFilterActiveIndex(0);
+                    if (hScroll.ref.current) {
+                      const cards = hScroll.ref.current.children;
+                      if (cards[0]) (cards[0] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                    }
+                  }}
                   style={{
                     flexShrink: 0, width: "100%", scrollSnapAlign: "center",
                     border: `2px solid ${!selectedPostingId ? accentColor : T.border}`,
@@ -322,13 +343,20 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
                   )}
                 </div>
 
-                {enrichedPostings.map((p) => {
+                {enrichedPostings.map((p, idx) => {
                   const isSelected = selectedPostingId === p.id;
                   const initials = p.role.split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
                   return (
                     <div
                       key={p.id}
-                      onClick={() => selectPosting(p.id)}
+                      onClick={() => {
+                        selectPosting(p.id);
+                        setFilterActiveIndex(idx + 1);
+                        if (hScroll.ref.current) {
+                          const cards = hScroll.ref.current.children;
+                          if (cards[idx + 1]) (cards[idx + 1] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                        }
+                      }}
                       style={{
                         flexShrink: 0, width: "100%", scrollSnapAlign: "center",
                         border: `2px solid ${isSelected ? accentColor : T.border}`,
@@ -379,15 +407,16 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
                     onClick={() => {
                       if (id === null) selectPosting(null);
                       else selectPosting(id as string);
-                      if (scrollRef.current) {
-                        const cards = scrollRef.current.children;
+                      setFilterActiveIndex(i);
+                      if (hScroll.ref.current) {
+                        const cards = hScroll.ref.current.children;
                         if (cards[i]) (cards[i] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
                       }
                     }}
                     style={{
-                      width: selectedPostingId === id ? 20 : 6,
+                      width: filterActiveIndex === i ? 20 : 6,
                       height: 6, borderRadius: 99,
-                      background: selectedPostingId === id ? accentColor : T.border,
+                      background: filterActiveIndex === i ? accentColor : T.border,
                       cursor: "pointer", transition: "all 0.2s",
                     }}
                   />
@@ -471,6 +500,13 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
           </div>
 
           <div
+            ref={scrollRef}
+            onScroll={(e) => {
+              const scrollLeft = e.currentTarget.scrollLeft;
+              const cardWidth = e.currentTarget.clientWidth;
+              const newIndex = Math.round(scrollLeft / cardWidth);
+              setCurrentCardIndex(newIndex);
+            }}
             style={{
               display: "flex",
               overflowX: "auto",
@@ -478,97 +514,212 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
               WebkitOverflowScrolling: "touch",
               scrollbarWidth: "none",
               msOverflowStyle: "none",
-              gap: 12,
-              paddingBottom: 4,
+              gap: 16,
+              padding: "0 16px 20px",
+              margin: "0 -16px",
             }}
           >
             {filteredRecords.map((o, idx) => {
               const done = TASK_KEYS.filter((k) => isTaskDone(k, o.tasks[k])).length;
               const pct = Math.round((done / TASK_KEYS.length) * 100);
+              const cardBackground = "linear-gradient(135deg, #72102a 0%, #3a0010 100%)";
               return (
                 <div
                   key={o.id}
                   onClick={() => setSelectedRecord(o)}
                   style={{
                     flexShrink: 0,
-                    width: "100%",
+                    minWidth: "calc(100% - 32px)",
                     scrollSnapAlign: "center",
-                    background: T.surface,
-                    borderRadius: 18,
-                    border: `1.5px solid ${T.border}`,
-                    overflow: "hidden",
-                    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                    borderRadius: 20,
+                    background: cardBackground,
+                    color: "#fff",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    padding: 24,
+                    position: "relative",
+                    boxShadow: "0 14px 40px rgba(0,0,0,0.25)",
                     cursor: "pointer",
+                    minHeight: 460,
                   }}
                 >
-                  {/* Header */}
+                  {/* Pagination counter */}
+                  <div style={{ position: "absolute", top: 12, right: 12, background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)", padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.9)", border: "1px solid rgba(255,255,255,0.2)" }}>
+                    {idx + 1} of {filteredRecords.length}
+                  </div>
+
+                  <div>
+                    {/* Header info */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <div
+                        style={{
+                          width: 48, height: 48, borderRadius: "50%",
+                          background: "rgba(255,255,255,0.15)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 16, fontWeight: 800, color: "#fff", flexShrink: 0,
+                        }}
+                      >
+                        👤
+                      </div>
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>{o.name}</h3>
+                        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 2 }}>
+                          {o.role} · Joining: <strong>{o.joining}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Details (Glassmorphic look) */}
                   <div
                     style={{
-                      background: `linear-gradient(135deg, ${T.primaryPale} 0%, ${T.canvas} 100%)`,
-                      padding: "16px 18px 14px",
-                      borderBottom: `1px solid ${T.border}`,
+                      background: "rgba(255,255,255,0.1)",
+                      backdropFilter: "blur(8px)",
+                      borderRadius: 12,
+                      padding: 18,
+                      border: "1px solid rgba(255,255,255,0.15)",
                       display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
+                      flexDirection: "column",
+                      gap: 12,
+                      marginTop: 16,
+                      flex: 1,
                     }}
                   >
-                    <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.name}</div>
-                      <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 4 }}>
-                        {o.role} · Joining: <strong>{o.joining}</strong>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      <div>
+                        <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Candidate ID</div>
+                        <div style={{ fontSize: 12, fontWeight: 600 }}>{o.id}</div>
                       </div>
-                    </div>
-                    <div style={{ fontSize: 11, color: T.inkFaint, flexShrink: 0 }}>
-                      {idx + 1}/{filteredRecords.length}
-                    </div>
-                  </div>
-
-                  {/* Details */}
-                  <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 8, borderBottom: `1px solid ${T.border}` }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Candidate ID</span>
-                      <Mono v={o.id} />
-                    </div>
-                    {o.empId !== "—" && (
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Employee ID</span>
-                        <Mono v={o.empId} />
-                      </div>
-                    )}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</span>
-                      <Badge label={o.status} variant={statusVariant(o.status)} />
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Progress</span>
-                      <div style={{ fontSize: 16, fontWeight: 900, color: pct === 100 ? T.green : T.blue }}>{pct}%</div>
-                    </div>
-                  </div>
-
-                  {/* Step indicators */}
-                  <div style={{ padding: "12px 18px", display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {TASK_LABELS.map((t, i) => {
-                      const { icon, color, bg, border } = getTaskIconAndColor(TASK_KEYS[i], o.tasks[TASK_KEYS[i]]);
-                      return (
-                        <div
-                          key={t}
-                          style={{
-                            display: "flex", alignItems: "center", gap: 6,
-                            background: bg,
-                            border: `1.5px solid ${border}`,
-                            borderRadius: 8, padding: "4px 8px",
-                          }}
-                        >
-                          <span style={{ color: color, fontSize: 11 }}>{icon}</span>
-                          <span style={{ fontSize: 10, fontWeight: 600, color: color === T.inkFaint ? T.inkMid : color }}>{t}</span>
+                      {o.empId !== "—" && (
+                        <div>
+                          <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Employee ID</div>
+                          <div style={{ fontSize: 12, fontWeight: 600 }}>{o.empId}</div>
                         </div>
-                      );
-                    })}
+                      )}
+                      <div>
+                        <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Progress</div>
+                        <div style={{ fontSize: 14, fontWeight: 900, color: pct === 100 ? "#34D399" : "#60A5FA" }}>{pct}%</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Status</div>
+                        <div style={{ marginTop: 2 }}>
+                          <Badge label={o.status} variant={statusVariant(o.status)} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Progress bar inside card */}
+                    <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: 99, height: 6, overflow: "hidden", margin: "4px 0" }}>
+                      <div
+                        style={{
+                          width: `${pct}%`, height: "100%", borderRadius: 99, transition: "width 0.4s",
+                          background: pct === 100 ? "#10B981" : "linear-gradient(90deg, #3B82F6, #06B6D4)",
+                        }}
+                      />
+                    </div>
+
+                    {/* Step indicators (sleek timeline stepper for mobile) */}
+                    <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 14, marginTop: 4, display: "flex", justifyContent: "space-between", alignItems: "center", position: "relative" }}>
+                      {/* Connecting line container behind the circles */}
+                      <div style={{ position: "absolute", left: "8.33%", right: "8.33%", top: 26, height: 2, background: "rgba(255,255,255,0.15)", zIndex: 0 }} />
+                      
+                      {TASK_KEYS.map((key, i) => {
+                        const val = o.tasks[key];
+                        const isDone = isTaskDone(key, val);
+                        const isRejected = val === "Rejected";
+                        const stepNum = i + 1;
+                        
+                        let stepLabel = "";
+                        switch(key) {
+                          case "profile": stepLabel = "Profile"; break;
+                          case "offer": stepLabel = "Offer"; break;
+                          case "docsUpload": stepLabel = "Upload"; break;
+                          case "docsVerify": stepLabel = "Verify"; break;
+                          case "bgc": stepLabel = "BGC"; break;
+                          case "checkin": stepLabel = "Day 1"; break;
+                        }
+
+                        // Determine circle styling
+                        let circleBg = "rgba(255,255,255,0.1)";
+                        let circleBorder = "rgba(255,255,255,0.2)";
+                        let circleColor = "rgba(255,255,255,0.7)";
+                        let circleText = `${stepNum}`;
+
+                        if (isDone) {
+                          circleBg = "#10B981";
+                          circleBorder = "#34D399";
+                          circleColor = "#fff";
+                          circleText = "✓";
+                        } else if (isRejected) {
+                          circleBg = "#EF4444";
+                          circleBorder = "#F87171";
+                          circleColor = "#fff";
+                          circleText = "✗";
+                        }
+
+                        return (
+                          <div key={key} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, zIndex: 1 }}>
+                            <div
+                              style={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: "50%",
+                                background: circleBg,
+                                border: `2px solid ${circleBorder}`,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 11,
+                                fontWeight: 800,
+                                color: circleColor,
+                                transition: "all 0.3s",
+                                boxShadow: isDone ? "0 0 8px rgba(16,185,129,0.4)" : isRejected ? "0 0 8px rgba(239,68,68,0.4)" : "none",
+                              }}
+                            >
+                              {circleText}
+                            </div>
+                            <span
+                              style={{
+                                fontSize: 9,
+                                fontWeight: 700,
+                                color: isDone ? "#34D399" : isRejected ? "#F87171" : "rgba(255,255,255,0.5)",
+                                marginTop: 6,
+                                textAlign: "center",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {stepLabel}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
+
+          {/* Dot indicators */}
+          {filteredRecords.length > 0 && (
+            <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 10, paddingBottom: 8 }}>
+              {filteredRecords.map((_, i) => (
+                <div
+                  key={i}
+                  onClick={() => scrollRef.current?.scrollTo({ left: (i * scrollRef.current.clientWidth), behavior: "smooth" })}
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: currentCardIndex === i ? T.primary : T.border,
+                    cursor: "pointer",
+                    transition: "all 0.3s",
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -694,7 +845,7 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
               </div>
 
               {/* Full Candidate Details */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 20, padding: "14px 16px", background: T.canvas, borderRadius: 10, border: `1px solid ${T.border}` }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14, marginBottom: 20, padding: "14px 16px", background: T.canvas, borderRadius: 10, border: `1px solid ${T.border}` }}>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>Joining Date</div>
                   <div style={{ fontSize: 13, color: T.ink, fontWeight: 600 }}>{currentRecord.joining}</div>

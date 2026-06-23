@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { T, statusVariant } from "../theme";
 import { useBreakpoint, useHorizontalScroll } from "../hooks";
 import { Card, SectionTitle, Table, Mono, Badge, Input, Btn, Modal, ModalHeader, Select, FormField } from "../components/ui";
@@ -37,8 +37,10 @@ export default function Applications({
   const [newStatus, setNewStatus] = useState("");
   const [selectedPostingId, setSelectedPostingId] = useState<string | null>(null);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [filterActiveIndex, setFilterActiveIndex] = useState(0);
 
   const hScroll = useHorizontalScroll();
+  const scrollRef = useRef<HTMLDivElement>(null);
   // lastTapRef is no longer needed for double-tap (using native onDoubleClick),
   // kept as empty ref so no other code breaks.
   const lastTapTimeRef = { current: {} as Record<string, number> };
@@ -243,7 +245,14 @@ export default function Applications({
                 <span>
                   Filtering by <span style={{ color: accentColor }}>{selectedRole}</span>
                   <button
-                    onClick={() => selectPosting(null)}
+                    onClick={() => {
+                      selectPosting(null);
+                      setFilterActiveIndex(0);
+                      if (hScroll.ref.current) {
+                        const cards = hScroll.ref.current.children;
+                        if (cards[0]) (cards[0] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                      }
+                    }}
                     style={{ marginLeft: 8, fontSize: 11, color: T.inkFaint, background: "none", border: `1px solid ${T.border}`, borderRadius: 6, padding: "2px 8px", cursor: "pointer" }}
                   >
                     Clear ×
@@ -272,6 +281,14 @@ export default function Applications({
             <>
               <div
                 ref={hScroll.ref}
+                onScroll={(e) => {
+                  const scrollLeft = e.currentTarget.scrollLeft;
+                  const cardWidth = e.currentTarget.clientWidth;
+                  if (cardWidth > 0) {
+                    const newIndex = Math.round(scrollLeft / cardWidth);
+                    setFilterActiveIndex(newIndex);
+                  }
+                }}
                 style={{
                   display: "flex",
                   overflowX: "auto",
@@ -285,7 +302,14 @@ export default function Applications({
               >
                 {/* All tile — full width */}
                 <div
-                  onClick={() => selectPosting(null)}
+                  onClick={() => {
+                    selectPosting(null);
+                    setFilterActiveIndex(0);
+                    if (hScroll.ref.current) {
+                      const cards = hScroll.ref.current.children;
+                      if (cards[0]) (cards[0] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                    }
+                  }}
                   style={{
                     flexShrink: 0,
                     width: "100%",
@@ -320,14 +344,21 @@ export default function Applications({
                   )}
                 </div>
 
-                {enrichedPostings.map((p) => {
+                {enrichedPostings.map((p, idx) => {
                   const isSelected = selectedPostingId === p.id;
                   const displayCount = isJob ? p.jobAppCount : p.genAppCount;
                   const initials = p.role.split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
                   return (
                     <div
                       key={p.id}
-                      onClick={() => selectPosting(p.id)}
+                      onClick={() => {
+                        selectPosting(p.id);
+                        setFilterActiveIndex(idx + 1);
+                        if (hScroll.ref.current) {
+                          const cards = hScroll.ref.current.children;
+                          if (cards[idx + 1]) (cards[idx + 1] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                        }
+                      }}
                       style={{
                         flexShrink: 0,
                         width: "100%",
@@ -397,16 +428,17 @@ export default function Applications({
                     onClick={() => {
                       if (id === null) selectPosting(null);
                       else selectPosting(id);
-                      if (scrollRef.current) {
-                        const cards = scrollRef.current.children;
+                      setFilterActiveIndex(i);
+                      if (hScroll.ref.current) {
+                        const cards = hScroll.ref.current.children;
                         if (cards[i]) (cards[i] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
                       }
                     }}
                     style={{
-                      width: selectedPostingId === id ? 20 : 6,
+                      width: filterActiveIndex === i ? 20 : 6,
                       height: 6,
                       borderRadius: 99,
-                      background: selectedPostingId === id ? accentColor : T.border,
+                      background: filterActiveIndex === i ? accentColor : T.border,
                       cursor: "pointer",
                       transition: "all 0.2s",
                     }}

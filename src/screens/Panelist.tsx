@@ -3,7 +3,6 @@ import { T } from "../theme";
 import { useBreakpoint, useHorizontalScroll } from "../hooks";
 
 const MAROON = T.primary;
-const GOLD = T.accent;
 
 const DEFAULT_FIELDS = [
   "Communication Skills",
@@ -99,6 +98,10 @@ export default function Panelist({
 
   // Which card's scorecards are expanded
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [filterActiveIndex, setFilterActiveIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // ── Check if current user can evaluate ──────────────────────────────────────
 
@@ -419,17 +422,24 @@ export default function Panelist({
       </div>
 
       {/* Summary cards */}
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3,1fr)", gap: 12, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(3, 1fr)" : "repeat(3, 1fr)", gap: isMobile ? 8 : 12, marginBottom: 24 }}>
         {[
-          { label: "Upcoming Interviews", value: upcomingCount, color: MAROON, bg: T.primaryLight },
-          { label: "Evaluations Done", value: evaluatedCount, color: T.green, bg: T.greenLight },
-          { label: "Total Scheduled", value: scheduledInterviews.length, color: T.teal, bg: T.tealLight },
+          { label: isMobile ? "Upcoming" : "Upcoming Interviews", value: upcomingCount, color: MAROON, bg: T.primaryLight },
+          { label: isMobile ? "Evaluations" : "Evaluations Done", value: evaluatedCount, color: T.green, bg: T.greenLight },
+          { label: isMobile ? "Scheduled" : "Total Scheduled", value: scheduledInterviews.length, color: T.teal, bg: T.tealLight },
         ].map((k) => (
-          <div key={k.label} style={{ background: k.bg, borderRadius: 14, padding: isMobile ? 16 : 20, border: `1px solid ${T.border}` }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: k.color, textTransform: "uppercase", letterSpacing: "0.07em", opacity: 0.85 }}>
+          <div key={k.label} style={{
+            background: k.bg,
+            borderRadius: isMobile ? 12 : 14,
+            padding: isMobile ? "12px 6px" : 20,
+            border: `1px solid ${T.border}`,
+            textAlign: "center",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+          }}>
+            <div style={{ fontSize: isMobile ? 8.5 : 10, fontWeight: 700, color: k.color, textTransform: "uppercase", letterSpacing: "0.05em", opacity: 0.85, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {k.label}
             </div>
-            <div style={{ fontSize: 32, fontWeight: 900, color: k.color, marginTop: 6, lineHeight: 1 }}>
+            <div style={{ fontSize: isMobile ? 22 : 32, fontWeight: 900, color: k.color, marginTop: 6, lineHeight: 1 }}>
               {k.value}
             </div>
           </div>
@@ -445,7 +455,14 @@ export default function Panelist({
                 <span>
                   Filtering by <span style={{ color: MAROON }}>{selectedRole}</span>
                   <button
-                    onClick={() => selectJob(null)}
+                    onClick={() => {
+                      selectJob(null);
+                      setFilterActiveIndex(0);
+                      if (hScroll.ref.current) {
+                        const cards = hScroll.ref.current.children;
+                        if (cards[0]) (cards[0] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                      }
+                    }}
                     style={{ marginLeft: 8, fontSize: 11, color: T.inkFaint, background: "none", border: `1px solid ${T.border}`, borderRadius: 6, padding: "2px 8px", cursor: "pointer" }}
                   >Clear ×</button>
                 </span>
@@ -461,83 +478,237 @@ export default function Panelist({
             )}
           </div>
 
-          <div style={{ position: "relative" }}>
-            {/* Left fade */}
-            <div style={{
-              position: "absolute", left: 0, top: 0, bottom: 8, width: 40, zIndex: 2,
-              background: `linear-gradient(to right, ${T.canvas}, transparent)`,
-              pointerEvents: "none",
-            }} />
-            {/* Right fade */}
-            <div style={{
-              position: "absolute", right: 0, top: 0, bottom: 8, width: 40, zIndex: 2,
-              background: `linear-gradient(to left, ${T.canvas}, transparent)`,
-              pointerEvents: "none",
-            }} />
-            <div
-              ref={hScroll.ref}
-              onWheel={hScroll.onWheel}
-              onMouseDown={hScroll.onMouseDown}
-              onMouseMove={hScroll.onMouseMove}
-              onMouseUp={hScroll.onMouseUp}
-              onMouseLeave={hScroll.onMouseLeave}
-              style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", paddingBottom: 8, WebkitOverflowScrolling: "touch", scrollbarWidth: "none", cursor: "grab", userSelect: "none" }}
-            >
-            {/* All tile */}
-            <div
-              onClick={() => selectJob(null)}
-              style={{
-                flexShrink: 0, width: isMobile ? "78vw" : 190, scrollSnapAlign: "start",
-                border: `2px solid ${!selectedJobId ? MAROON : T.border}`, borderRadius: 14,
-                padding: "16px 18px", cursor: "pointer",
-                background: !selectedJobId ? T.primaryLight : T.surface,
-                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                gap: 8, transition: "all 0.15s", minHeight: 125,
-                boxShadow: !selectedJobId ? `0 4px 20px ${MAROON}22` : "0 1px 4px rgba(0,0,0,0.05)",
-              }}
-            >
-              <div style={{ fontSize: 24, opacity: 0.45 }}>◈</div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: !selectedJobId ? MAROON : T.ink, textAlign: "center" }}>All Interviews</div>
-              <div style={{ fontSize: 11, color: T.inkFaint }}>{scheduledInterviews.length} scheduled</div>
-              {!selectedJobId && <div style={{ background: MAROON, color: "#fff", borderRadius: 99, padding: "2px 10px", fontSize: 10, fontWeight: 700 }}>Selected</div>}
-            </div>
-
-            {enrichedPostings.map((p) => {
-              const isSelected = selectedJobId === p.id;
-              return (
+          {isMobile ? (
+            <>
+              <div
+                ref={hScroll.ref}
+                onScroll={(e) => {
+                  const scrollLeft = e.currentTarget.scrollLeft;
+                  const cardWidth = e.currentTarget.clientWidth;
+                  if (cardWidth > 0) {
+                    const newIndex = Math.round(scrollLeft / cardWidth);
+                    setFilterActiveIndex(newIndex);
+                  }
+                }}
+                style={{
+                  display: "flex",
+                  overflowX: "auto",
+                  scrollSnapType: "x mandatory",
+                  WebkitOverflowScrolling: "touch",
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                  gap: 12,
+                  paddingBottom: 4,
+                }}
+              >
+                {/* All tile — full width */}
                 <div
-                  key={p.id}
-                  onClick={() => selectJob(p.id)}
+                  onClick={() => {
+                    selectJob(null);
+                    setFilterActiveIndex(0);
+                    if (hScroll.ref.current) {
+                      const cards = hScroll.ref.current.children;
+                      if (cards[0]) (cards[0] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                    }
+                  }}
                   style={{
-                    flexShrink: 0, width: isMobile ? "78vw" : 250, scrollSnapAlign: "start",
-                    border: `2px solid ${isSelected ? MAROON : T.border}`, borderRadius: 14,
-                    padding: "14px 16px", cursor: "pointer",
-                    background: isSelected ? T.primaryLight : T.surface,
-                    transition: "all 0.18s",
-                    display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 125,
-                    boxShadow: isSelected ? `0 4px 20px ${MAROON}22` : "0 1px 4px rgba(0,0,0,0.05)",
+                    flexShrink: 0, width: "100%", scrollSnapAlign: "center",
+                    border: `2px solid ${!selectedJobId ? MAROON : T.border}`,
+                    borderRadius: 16, padding: "18px 20px", cursor: "pointer",
+                    background: !selectedJobId ? T.primaryLight : T.surface,
+                    display: "flex", flexDirection: "row", alignItems: "center", gap: 16,
+                    transition: "all 0.2s",
+                    boxShadow: !selectedJobId ? `0 4px 20px ${MAROON}22` : "0 1px 4px rgba(0,0,0,0.05)",
                   }}
                 >
-                  <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 4 }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: T.ink, lineHeight: 1.3, flex: 1 }}>{p.role}</div>
-                      <span style={{ fontSize: 10, fontWeight: 700, borderRadius: 99, padding: "2px 7px", flexShrink: 0, background: p.type === "Full-time" ? T.primaryLight : T.tealLight, color: p.type === "Full-time" ? MAROON : T.teal }}>
-                        {p.type}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 11, color: T.inkLight }}>{p.channel} Posting</div>
+                  <div style={{
+                    width: 52, height: 52, borderRadius: "50%", flexShrink: 0,
+                    background: !selectedJobId ? MAROON : T.border,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 22, color: "#fff",
+                  }}>◈</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: !selectedJobId ? MAROON : T.ink }}>All Interviews</div>
+                    <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 2 }}>{scheduledInterviews.length} scheduled</div>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
-                    <span style={{ fontSize: 12, color: T.inkMid }}>
-                      <strong style={{ fontSize: 15, color: isSelected ? MAROON : T.ink }}>{p.count}</strong> upcoming
-                    </span>
-                    {isSelected && <span style={{ fontSize: 10, fontWeight: 700, background: MAROON, color: "#fff", borderRadius: 99, padding: "2px 9px" }}>Selected</span>}
-                  </div>
+                  {!selectedJobId && (
+                    <div style={{ background: MAROON, color: "#fff", borderRadius: 99, padding: "4px 12px", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>Active</div>
+                  )}
                 </div>
-              );
-            })}
+
+                {enrichedPostings.map((p, idx) => {
+                  const isSelected = selectedJobId === p.id;
+                  const initials = p.role.split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => {
+                        selectJob(p.id);
+                        setFilterActiveIndex(idx + 1);
+                        if (hScroll.ref.current) {
+                          const cards = hScroll.ref.current.children;
+                          if (cards[idx + 1]) (cards[idx + 1] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                        }
+                      }}
+                      style={{
+                        flexShrink: 0, width: "100%", scrollSnapAlign: "center",
+                        border: `2px solid ${isSelected ? MAROON : T.border}`,
+                        borderRadius: 16, padding: "18px 20px", cursor: "pointer",
+                        background: isSelected ? T.primaryLight : T.surface,
+                        transition: "all 0.2s",
+                        boxShadow: isSelected ? `0 4px 20px ${MAROON}22` : "0 1px 4px rgba(0,0,0,0.05)",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                        <div style={{
+                          width: 52, height: 52, borderRadius: "50%", flexShrink: 0,
+                          background: isSelected ? MAROON : "#E2E8F0",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 17, fontWeight: 800,
+                          color: isSelected ? "#fff" : T.inkMid,
+                        }}>{initials}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: T.ink, lineHeight: 1.3, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{p.role}</div>
+                          <div style={{ fontSize: 11, color: T.inkFaint, marginTop: 2 }}>{p.channel} Posting</div>
+                        </div>
+                        {isSelected && (
+                          <div style={{ background: MAROON, color: "#fff", borderRadius: 99, padding: "4px 12px", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>Active</div>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14, gap: 8 }}>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <span style={{
+                            fontSize: 11, borderRadius: 99, padding: "3px 10px", fontWeight: 700,
+                            background: p.type === "Full-time" ? T.primaryLight : T.tealLight,
+                            color: p.type === "Full-time" ? MAROON : T.teal,
+                          }}>{p.type}</span>
+                        </div>
+                        <div style={{ flexShrink: 0, textAlign: "right" }}>
+                          <span style={{ fontSize: 18, fontWeight: 800, color: isSelected ? MAROON : T.ink }}>{p.count}</span>
+                          <span style={{ fontSize: 10, color: T.inkFaint, display: "block", lineHeight: 1 }}>upcoming</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Dot indicators */}
+              <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 10 }}>
+                {[null, ...enrichedPostings.map((p) => p.id)].map((id, i) => (
+                  <div
+                    key={i}
+                    onClick={() => {
+                      if (id === null) selectJob(null);
+                      else selectJob(id as string);
+                      setFilterActiveIndex(i);
+                      if (hScroll.ref.current) {
+                        const cards = hScroll.ref.current.children;
+                        if (cards[i]) (cards[i] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                      }
+                    }}
+                    style={{
+                      width: filterActiveIndex === i ? 20 : 6,
+                      height: 6, borderRadius: 99,
+                      background: filterActiveIndex === i ? MAROON : T.border,
+                      cursor: "pointer", transition: "all 0.2s",
+                    }}
+                  />
+                ))}
+              </div>
+            </>
+          ) : (
+            <div style={{ position: "relative" }}>
+              {/* Left fade */}
+              <div style={{
+                position: "absolute", left: 0, top: 0, bottom: 8, width: 40, zIndex: 2,
+                background: `linear-gradient(to right, ${T.canvas}, transparent)`,
+                pointerEvents: "none",
+              }} />
+              {/* Right fade */}
+              <div style={{
+                position: "absolute", right: 0, top: 0, bottom: 8, width: 40, zIndex: 2,
+                background: `linear-gradient(to left, ${T.canvas}, transparent)`,
+                pointerEvents: "none",
+              }} />
+              <div
+                ref={hScroll.ref}
+                onWheel={hScroll.onWheel}
+                onMouseDown={hScroll.onMouseDown}
+                onMouseMove={hScroll.onMouseMove}
+                onMouseUp={hScroll.onMouseUp}
+                onMouseLeave={hScroll.onMouseLeave}
+                className="carousel-scroll"
+                style={{
+                  display: "flex",
+                  gap: 14,
+                  overflowX: "auto",
+                  scrollSnapType: "x mandatory",
+                  paddingBottom: 8,
+                  WebkitOverflowScrolling: "touch",
+                  cursor: "grab",
+                  userSelect: "none",
+                  margin: isMobile ? "0 -12px" : undefined,
+                  paddingLeft: isMobile ? 12 : undefined,
+                  paddingRight: isMobile ? 12 : undefined,
+                }}
+              >
+              {/* All tile */}
+              <div
+                onClick={() => selectJob(null)}
+                style={{
+                  flexShrink: 0, width: isMobile ? "78vw" : 190, scrollSnapAlign: "start",
+                  border: `2px solid ${!selectedJobId ? MAROON : T.border}`, borderRadius: 14,
+                  padding: "16px 18px", cursor: "pointer",
+                  background: !selectedJobId ? T.primaryLight : T.surface,
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  gap: 8, transition: "all 0.15s", minHeight: 125,
+                  boxShadow: !selectedJobId ? `0 4px 20px ${MAROON}22` : "0 1px 4px rgba(0,0,0,0.05)",
+                }}
+              >
+                <div style={{ fontSize: 24, opacity: 0.45 }}>◈</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: !selectedJobId ? MAROON : T.ink, textAlign: "center" }}>All Interviews</div>
+                <div style={{ fontSize: 11, color: T.inkFaint }}>{scheduledInterviews.length} scheduled</div>
+                {!selectedJobId && <div style={{ background: MAROON, color: "#fff", borderRadius: 99, padding: "2px 10px", fontSize: 10, fontWeight: 700 }}>Selected</div>}
+              </div>
+
+              {enrichedPostings.map((p) => {
+                const isSelected = selectedJobId === p.id;
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => selectJob(p.id)}
+                    style={{
+                      flexShrink: 0, width: isMobile ? "78vw" : 250, scrollSnapAlign: "start",
+                      border: `2px solid ${isSelected ? MAROON : T.border}`, borderRadius: 14,
+                      padding: "14px 16px", cursor: "pointer",
+                      background: isSelected ? T.primaryLight : T.surface,
+                      transition: "all 0.18s",
+                      display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 125,
+                      boxShadow: isSelected ? `0 4px 20px ${MAROON}22` : "0 1px 4px rgba(0,0,0,0.05)",
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 4 }}>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: T.ink, lineHeight: 1.3, flex: 1 }}>{p.role}</div>
+                        <span style={{ fontSize: 10, fontWeight: 700, borderRadius: 99, padding: "2px 7px", flexShrink: 0, background: p.type === "Full-time" ? T.primaryLight : T.tealLight, color: p.type === "Full-time" ? MAROON : T.teal }}>
+                          {p.type}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 11, color: T.inkLight }}>{p.channel} Posting</div>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
+                      <span style={{ fontSize: 12, color: T.inkMid }}>
+                        <strong style={{ fontSize: 15, color: isSelected ? MAROON : T.ink }}>{p.count}</strong> upcoming
+                      </span>
+                      {isSelected && <span style={{ fontSize: 10, fontWeight: 700, background: MAROON, color: "#fff", borderRadius: 99, padding: "2px 9px" }}>Selected</span>}
+                    </div>
+                  </div>
+                );
+              })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -548,275 +719,348 @@ export default function Panelist({
           {selectedRole ? `No scheduled interviews for "${selectedRole}"` : "No interviews scheduled yet."}
         </div>
       ) : (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: isMobile ? "row" : "column",
-            alignItems: isMobile ? "flex-start" : undefined,
-            gap: 20,
-            overflowX: isMobile ? "auto" : undefined,
-            overflowY: isMobile ? "hidden" : undefined,
-            scrollSnapType: isMobile ? "x mandatory" : undefined,
-            WebkitOverflowScrolling: isMobile ? "touch" : undefined,
-            msOverflowStyle: isMobile ? "none" : undefined,
-            paddingBottom: isMobile ? 20 : undefined,
-            marginBottom: isMobile ? 10 : undefined,
-            paddingLeft: isMobile ? 16 : undefined,
-            paddingRight: isMobile ? 16 : undefined,
-            height: isMobile ? "auto" : undefined,
-            margin: isMobile ? "0 -16px" : undefined,
-          }}
-        >
-          {filteredInterviews.map((interview, idx) => {
-            const cardKey = `${interview.candidate}-${interview.role}-${interview.round}`;
-            const evaluations: any[] = interview.evaluations || [];
-            const totalScore = computeTotalScore(evaluations);
-            const isCompleted = interview.status === "Completed";
-            const isExpanded = expandedCards[cardKey] ?? evaluations.length > 0;
+        <>
+          <div
+            ref={scrollRef}
+            onScroll={(e) => {
+              if (isMobile) {
+                const scrollLeft = e.currentTarget.scrollLeft;
+                const cardWidth = e.currentTarget.clientWidth;
+                const newIndex = Math.round(scrollLeft / cardWidth);
+                setCurrentCardIndex(newIndex);
+              }
+            }}
+            className="carousel-scroll"
+            style={{
+              display: "flex",
+              flexDirection: isMobile ? "row" : "column",
+              alignItems: isMobile ? "flex-start" : undefined,
+              gap: 20,
+              overflowX: isMobile ? "auto" : undefined,
+              overflowY: isMobile ? "hidden" : undefined,
+              scrollSnapType: isMobile ? "x mandatory" : undefined,
+              WebkitOverflowScrolling: isMobile ? "touch" : undefined,
+              paddingBottom: isMobile ? 20 : undefined,
+              marginBottom: isMobile ? 10 : undefined,
+              paddingLeft: isMobile ? 12 : undefined,
+              paddingRight: isMobile ? 12 : undefined,
+              height: isMobile ? "auto" : undefined,
+              margin: isMobile ? "0 -12px" : undefined,
+            }}
+          >
+            {filteredInterviews.map((interview, idx) => {
+              const cardKey = `${interview.candidate}-${interview.role}-${interview.round}`;
+              const evaluations: any[] = interview.evaluations || [];
+              const totalScore = computeTotalScore(evaluations);
+              const isCompleted = interview.status === "Completed";
+              const isExpanded = expandedCards[cardKey] ?? evaluations.length > 0;
 
-            if (isMobile) {
-              return (
-                <div
-                  key={cardKey}
-                  style={{
-                    flexShrink: 0,
-                    width: "calc(100vw - 32px)",
-                    scrollSnapAlign: "center",
-                    borderRadius: 20,
-                    background: "linear-gradient(135deg, #72102a 0%, #3a0010 100%)",
-                    color: "#fff",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    padding: 24,
-                    position: "relative",
-                    boxShadow: "0 14px 40px rgba(0,0,0,0.25)",
-                    cursor: "pointer",
-                    minHeight: 520,
-                  }}
-                >
-                  {/* Reminder banner — shown when a reminder has been sent */}
-                  {interview.reminderSentAt && (
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (!setInterviews) return;
-                        setInterviews((prev: any[]) =>
-                          prev.map((i: any) =>
-                            i.candidate === interview.candidate && i.role === interview.role && i.round === interview.round
-                              ? { ...i, reminderSentAt: undefined }
-                              : i
-                          )
-                        );
-                      }}
-                      style={{
-                        position: "absolute", top: 48, right: 12,
-                        background: "linear-gradient(135deg, #7B1FA2, #9C27B0)",
-                        color: "#fff", borderRadius: 10, padding: "7px 12px",
-                        fontSize: 11, fontWeight: 700, cursor: "pointer",
-                        display: "flex", alignItems: "center", gap: 6,
-                        animation: "pulse-reminder 2s infinite",
-                        boxShadow: "0 4px 14px rgba(123,31,162,0.5)",
-                      }}
-                      title="Click to dismiss reminder"
-                    >
-                      🔔 Reminder sent · {new Date(interview.reminderSentAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
-                    </div>
-                  )}
-
-                  {/* Pagination counter */}
-                  <div style={{ position: "absolute", top: 12, right: 12, background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)", padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.9)", border: "1px solid rgba(255,255,255,0.2)" }}>
-                    {idx + 1} of {filteredInterviews.length}
-                  </div>
-
-                  <div>
-                    {/* Header info */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                      {avatar(interview.candidate, 56, 16)}
-                      <div>
-                        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>{interview.candidate}</h3>
-                        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 2 }}>
-                          {interview.role}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Details (Glassmorphic look) */}
+              if (isMobile) {
+                const cardBackground = "linear-gradient(135deg, #72102a 0%, #3a0010 100%)";
+                return (
                   <div
+                    key={cardKey}
                     style={{
-                      background: "rgba(255,255,255,0.1)",
-                      backdropFilter: "blur(8px)",
-                      borderRadius: 12,
-                      padding: 18,
-                      border: "1px solid rgba(255,255,255,0.15)",
+                      flexShrink: 0,
+                      minWidth: "calc(100% - 24px)",
+                      scrollSnapAlign: "center",
+                      borderRadius: 20,
+                      background: cardBackground,
+                      color: "#fff",
                       display: "flex",
                       flexDirection: "column",
-                      gap: 14,
-                      minHeight: 260,
+                      justifyContent: "space-between",
+                      padding: 24,
+                      position: "relative",
+                      boxShadow: "0 14px 40px rgba(0,0,0,0.25)",
+                      minHeight: 480,
                     }}
                   >
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                      <div>
-                        <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Date & Time</div>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>{interview.date} · {interview.time}</div>
+                    {/* Reminder banner inside mobile card */}
+                    {interview.reminderSentAt && (
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!setInterviews) return;
+                          setInterviews((prev: any[]) =>
+                            prev.map((i: any) =>
+                              i.candidate === interview.candidate && i.role === interview.role && i.round === interview.round
+                                ? { ...i, reminderSentAt: undefined }
+                                : i
+                            )
+                          );
+                        }}
+                        style={{
+                          marginBottom: 16,
+                          background: "rgba(167, 139, 250, 0.2)",
+                          border: "1px solid rgba(167, 139, 250, 0.4)",
+                          borderRadius: 10, padding: "10px 16px",
+                          display: "flex", alignItems: "center", gap: 10,
+                          cursor: "pointer",
+                        }}
+                        title="Click to dismiss reminder"
+                      >
+                        <span style={{ fontSize: 18 }}>🔔</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 12, fontWeight: 800, color: "#C084FC" }}>Reminder Sent</div>
+                          <div style={{ fontSize: 11, color: "#E9D5FF", marginTop: 1 }}>
+                            {new Date(interview.reminderSentAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 11, color: "#E9D5FF", fontWeight: 600, whiteSpace: "nowrap" }}>Dismiss ×</span>
                       </div>
-                      <div>
-                        <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Panel</div>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>{interview.panel?.join(", ") || "TBD"}</div>
+                    )}
+
+                    {/* Pagination counter */}
+                    <div style={{ position: "absolute", top: 12, right: 12, background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)", padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.9)", border: "1px solid rgba(255,255,255,0.2)" }}>
+                      {idx + 1} of {filteredInterviews.length}
+                    </div>
+
+                    <div>
+                      {/* Card header */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                        {avatar(interview.candidate)}
+                        <div>
+                          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>{interview.candidate}</h3>
+                          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 2 }}>{interview.role}</div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                            <span style={{ background: "rgba(255,255,255,0.15)", color: "#fff", borderRadius: 999, fontWeight: 700, fontSize: 10, padding: "4px 10px" }}>
+                              Round {interview.round || 1}
+                            </span>
+                            <span style={{
+                              background: interview.mode === "Online" ? "rgba(56, 189, 248, 0.2)" : "rgba(20, 184, 166, 0.2)",
+                              color: interview.mode === "Online" ? "#38BDF8" : "#2DD4BF",
+                              borderRadius: 999, fontWeight: 700, fontSize: 10, padding: "4px 10px"
+                            }}>
+                              {interview.mode === "Online" ? "💻 Online" : "🏢 In-Person"}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Mode</div>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>{interview.mode || "In-Person"}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Status</div>
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "flex-end",
-                            gap: 10,
-                            minWidth: 130
-                          }}
-                        >
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              background: isCompleted ? T.greenLight : "#FEF3C7",
-                              color: isCompleted ? T.green : "#B45309",
-                              padding: "8px 18px",
-                              borderRadius: 999,
-                              fontSize: 11,
-                              fontWeight: 700,
-                              border: `1px solid ${
-                                isCompleted ? T.green + "44" : "#FDE68A"
-                              }`,
-                            }}
-                          >
-                            {isCompleted ? "✓ Completed" : "● Upcoming"}
-                          </span>
-                          {interview.attendance && (
+                    </div>
+
+                    {/* Details (Glassmorphic) */}
+                    <div
+                      style={{
+                        background: "rgba(255,255,255,0.08)",
+                        backdropFilter: "blur(8px)",
+                        borderRadius: 14,
+                        padding: 16,
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 12,
+                        marginTop: 16,
+                        flex: 1,
+                      }}
+                    >
+                      {[
+                        { icon: "📅", label: "Date & Time", value: `${interview.date} · ${interview.time}` },
+                        { icon: "👥", label: "Panel Members", value: interview.panel?.join(", ") || "TBD" },
+                        { icon: "🔗", label: "Meeting Link", value: interview.meetingLink ? "Google Meet Link Available" : (interview.mode || "In-Person") },
+                      ].map((item, idx) => (
+                        <div key={idx} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                          <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>
+                              {item.label}
+                            </div>
+                            <div style={{ fontSize: 13, color: "#fff", fontWeight: 600, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={item.value}>
+                              {item.value}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Status row inside the glassmorphic card */}
+                      <div style={{ display: "flex", gap: 12, alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 10, marginTop: 2 }}>
+                        <span style={{ fontSize: 16, flexShrink: 0 }}>⚙️</span>
+                        <div style={{ flex: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>Status</span>
+                          {interview.attendance ? (
                             <span
                               style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                background:
-                                  interview.attendance === "Present"
-                                    ? "#DCFCE7"
-                                    : "#FEE2E2",
-                                color:
-                                  interview.attendance === "Present"
-                                    ? "#166534"
-                                    : "#991B1B",
-                                padding: "8px 18px",
-                                borderRadius: 999,
-                                fontSize: 11,
-                                fontWeight: 700,
+                                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                background: interview.attendance === "Present" ? "rgba(16, 185, 129, 0.25)" : "rgba(239, 68, 68, 0.25)",
+                                color: interview.attendance === "Present" ? "#34D399" : "#FCA5A5",
+                                padding: "3px 10px", borderRadius: 999, fontSize: 10, fontWeight: 700,
+                                border: `1px solid ${interview.attendance === "Present" ? "rgba(16, 185, 129, 0.4)" : "rgba(239, 68, 68, 0.4)"}`
                               }}
                             >
-                              {interview.attendance === "Present"
-                                ? "✓ Present"
-                                : "✕ Absent"}
+                              {interview.attendance === "Present" ? "✓ Present" : "✕ Absent"}
                             </span>
-                          )}
-                             {totalScore !== null && (
-                            <div
+                          ) : (
+                            <span
                               style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 10,
-                                background: T.canvas,
-                                borderRadius: 999,
-                                padding: "10px 14px",
-                                border: `1px solid ${T.border}`,
+                                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                background: isCompleted ? "rgba(16, 185, 129, 0.25)" : "rgba(245, 158, 11, 0.25)",
+                                color: isCompleted ? "#34D399" : "#FBBF24",
+                                padding: "3px 10px", borderRadius: 999, fontSize: 10, fontWeight: 700,
+                                border: `1px solid ${isCompleted ? "rgba(16, 185, 129, 0.4)" : "rgba(245, 158, 11, 0.4)"}`
                               }}
                             >
-                              <span
-                                style={{
-                                  fontSize: 11,
-                                  color: T.inkFaint,
-                                  fontWeight: 700,
-                                }}
-                              >
-                                Score
-                              </span>
-                              <ScoreCircle score={totalScore} />
-                            </div>
+                              {isCompleted ? "✓ Completed" : "● Upcoming"}
+                            </span>
                           )}
                         </div>
                       </div>
                     </div>
 
-                    <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 8, marginTop: 4 }}>
-                      <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Evaluations</div>
-                      <div style={{ fontSize: 12, display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
-                        <span>{evaluations.length} submitted</span>
-                        {totalScore !== null && <span style={{ fontWeight: 700, color: GOLD }}>Avg: {totalScore}</span>}
+                    {/* Evaluations & Score Footer */}
+                    <div style={{ padding: "12px 0", borderTop: "1px solid rgba(255,255,255,0.1)", display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
+                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>
+                        <span style={{ color: "#fff" }}>{evaluations.length}</span> / {interview.panel?.length || 1} Evaluations
                       </div>
+                      {totalScore !== null && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Avg</span>
+                          <ScoreCircle score={totalScore} />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Collapsible Scorecards section on mobile */}
+                    {evaluations.length > 0 && (
+                      <div style={{ marginTop: 10, borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 10 }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleExpand(cardKey);
+                          }}
+                          style={{
+                            width: "100%", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "8px 12px",
+                            display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", color: "#fff", fontSize: 12, fontWeight: 700
+                          }}
+                        >
+                          <span>📋 Scorecards ({evaluations.length})</span>
+                          <span style={{ fontSize: 12, transition: "transform 0.2s", display: "inline-block", transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span>
+                        </button>
+                        
+                        {isExpanded && (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10, maxHeight: 180, overflowY: "auto", paddingRight: 4 }} className="carousel-scroll">
+                            {evaluations.map((ev, index) => {
+                              const evScore = computeScore(ev.scores);
+                              const recStyle = REC_COLORS[ev.recommendation] || { bg: "rgba(255,255,255,0.1)", color: "#fff" };
+                              return (
+                                <div key={index} style={{ background: "rgba(255,255,255,0.06)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", padding: 10 }}>
+                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>{ev.panelist}</span>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                      <span style={{ fontSize: 10, fontWeight: 700, borderRadius: 99, padding: "1px 6px", background: recStyle.bg, color: recStyle.color }}>
+                                        {ev.recommendation}
+                                      </span>
+                                      {evScore !== null && (
+                                        <span style={{ fontSize: 10, fontWeight: 800, color: evScore >= 80 ? T.green : evScore >= 60 ? T.accentDark : T.red, background: evScore >= 80 ? T.greenLight : evScore >= 60 ? T.accentLight : T.redLight, borderRadius: 99, padding: "1px 6px" }}>
+                                          {evScore}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 4, marginBottom: ev.notes ? 6 : 0 }}>
+                                    {Object.entries(ev.scores).map(([f, v]) => (
+                                      <div key={f} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(255,255,255,0.7)" }}>
+                                        <span>{f}</span>
+                                        <span>{v as number}/5</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  {ev.notes && (
+                                    <div style={{ fontSize: 11, fontStyle: "italic", color: "rgba(255,255,255,0.8)", borderTop: "1px dashed rgba(255,255,255,0.1)", paddingTop: 4, marginTop: 4 }}>
+                                      "{ev.notes}"
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Action buttons */}
+                    <div
+                      style={{
+                        padding: "12px 0 0",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 10,
+                        borderTop: "1px solid rgba(255,255,255,0.1)",
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {interview.meetingLink && (
+                        <a
+                          href={interview.meetingLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            justifyContent: "center",
+                            width: "100%",
+                            background: "rgba(255,255,255,0.15)",
+                            color: "#fff",
+                            border: "1px solid rgba(255,255,255,0.25)",
+                            borderRadius: 8,
+                            padding: "10px 0",
+                            fontWeight: 700,
+                            fontSize: 13,
+                            display: "flex",
+                            alignItems: "center",
+                            textDecoration: "none"
+                          }}
+                        >
+                          🔗 Join Interview
+                        </a>
+                      )}
+
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                        <button
+                          onClick={() => markAttendance(interview, "Present")}
+                          style={{
+                            justifyContent: "center", width: "100%",
+                            background: interview.attendance === "Present" ? "rgba(16, 185, 129, 0.25)" : "rgba(255,255,255,0.08)",
+                            color: interview.attendance === "Present" ? "#34D399" : "rgba(255,255,255,0.8)",
+                            border: `1px solid ${interview.attendance === "Present" ? "rgba(16, 185, 129, 0.4)" : "rgba(255,255,255,0.15)"}`,
+                            borderRadius: 8, padding: "10px 0", fontWeight: 700, fontSize: 13, cursor: "pointer"
+                          }}
+                        >
+                          ✓ Present
+                        </button>
+                        <button
+                          onClick={() => markAttendance(interview, "Absent")}
+                          style={{
+                            justifyContent: "center", width: "100%",
+                            background: interview.attendance === "Absent" ? "rgba(239, 68, 68, 0.25)" : "rgba(255,255,255,0.08)",
+                            color: interview.attendance === "Absent" ? "#FCA5A5" : "rgba(255,255,255,0.8)",
+                            border: `1px solid ${interview.attendance === "Absent" ? "rgba(239, 68, 68, 0.4)" : "rgba(255,255,255,0.15)"}`,
+                            borderRadius: 8, padding: "10px 0", fontWeight: 700, fontSize: 13, cursor: "pointer"
+                          }}
+                        >
+                          ✕ Absent
+                        </button>
+                      </div>
+
+                      {interview.attendance === "Present" && (
+                        <button
+                          onClick={() => {
+                            const res = canEvaluate(interview);
+                            if (!res.allowed) { alert(res.reason); return; }
+                            openEval(interview);
+                          }}
+                          style={{
+                            justifyContent: "center", width: "100%",
+                            background: "rgba(52, 211, 153, 0.2)",
+                            color: "#34D399",
+                            border: "1px solid rgba(52, 211, 153, 0.3)",
+                            borderRadius: 8, padding: "10px 0", fontWeight: 700, fontSize: 13, cursor: "pointer"
+                          }}
+                        >
+                          ⭐ Evaluate Candidate
+                        </button>
+                      )}
                     </div>
                   </div>
-
-                  
-                  {/* ── Action buttons ──────────────────────────────── */}
-                      <div
-                        style={{
-                          padding: "14px 24px",
-                          display: "flex",
-                          gap: 10,
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        {interview.meetingLink && (
-                          <a
-                            href={interview.meetingLink}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="pan-btn pan-btn-join"
-                          >
-                            🔗 Join Interview
-                          </a>
-                        )}
-
-                        {/* Attendance buttons — mobile card (ghost→solid on selection) */}
-                        {(!interview.evaluations || interview.evaluations.length === 0) && (
-                          <>
-                            <button
-                              onClick={() => markAttendance(interview, "Present")}
-                              className={`pan-btn ${interview.attendance === "Present" ? "pan-btn-present-active" : "pan-btn-present"}`}
-                            >
-                              ✓ Present
-                            </button>
-
-                            <button
-                              onClick={() => markAttendance(interview, "Absent")}
-                              className={`pan-btn ${interview.attendance === "Absent" ? "pan-btn-absent-active" : "pan-btn-absent"}`}
-                            >
-                              ✕ Absent
-                            </button>
-                          </>
-                        )}
-
-                        {/* Evaluate — mobile card */}
-                        {interview.attendance === "Present" && (
-                          <button
-                            onClick={() => {
-                              const res = canEvaluate(interview);
-                              if (!res.allowed) { alert(res.reason); return; }
-                              openEval(interview);
-                            }}
-                            className="pan-btn pan-btn-evaluate"
-                          >
-                            ⭐ Evaluate Candidate
-                          </button>
-                        )}
-                      </div>
-                </div>
-              );
-            }
+                );
+              }
 
             return (
               <div
@@ -1088,33 +1332,52 @@ export default function Panelist({
               </div>
             );
           })}
-        </div>
+          </div>
+          {isMobile && filteredInterviews.length > 0 && (
+            <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 10, paddingBottom: 8 }}>
+              {filteredInterviews.map((_, i) => (
+                <div
+                  key={i}
+                  onClick={() => scrollRef.current?.scrollTo({ left: (i * scrollRef.current.clientWidth), behavior: "smooth" })}
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: currentCardIndex === i ? T.primary : T.border,
+                    cursor: "pointer",
+                    transition: "all 0.3s",
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* ── Evaluation Modal ─────────────────────────────────────────────────── */}
       {selectedInterview && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.52)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999, padding: 20 }}>
-          <div style={{ width: "100%", maxWidth: 880, maxHeight: "92vh", overflowY: "auto", background: "#faf8f5", borderRadius: 20, boxShadow: "0 24px 60px rgba(0,0,0,0.25)" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.52)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999, padding: isMobile ? 12 : 20 }}>
+          <div style={{ width: "100%", maxWidth: 880, maxHeight: isMobile ? "96vh" : "92vh", overflowY: "auto", background: "#faf8f5", borderRadius: 20, boxShadow: "0 24px 60px rgba(0,0,0,0.25)" }}>
 
             {/* Modal header */}
-            <div style={{ background: MAROON, color: "#fff", padding: "22px 26px", borderRadius: "20px 20px 0 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div style={{ background: MAROON, color: "#fff", padding: isMobile ? "16px 18px" : "22px 26px", borderRadius: "20px 20px 0 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>
+                <h2 style={{ margin: 0, fontSize: isMobile ? 16 : 20, fontWeight: 800 }}>
                   {currentUser === "admin" && evaluatorName && evaluatorName !== "__custom" ? "Edit Panelist Evaluation" : "Candidate Evaluation"}
                 </h2>
-                <div style={{ marginTop: 4, opacity: 0.85, fontSize: 14 }}>
+                <div style={{ marginTop: 4, opacity: 0.85, fontSize: isMobile ? 12 : 14 }}>
                   {selectedInterview.candidate} · {selectedInterview.role} · Round {selectedInterview.round || 1}
                   {currentUser !== "admin" && <span style={{ marginLeft: 8, opacity: 0.7 }}>| Your evaluation</span>}
                 </div>
               </div>
-              <button onClick={() => setSelectedInterview(null)} style={{ background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 20, lineHeight: 1 }}>×</button>
+              <button onClick={() => setSelectedInterview(null)} style={{ background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", borderRadius: 8, padding: "4px 10px", cursor: "pointer", fontSize: 20, lineHeight: 1 }}>×</button>
             </div>
 
-            <div style={{ padding: isMobile ? 18 : 26 }}>
+            <div style={{ padding: isMobile ? 16 : 26 }}>
 
               {/* Evaluator name */}
-              <div style={{ marginBottom: 24, padding: "14px 16px", background: T.primaryLight, borderRadius: 12, border: `1px solid ${MAROON}22` }}>
-                <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 12, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              <div style={{ marginBottom: isMobile ? 18 : 24, padding: "14px 16px", background: T.primaryLight, borderRadius: 12, border: `1px solid ${MAROON}22` }}>
+                <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 11, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   Evaluating as <span style={{ color: T.red }}>*</span>
                 </label>
                   <select
@@ -1130,7 +1393,7 @@ export default function Panelist({
                         padding: "10px 14px",
                         borderRadius: 10,
                         border: `1.5px solid ${T.border}`,
-                        fontSize: 14,
+                        fontSize: 13,
                         background: "#fff",
                       }}
                     >
@@ -1150,21 +1413,21 @@ export default function Panelist({
               </div>
 
               {/* Scorecard */}
-              <div style={{ fontSize: 12, fontWeight: 700, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 16 }}>Evaluation Scorecard</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 14 }}>Evaluation Scorecard</div>
               {[...DEFAULT_FIELDS, ...customFields].map((field) => (
-                <div key={field} style={{ marginBottom: 18 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                    <span style={{ fontWeight: 700, fontSize: 14, color: T.ink }}>{field}</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: scores[field] ? MAROON : T.inkFaint }}>{scores[field] ? `${scores[field]}/5` : "—"}</span>
+                <div key={field} style={{ marginBottom: isMobile ? 14 : 18 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <span style={{ fontWeight: 700, fontSize: isMobile ? 13 : 14, color: T.ink }}>{field}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: scores[field] ? MAROON : T.inkFaint }}>{scores[field] ? `${scores[field]}/5` : "—"}</span>
                   </div>
-                  <div style={{ display: "flex", gap: 10 }}>
+                  <div style={{ display: "flex", gap: isMobile ? 6 : 10 }}>
                     {[1, 2, 3, 4, 5].map((n) => (
                       <button
                         key={n}
                         onClick={() => updateScore(field, n)}
                         style={{
-                          flex: 1, height: 44, borderRadius: 10, border: "none", cursor: "pointer",
-                          fontWeight: 800, fontSize: 16, transition: "all 0.15s",
+                          flex: 1, height: isMobile ? 38 : 44, borderRadius: 10, border: "none", cursor: "pointer",
+                          fontWeight: 800, fontSize: isMobile ? 14 : 16, transition: "all 0.15s",
                           background: (scores[field] || 0) >= n ? MAROON : "#F1F5F9",
                           color: (scores[field] || 0) >= n ? "#fff" : T.inkMid,
                           boxShadow: (scores[field] || 0) >= n ? `0 4px 12px ${MAROON}44` : "none",
@@ -1180,7 +1443,7 @@ export default function Panelist({
               {/* Score preview */}
               {Object.keys(scores).length > 0 && (
                 <div style={{ margin: "16px 0", padding: "12px 16px", background: T.primaryLight, borderRadius: 12, display: "flex", justifyContent: "space-between", alignItems: "center", border: `1px solid ${MAROON}22` }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: T.ink }}>Your Score Preview</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: T.ink }}>Your Score Preview</span>
                   <ScoreCircle score={computeScore(scores) ?? 0} />
                 </div>
               )}
@@ -1188,7 +1451,7 @@ export default function Panelist({
               <hr style={{ margin: "20px 0", borderColor: T.border, borderStyle: "solid", borderWidth: "1px 0 0 0" }} />
 
               {/* Custom field */}
-              <div style={{ fontSize: 12, fontWeight: 700, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>Add Custom Field</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>Add Custom Field</div>
               <div style={{ display: "flex", gap: 10, marginBottom: 22 }}>
                 <input
                   value={newField}
@@ -1197,15 +1460,15 @@ export default function Panelist({
                   placeholder="e.g. Leadership, Punctuality..."
                   style={{ flex: 1, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${T.border}`, fontSize: 13, color: T.ink, background: "#fff" }}
                 />
-                <button onClick={addCustomField} style={{ background: MAROON, color: "#fff", border: "none", padding: "10px 18px", borderRadius: 10, cursor: "pointer", fontWeight: 700 }}>
+                <button onClick={addCustomField} style={{ background: MAROON, color: "#fff", border: "none", padding: "10px 18px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>
                   Add
                 </button>
               </div>
 
               {/* Recommendation */}
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 12, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>Recommendation</label>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 11, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>Recommendation</label>
+                <div style={{ display: "flex", gap: isMobile ? 6 : 8, flexWrap: "wrap" }}>
                   {["Strong Hire", "Hire", "Hold", "Reject"].map((r) => {
                     const rc = REC_COLORS[r];
                     const isActive = recommendation === r;
@@ -1214,7 +1477,7 @@ export default function Panelist({
                         key={r}
                         onClick={() => setRecommendation(r)}
                         style={{
-                          padding: "8px 16px", borderRadius: 99, cursor: "pointer", fontWeight: 700, fontSize: 13, border: "none", transition: "all 0.15s",
+                          padding: isMobile ? "8px 12px" : "8px 16px", borderRadius: 99, cursor: "pointer", fontWeight: 700, fontSize: isMobile ? 12 : 13, border: "none", transition: "all 0.15s",
                           background: isActive ? rc.color : T.canvas,
                           color: isActive ? "#fff" : T.inkMid,
                           boxShadow: isActive ? `0 4px 12px ${rc.color}55` : "none",
@@ -1229,7 +1492,7 @@ export default function Panelist({
 
               {/* Notes */}
               <div style={{ marginBottom: 24 }}>
-                <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 12, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>Interview Notes</label>
+                <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 11, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>Interview Notes</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
@@ -1240,13 +1503,13 @@ export default function Panelist({
               </div>
 
               {/* Footer buttons */}
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                <button onClick={() => setSelectedInterview(null)} style={{ padding: "10px 20px", borderRadius: 10, border: `1.5px solid ${T.border}`, cursor: "pointer", fontWeight: 600, background: "#fff", color: T.inkMid, fontSize: 13 }}>
+              <div style={{ display: "flex", flexDirection: isMobile ? "column-reverse" : "row", justifyContent: "flex-end", gap: 10 }}>
+                <button onClick={() => setSelectedInterview(null)} style={{ width: isMobile ? "100%" : "auto", padding: "10px 20px", borderRadius: 10, border: `1.5px solid ${T.border}`, cursor: "pointer", fontWeight: 600, background: "#fff", color: T.inkMid, fontSize: 13 }}>
                   Cancel
                 </button>
                 <button
                   onClick={handleSubmit}
-                  style={{ background: MAROON, color: "#fff", border: "none", padding: "10px 26px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, boxShadow: `0 4px 14px ${MAROON}44` }}
+                  style={{ width: isMobile ? "100%" : "auto", background: MAROON, color: "#fff", border: "none", padding: "10px 26px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, boxShadow: `0 4px 14px ${MAROON}44` }}
                 >
                   Submit Evaluation
                 </button>

@@ -54,7 +54,9 @@ export default function InterviewPanel({
 
   const [search, setSearch] = useState("");
   const [selectedPostingId, setSelectedPostingId] = useState<string | null>(null);
-  const [roundFilter, setRoundFilter] = useState<number | null>(null);
+  const [roundFilter, setRoundFilter] = useState<number | null>(1);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [evalInterview, setEvalInterview] = useState<any>(null);
   const [scores, setScores] = useState<ScoreState>({});
   const [recommendation, setRecommendation] = useState("");
@@ -134,6 +136,7 @@ export default function InterviewPanel({
   const [newPanelistEmail, setNewPanelistEmail] = useState("");
   const [newPanelistPhone, setNewPanelistPhone] = useState("");
 
+  const [filterActiveIndex, setFilterActiveIndex] = useState(0);
   const hScroll = useHorizontalScroll();
   const dateInputRef = useRef<HTMLInputElement>(null);
   const criteria = ["Subject Knowledge", "Communication Skills", "Demo Class / Task", "Classroom Management"];
@@ -558,7 +561,7 @@ export default function InterviewPanel({
   const selectPosting = (id: string | null) => {
     setSelectedPostingId((prev) => (prev === id ? null : id));
     setSearch("");
-    setRoundFilter(null); // reset round filter when job changes
+    setRoundFilter(1); // reset round filter when job changes
   };
 
   const avatar = (name: string, size = 32, fontSize = 12) => (
@@ -1059,7 +1062,14 @@ export default function InterviewPanel({
                 <span>
                   Filtering by <span style={{ color: T.primary }}>{selectedRole}</span>
                   <button
-                    onClick={() => selectPosting(null)}
+                    onClick={() => {
+                      selectPosting(null);
+                      setFilterActiveIndex(0);
+                      if (hScroll.ref.current) {
+                        const cards = hScroll.ref.current.children;
+                        if (cards[0]) (cards[0] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                      }
+                    }}
                     style={{ marginLeft: 8, fontSize: 11, color: T.inkFaint, background: "none", border: `1px solid ${T.border}`, borderRadius: 6, padding: "2px 8px", cursor: "pointer" }}
                   >
                     Clear ×
@@ -1082,6 +1092,14 @@ export default function InterviewPanel({
             <>
               <div
                 ref={hScroll.ref}
+                onScroll={(e) => {
+                  const scrollLeft = e.currentTarget.scrollLeft;
+                  const cardWidth = e.currentTarget.clientWidth;
+                  if (cardWidth > 0) {
+                    const newIndex = Math.round(scrollLeft / cardWidth);
+                    setFilterActiveIndex(newIndex);
+                  }
+                }}
                 style={{
                   display: "flex",
                   overflowX: "auto",
@@ -1095,7 +1113,14 @@ export default function InterviewPanel({
               >
                 {/* All tile — full width */}
                 <div
-                  onClick={() => selectPosting(null)}
+                  onClick={() => {
+                    selectPosting(null);
+                    setFilterActiveIndex(0);
+                    if (hScroll.ref.current) {
+                      const cards = hScroll.ref.current.children;
+                      if (cards[0]) (cards[0] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                    }
+                  }}
                   style={{
                     flexShrink: 0, width: "100%", scrollSnapAlign: "center",
                     border: `2px solid ${!selectedPostingId ? T.primary : T.border}`,
@@ -1121,13 +1146,20 @@ export default function InterviewPanel({
                   )}
                 </div>
 
-                {enrichedPostings.map((p) => {
+                {enrichedPostings.map((p, idx) => {
                   const isSelected = selectedPostingId === p.id;
                   const initials = p.role.split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
                   return (
                     <div
                       key={p.id}
-                      onClick={() => selectPosting(p.id)}
+                      onClick={() => {
+                        selectPosting(p.id);
+                        setFilterActiveIndex(idx + 1);
+                        if (hScroll.ref.current) {
+                          const cards = hScroll.ref.current.children;
+                          if (cards[idx + 1]) (cards[idx + 1] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                        }
+                      }}
                       style={{
                         flexShrink: 0, width: "100%", scrollSnapAlign: "center",
                         border: `2px solid ${isSelected ? T.primary : T.border}`,
@@ -1179,15 +1211,16 @@ export default function InterviewPanel({
                     onClick={() => {
                       if (id === null) selectPosting(null);
                       else selectPosting(id as string);
-                      if (scrollRef.current) {
-                        const cards = scrollRef.current.children;
+                      setFilterActiveIndex(i);
+                      if (hScroll.ref.current) {
+                        const cards = hScroll.ref.current.children;
                         if (cards[i]) (cards[i] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
                       }
                     }}
                     style={{
-                      width: selectedPostingId === id ? 20 : 6,
+                      width: filterActiveIndex === i ? 20 : 6,
                       height: 6, borderRadius: 99,
-                      background: selectedPostingId === id ? T.primary : T.border,
+                      background: filterActiveIndex === i ? T.primary : T.border,
                       cursor: "pointer", transition: "all 0.2s",
                     }}
                   />
@@ -1275,30 +1308,13 @@ export default function InterviewPanel({
       {availableRounds.length > 0 && (
         <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", marginRight: 2 }}>Round:</span>
-          <button
-            onClick={() => setRoundFilter(null)}
-            style={{
-              background: roundFilter === null ? T.primary : T.white,
-              color: roundFilter === null ? "#fff" : T.ink,
-              border: `1.5px solid ${roundFilter === null ? T.primary : T.border}`,
-              borderRadius: 999,
-              padding: "5px 14px",
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: "pointer",
-              transition: "all 0.15s",
-            }}
-          >
-            All Rounds
-            <span style={{ marginLeft: 5, opacity: 0.7 }}>({jobFilteredCandidates.length})</span>
-          </button>
           {availableRounds.map((rnd) => {
             const count = jobFilteredCandidates.filter((c) => c.activeRound >= rnd).length;
             const isActive = roundFilter === rnd;
             return (
               <button
                 key={rnd}
-                onClick={() => setRoundFilter(isActive ? null : rnd)}
+                onClick={() => setRoundFilter(rnd)}
                 style={{
                   background: isActive ? T.primary : T.white,
                   color: isActive ? "#fff" : T.ink,
@@ -1396,7 +1412,13 @@ export default function InterviewPanel({
 
               {/* Snap scroll container */}
               <div
-                id="candidate-mobile-scroll"
+                ref={scrollRef}
+                onScroll={(e) => {
+                  const scrollLeft = e.currentTarget.scrollLeft;
+                  const cardWidth = e.currentTarget.clientWidth;
+                  const newIndex = Math.round(scrollLeft / cardWidth);
+                  setCurrentCardIndex(newIndex);
+                }}
                 style={{
                   display: "flex",
                   overflowX: "auto",
@@ -1404,8 +1426,9 @@ export default function InterviewPanel({
                   WebkitOverflowScrolling: "touch",
                   scrollbarWidth: "none",
                   msOverflowStyle: "none",
-                  gap: 12,
-                  paddingBottom: 4,
+                  gap: 16,
+                  padding: "0 16px 20px",
+                  margin: "0 -16px",
                 }}
               >
                 {filteredCandidates.map((c, idx) => {
@@ -1413,146 +1436,188 @@ export default function InterviewPanel({
                   const rnd = c.displayRound;
                   const isScheduled = !!i.date;
                   const isPreviousRound = c.displayRound < c.activeRound;
+                  const cardBackground = "linear-gradient(135deg, #72102a 0%, #3a0010 100%)";
                   return (
                     <div
                       key={`${c.name}-${c.role}-${rnd}`}
                       style={{
                         flexShrink: 0,
-                        width: "100%",
+                        minWidth: "calc(100% - 32px)",
                         scrollSnapAlign: "center",
-                        background: T.surface,
-                        borderRadius: 18,
-                        border: `1.5px solid ${T.border}`,
-                        overflow: "hidden",
-                        boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                        background: cardBackground,
+                        color: "#fff",
+                        borderRadius: 20,
+                        padding: 24,
+                        position: "relative",
+                        boxShadow: "0 14px 40px rgba(0,0,0,0.25)",
+                        minHeight: 460,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
                       }}
                     >
-                      {/* Card header — candidate info */}
-                      <div
-                        style={{
-                          background: `linear-gradient(135deg, ${T.primaryLight} 0%, ${T.canvas} 100%)`,
-                          padding: "16px 18px 14px",
-                          borderBottom: `1px solid ${T.border}`,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 12,
-                          cursor: "pointer",
-                        }}
-                        onClick={() => setSelectedAppDetail(c)}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedCandidateKeys.includes(candidateKey(c))}
-                          disabled={isPreviousRound}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            toggleSelectCandidate(c);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
+                      {/* Pagination counter */}
+                      <div style={{ position: "absolute", top: 12, right: 12, background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)", padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.9)", border: "1px solid rgba(255,255,255,0.2)" }}>
+                        {idx + 1} of {filteredCandidates.length}
+                      </div>
+
+                      <div>
+                        {/* Card header — candidate info */}
+                        <div
                           style={{
-                            width: 18, height: 18,
-                            cursor: isPreviousRound ? "not-allowed" : "pointer",
-                            flexShrink: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                            cursor: "pointer",
                           }}
-                        />
-                        {avatar(c.name, 48, 16)}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 16, fontWeight: 800, color: T.ink, lineHeight: 1.2 }}>{c.name}</div>
-                          <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 3 }}>{c.role}</div>
-                          <div style={{ fontSize: 11, color: T.inkLight, marginTop: 2 }}>{c.email}</div>
-                        </div>
-                        <div style={{ fontSize: 11, color: T.inkFaint, flexShrink: 0 }}>
-                          {idx + 1}/{filteredCandidates.length}
+                          onClick={() => setSelectedAppDetail(c)}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedCandidateKeys.includes(candidateKey(c))}
+                            disabled={isPreviousRound}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              toggleSelectCandidate(c);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                              width: 18, height: 18,
+                              cursor: isPreviousRound ? "not-allowed" : "pointer",
+                              flexShrink: 0,
+                            }}
+                          />
+                          {avatar(c.name, 48, 16)}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", lineHeight: 1.2 }}>{c.name}</div>
+                            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>{c.role}</div>
+                            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>{c.email}</div>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Round + schedule info row */}
-                      <div style={{ padding: "12px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${T.border}` }}>
-                        {/* Round stepper */}
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Round</span>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleDecrementCandidateRound(c, rnd); }}
-                              disabled={rnd <= 1 || isPreviousRound}
-                              style={{
-                                width: 24, height: 24, borderRadius: 6, border: "none",
-                                background: (rnd <= 1 || isPreviousRound) ? T.border : T.primary,
-                                color: (rnd <= 1 || isPreviousRound) ? T.inkFaint : "#fff",
-                                cursor: (rnd <= 1 || isPreviousRound) ? "not-allowed" : "pointer",
-                                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: "bold",
-                              }}
-                            >−</button>
-                            <span style={{
-                              fontSize: 13, fontWeight: 800, color: T.primary,
-                              background: T.primaryLight, borderRadius: 8, padding: "3px 10px",
-                              minWidth: 70, textAlign: "center",
-                            }}>
-                              {getRoundOrdinal(rnd)}
-                            </span>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleIncrementCandidateRound(c, rnd); }}
-                              disabled={rnd >= 10 || isPreviousRound}
-                              style={{
-                                width: 24, height: 24, borderRadius: 6, border: "none",
-                                background: (rnd >= 10 || isPreviousRound) ? T.border : T.primary,
-                                color: (rnd >= 10 || isPreviousRound) ? T.inkFaint : "#fff",
-                                cursor: (rnd >= 10 || isPreviousRound) ? "not-allowed" : "pointer",
-                                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: "bold",
-                              }}
-                            >+</button>
+                      {/* Details (Glassmorphic) */}
+                      <div
+                        style={{
+                          background: "rgba(255,255,255,0.1)",
+                          backdropFilter: "blur(8px)",
+                          borderRadius: 12,
+                          padding: 18,
+                          border: "1px solid rgba(255,255,255,0.15)",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 12,
+                          marginTop: 16,
+                          flex: 1,
+                        }}
+                      >
+                        {/* Round stepper + status row */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid rgba(255,255,255,0.1)`, paddingBottom: 10 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Round</span>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDecrementCandidateRound(c, rnd); }}
+                                disabled={rnd <= 1 || isPreviousRound}
+                                style={{
+                                  width: 24, height: 24, borderRadius: 6, border: "none",
+                                  background: (rnd <= 1 || isPreviousRound) ? "rgba(255,255,255,0.05)" : "#fff",
+                                  color: (rnd <= 1 || isPreviousRound) ? "rgba(255,255,255,0.3)" : "#72102a",
+                                  cursor: (rnd <= 1 || isPreviousRound) ? "not-allowed" : "pointer",
+                                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: "bold",
+                                }}
+                              >−</button>
+                              <span style={{
+                                fontSize: 13, fontWeight: 800, color: "#fff",
+                                background: "rgba(255,255,255,0.15)", borderRadius: 8, padding: "3px 10px",
+                                minWidth: 70, textAlign: "center",
+                              }}>
+                                {getRoundOrdinal(rnd)}
+                              </span>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleIncrementCandidateRound(c, rnd); }}
+                                disabled={rnd >= 10 || isPreviousRound}
+                                style={{
+                                  width: 24, height: 24, borderRadius: 6, border: "none",
+                                  background: (rnd >= 10 || isPreviousRound) ? "rgba(255,255,255,0.05)" : "#fff",
+                                  color: (rnd >= 10 || isPreviousRound) ? "rgba(255,255,255,0.3)" : "#72102a",
+                                  cursor: (rnd >= 10 || isPreviousRound) ? "not-allowed" : "pointer",
+                                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: "bold",
+                                }}
+                              >+</button>
+                            </div>
+                          </div>
+
+                          <div style={{
+                            fontSize: 11, fontWeight: 700, borderRadius: 99, padding: "4px 10px",
+                            background: i.status === "Completed" ? "rgba(16, 185, 129, 0.2)" : isScheduled ? "rgba(245, 158, 11, 0.2)" : "rgba(255, 255, 255, 0.08)",
+                            color: i.status === "Completed" ? "#34D399" : isScheduled ? "#FBBF24" : "rgba(255,255,255,0.7)",
+                            border: `1px solid ${i.status === "Completed" ? "rgba(16, 185, 129, 0.3)" : isScheduled ? "rgba(245, 158, 11, 0.3)" : "rgba(255,255,255,0.15)"}`,
+                          }}>
+                            {i.status === "Completed" ? "✓ Done" : isScheduled ? "● Scheduled" : "○ Pending"}
                           </div>
                         </div>
 
-                        {/* Status badge */}
-                        <div style={{
-                          fontSize: 11, fontWeight: 700, borderRadius: 99, padding: "4px 10px",
-                          background: i.status === "Completed" ? T.greenLight : isScheduled ? T.amberLight : T.canvas,
-                          color: i.status === "Completed" ? T.green : isScheduled ? T.amber : T.inkFaint,
-                          border: `1px solid ${i.status === "Completed" ? T.green + "44" : isScheduled ? T.amber + "44" : T.border}`,
-                        }}>
-                          {i.status === "Completed" ? "✓ Done" : isScheduled ? "● Scheduled" : "○ Pending"}
-                        </div>
-                      </div>
-
-                      {/* Date / Mode / Panel info */}
-                      <div style={{ padding: "12px 18px", display: "flex", flexDirection: "column", gap: 8, borderBottom: `1px solid ${T.border}` }}>
+                        {/* Date & Time */}
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Date & Time</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Date & Time</span>
                           {isScheduled ? (
-                            <span style={{ fontSize: 13, fontWeight: 700, color: T.ink }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>
                               {i.date} · {i.time}
                             </span>
                           ) : (
-                            <span style={{ fontSize: 12, color: T.inkFaint, fontStyle: "italic" }}>Not scheduled</span>
+                            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontStyle: "italic" }}>Not scheduled</span>
                           )}
                         </div>
+
+                        {/* Mode */}
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Mode</span>
-                          {modeCell(i.mode || "In-Person")}
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Mode</span>
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 5,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              background: (i.mode || "In-Person") === "Online" ? "rgba(56, 189, 248, 0.2)" : "rgba(255, 255, 255, 0.08)",
+                              color: (i.mode || "In-Person") === "Online" ? "#38BDF8" : "#fff",
+                              borderRadius: 99,
+                              padding: "3px 10px",
+                              border: `1px solid ${(i.mode || "In-Person") === "Online" ? "rgba(56, 189, 248, 0.3)" : "rgba(255, 255, 255, 0.15)"}`,
+                            }}
+                          >
+                            {(i.mode || "In-Person") === "Online" ? "💻 Online" : "🏢 In-Person"}
+                          </span>
                         </div>
+
+                        {/* Panelists */}
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Panelists</span>
-                          <span style={{ fontSize: 12, color: i.panel?.length > 0 ? T.ink : T.inkFaint, fontStyle: i.panel?.length > 0 ? "normal" : "italic", textAlign: "right", maxWidth: "60%" }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Panelists</span>
+                          <span style={{ fontSize: 12, color: i.panel?.length > 0 ? "#fff" : "rgba(255,255,255,0.5)", fontStyle: i.panel?.length > 0 ? "normal" : "italic", textAlign: "right", maxWidth: "60%" }}>
                             {i.panel?.length > 0 ? i.panel.join(", ") : "Not assigned"}
                           </span>
                         </div>
+
+                        {/* Score / Rec */}
                         {i.score !== null && (
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Score / Rec</span>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Score / Rec</span>
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                               <div style={{
                                 width: 32, height: 32, borderRadius: "50%",
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 fontSize: 12, fontWeight: 800,
-                                background: i.score >= 80 ? T.greenLight : i.score >= 60 ? T.amberLight : T.redLight,
-                                color: i.score >= 80 ? T.green : i.score >= 60 ? T.amber : T.red,
+                                background: i.score >= 80 ? "rgba(16, 185, 129, 0.2)" : i.score >= 60 ? "rgba(245, 158, 11, 0.2)" : "rgba(239, 68, 68, 0.2)",
+                                color: i.score >= 80 ? "#34D399" : i.score >= 60 ? "#FBBF24" : "#FCA5A5",
+                                border: `1px solid ${i.score >= 80 ? "rgba(16, 185, 129, 0.3)" : i.score >= 60 ? "rgba(245, 158, 11, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
                               }}>{i.score}</div>
                               {i.rec && i.rec !== "—" && (
                                 <span style={{
                                   fontSize: 11, fontWeight: 700, borderRadius: 99, padding: "3px 10px",
-                                  background: i.rec === "Selected" ? T.greenLight : i.rec === "Rejected" ? T.redLight : T.amberLight,
-                                  color: i.rec === "Selected" ? T.green : i.rec === "Rejected" ? T.red : T.amber,
+                                  background: i.rec === "Selected" ? "rgba(16, 185, 129, 0.2)" : i.rec === "Rejected" ? "rgba(239, 68, 68, 0.2)" : "rgba(245, 158, 11, 0.2)",
+                                  color: i.rec === "Selected" ? "#34D399" : i.rec === "Rejected" ? "#FCA5A5" : "#FBBF24",
+                                  border: `1px solid ${i.rec === "Selected" ? "rgba(16, 185, 129, 0.3)" : i.rec === "Rejected" ? "rgba(239, 68, 68, 0.3)" : "rgba(245, 158, 11, 0.3)"}`,
                                 }}>{i.rec}</span>
                               )}
                             </div>
@@ -1561,15 +1626,16 @@ export default function InterviewPanel({
                       </div>
 
                       {/* Action buttons */}
-                      <div style={{ padding: "14px 18px", display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <div style={{ padding: "14px 0 0", display: "flex", gap: 8, flexWrap: "wrap" }} onClick={(e) => e.stopPropagation()}>
                         {!isScheduled ? (
                           <button
                             onClick={(e) => { e.stopPropagation(); handleOpenSchedule(c); }}
                             disabled={isPreviousRound}
                             style={{
-                              flex: 1, padding: "10px 0", borderRadius: 10, border: "none",
-                              background: isPreviousRound ? T.border : T.primaryLight,
-                              color: isPreviousRound ? T.inkFaint : T.primary,
+                              flex: 1, padding: "10px 0", borderRadius: 10,
+                              background: isPreviousRound ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.15)",
+                              color: isPreviousRound ? "rgba(255,255,255,0.3)" : "#fff",
+                              border: isPreviousRound ? "none" : "1px solid rgba(255,255,255,0.25)",
                               fontSize: 13, fontWeight: 700, cursor: isPreviousRound ? "not-allowed" : "pointer",
                               opacity: isPreviousRound ? 0.6 : 1,
                             }}
@@ -1579,9 +1645,10 @@ export default function InterviewPanel({
                             onClick={(e) => { e.stopPropagation(); handleOpenSchedule(c); }}
                             disabled={isPreviousRound}
                             style={{
-                              flex: 1, padding: "10px 0", borderRadius: 10, border: "none",
-                              background: isPreviousRound ? T.border : "#FFF3E0",
-                              color: isPreviousRound ? T.inkFaint : "#E65100",
+                              flex: 1, padding: "10px 0", borderRadius: 10,
+                              background: isPreviousRound ? "rgba(255,255,255,0.05)" : "rgba(245, 158, 11, 0.2)",
+                              color: isPreviousRound ? "rgba(255,255,255,0.3)" : "#FBBF24",
+                              border: isPreviousRound ? "none" : "1px solid rgba(245, 158, 11, 0.3)",
                               fontSize: 13, fontWeight: 700, cursor: isPreviousRound ? "not-allowed" : "pointer",
                               opacity: isPreviousRound ? 0.6 : 1,
                             }}
@@ -1591,9 +1658,10 @@ export default function InterviewPanel({
                           onClick={(e) => { e.stopPropagation(); setAssigningCandidate(c); }}
                           disabled={isPreviousRound}
                           style={{
-                            flex: 1, padding: "10px 0", borderRadius: 10, border: "none",
-                            background: isPreviousRound ? T.border : T.accentLight,
-                            color: isPreviousRound ? T.inkFaint : T.accentDark,
+                            flex: 1, padding: "10px 0", borderRadius: 10,
+                            background: isPreviousRound ? "rgba(255,255,255,0.05)" : "rgba(255, 215, 0, 0.15)",
+                            color: isPreviousRound ? "rgba(255,255,255,0.3)" : "#FBBF24",
+                            border: isPreviousRound ? "none" : "1px solid rgba(255, 215, 0, 0.25)",
                             fontSize: 13, fontWeight: 700, cursor: isPreviousRound ? "not-allowed" : "pointer",
                             opacity: isPreviousRound ? 0.6 : 1,
                           }}
@@ -1603,9 +1671,10 @@ export default function InterviewPanel({
                             onClick={(e) => { e.stopPropagation(); setReminderCandidate(c); }}
                             disabled={isPreviousRound}
                             style={{
-                              flex: 1, padding: "10px 0", borderRadius: 10, border: "none",
-                              background: isPreviousRound ? T.border : "#EDE7F6",
-                              color: isPreviousRound ? T.inkFaint : "#6A1B9A",
+                              flex: 1, padding: "10px 0", borderRadius: 10,
+                              background: isPreviousRound ? "rgba(255,255,255,0.05)" : "rgba(167, 139, 250, 0.2)",
+                              color: isPreviousRound ? "rgba(255,255,255,0.3)" : "#C084FC",
+                              border: isPreviousRound ? "none" : "1px solid rgba(167, 139, 250, 0.3)",
                               fontSize: 13, fontWeight: 700, cursor: isPreviousRound ? "not-allowed" : "pointer",
                               opacity: isPreviousRound ? 0.6 : 1,
                             }}
@@ -1615,9 +1684,10 @@ export default function InterviewPanel({
                           onClick={(e) => { e.stopPropagation(); handleGiveOffer(c); }}
                           disabled={isPreviousRound}
                           style={{
-                            width: "100%", padding: "10px 0", borderRadius: 10, border: "none",
-                            background: isPreviousRound ? T.border : T.greenLight,
-                            color: isPreviousRound ? T.inkFaint : T.green,
+                            width: "100%", padding: "10px 0", borderRadius: 10,
+                            background: isPreviousRound ? "rgba(255,255,255,0.05)" : "rgba(52, 211, 153, 0.2)",
+                            color: isPreviousRound ? "rgba(255,255,255,0.3)" : "#34D399",
+                            border: isPreviousRound ? "none" : "1px solid rgba(52, 211, 153, 0.3)",
                             fontSize: 13, fontWeight: 700, cursor: isPreviousRound ? "not-allowed" : "pointer",
                             opacity: isPreviousRound ? 0.6 : 1,
                           }}
@@ -1629,21 +1699,15 @@ export default function InterviewPanel({
               </div>
 
               {/* Dot indicators */}
-              <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 12 }}>
+              <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 12, paddingBottom: 8 }}>
                 {filteredCandidates.map((_, idx) => (
                   <div
                     key={idx}
-                    onClick={() => {
-                      const el = document.getElementById("candidate-mobile-scroll");
-                      if (el) {
-                        const cards = el.children;
-                        if (cards[idx]) (cards[idx] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-                      }
-                    }}
+                    onClick={() => scrollRef.current?.scrollTo({ left: (idx * scrollRef.current.clientWidth), behavior: "smooth" })}
                     style={{
-                      width: 6, height: 6, borderRadius: 99,
-                      background: T.border,
-                      cursor: "pointer", transition: "all 0.2s",
+                      width: 8, height: 8, borderRadius: "50%",
+                      background: currentCardIndex === idx ? T.primary : T.border,
+                      cursor: "pointer", transition: "all 0.3s",
                     }}
                   />
                 ))}

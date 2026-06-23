@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { T } from "../theme";
 import { statusVariant } from "../theme";
 import { useBreakpoint } from "../hooks";
@@ -27,10 +27,27 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
   const bp = useBreakpoint();
   const isMobile = bp === "mobile";
   const [sel, setSel] = useState<any>(null);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [comment, setComment] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const avatar = (name: string, size = 48, fs = 16) => {
+    const val = name || "RQ";
+    return (
+      <div style={{
+        width: size, height: size, borderRadius: "50%",
+        background: "rgba(255,255,255,0.15)", color: "#fff",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontWeight: 800, fontSize: fs, flexShrink: 0,
+        border: "1px solid rgba(255,255,255,0.25)"
+      }}>
+        {val.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}
+      </div>
+    );
+  };
 
   const parseSal = (v: string) => parseFloat((v || "").replace(/,/g, "")) || 0;
 
@@ -372,7 +389,7 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                       )}
                     </div>
                     <div>
-                      <div style={labelCss}>Employment Type</div>
+                      <div style={labelCss}>Emp Type</div>
                       {isPending ? (
                         <select
                           value={sel.empType || ""}
@@ -554,6 +571,16 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
             </div>
 
             <div
+              ref={scrollRef}
+              onScroll={(e) => {
+                const scrollLeft = e.currentTarget.scrollLeft;
+                const cardWidth = e.currentTarget.clientWidth;
+                if (cardWidth > 0) {
+                  const newIndex = Math.round(scrollLeft / cardWidth);
+                  setCurrentCardIndex(newIndex);
+                }
+              }}
+              className="carousel-scroll"
               style={{
                 display: "flex",
                 overflowX: "auto",
@@ -562,7 +589,10 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                 scrollbarWidth: "none",
                 msOverflowStyle: "none",
                 gap: 12,
-                paddingBottom: 4,
+                paddingBottom: 20,
+                margin: "0 -12px",
+                paddingLeft: 12,
+                paddingRight: 12,
               }}
             >
               {filtered.map((r, idx) => (
@@ -571,56 +601,96 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                   onClick={() => openModal(r)}
                   style={{
                     flexShrink: 0,
-                    width: "100%",
+                    width: "calc(100% - 24px)",
                     scrollSnapAlign: "center",
-                    background: T.surface,
-                    borderRadius: 18,
-                    border: `1.5px solid ${T.border}`,
-                    overflow: "hidden",
-                    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                    borderRadius: 20,
+                    background: "linear-gradient(135deg, #72102a 0%, #3a0010 100%)",
+                    color: "#fff",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    padding: 24,
+                    position: "relative",
+                    boxShadow: "0 14px 40px rgba(0,0,0,0.25)",
+                    minHeight: 380,
                     cursor: "pointer",
                   }}
                 >
-                  {/* Header */}
+                  {/* Pagination counter */}
                   <div
                     style={{
-                      background: `linear-gradient(135deg, ${T.primaryPale} 0%, ${T.canvas} 100%)`,
-                      padding: "16px 18px 14px",
-                      borderBottom: `1px solid ${T.border}`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
+                      position: "absolute",
+                      top: 12,
+                      right: 12,
+                      background: "rgba(255,255,255,0.15)",
+                      backdropFilter: "blur(8px)",
+                      padding: "4px 12px",
+                      borderRadius: 99,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "rgba(255,255,255,0.9)",
+                      border: "1px solid rgba(255,255,255,0.2)",
                     }}
                   >
-                    <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.role}</div>
-                      <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 4 }}>
-                        {r.dept && r.dept !== "N/A" ? `${r.dept} · ` : ""}{r.requestedBy}
+                    {idx + 1} of {filtered.length}
+                  </div>
+
+                  <div>
+                    {/* Header */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 14, paddingRight: 40 }}>
+                      {avatar(r.role || r.type || "Request")}
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>{r.role}</h3>
+                        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 2 }}>
+                          {r.dept && r.dept !== "N/A" ? `${r.dept} · ` : ""}{r.requestedBy}
+                        </div>
                       </div>
-                    </div>
-                    <div style={{ fontSize: 11, color: T.inkFaint, flexShrink: 0 }}>
-                      {idx + 1}/{filtered.length}
                     </div>
                   </div>
 
-                  {/* Details */}
-                  <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 8, borderBottom: `1px solid ${T.border}` }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Request ID</span>
-                      <Mono v={String(r.sourceId).substring(0, 16)} />
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Type</span>
-                      <Badge label={r.type || "Request"} variant="blue" />
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Date</span>
-                      <span style={{ fontSize: 13, color: T.ink }}>{r.date}</span>
-                    </div>
+                  {/* Details (Glassmorphic) */}
+                  <div
+                    style={{
+                      background: "rgba(255,255,255,0.08)",
+                      backdropFilter: "blur(8px)",
+                      borderRadius: 14,
+                      padding: 16,
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 10,
+                      marginTop: 16,
+                      flex: 1,
+                    }}
+                  >
+                    {[
+                      { icon: "🆔", label: "Request ID", value: String(r.sourceId).substring(0, 16) },
+                      { icon: "📋", label: "Type", value: r.type || "Request" },
+                      { icon: "📅", label: "Date", value: r.date },
+                      ...(r.salary ? [{ icon: "💰", label: "Salary", value: r.salary }] : []),
+                      ...(r.experience ? [{ icon: "⏳", label: "Experience", value: `${r.experience} yrs` }] : []),
+                      ...(r.vacancies ? [{ icon: "👥", label: "Vacancies", value: String(r.vacancies) }] : []),
+                      ...(r.empType ? [{ icon: "💼", label: "Emp Type", value: r.empType }] : []),
+                    ].map((item, index) => (
+                      <div key={index} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                        <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>
+                            {item.label}
+                          </div>
+                          <div style={{ fontSize: 13, color: "#fff", fontWeight: 600, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {item.value}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
                     {r.comment && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Comment</span>
-                        <div style={{ fontSize: 12, color: T.amber, background: T.amberLight, padding: "6px 10px", borderRadius: 6, border: `1px solid #FDE68A` }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 10, marginTop: 2 }}>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>
+                          Comment
+                        </div>
+                        <div style={{ fontSize: 12, color: "#FBBF24", background: "rgba(245, 158, 11, 0.15)", padding: "6px 10px", borderRadius: 8, border: "1px solid rgba(245, 158, 11, 0.3)" }}>
                           {r.comment}
                         </div>
                       </div>
@@ -628,8 +698,18 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                   </div>
 
                   {/* Action row */}
-                  <div style={{ padding: "12px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }} onClick={(e) => e.stopPropagation()}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</span>
+                  <div
+                    style={{
+                      padding: "12px 0 0",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      borderTop: "1px solid rgba(255,255,255,0.1)",
+                      marginTop: 12,
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>Status</span>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       {r.status === "Pending" ? (
                         <div style={{ display: "flex", gap: 6 }}>
@@ -640,8 +720,14 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                               }
                             }}
                             style={{
-                              background: T.greenLight, color: T.green, border: `1.5px solid #A7F3D0`,
-                              borderRadius: 8, padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer"
+                              background: "rgba(16, 185, 129, 0.25)",
+                              color: "#34D399",
+                              border: `1px solid rgba(16, 185, 129, 0.4)`,
+                              borderRadius: 8,
+                              padding: "6px 12px",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: "pointer",
                             }}
                           >
                             Accept
@@ -653,21 +739,66 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                               }
                             }}
                             style={{
-                              background: T.redLight, color: T.red, border: `1.5px solid #FECACA`,
-                              borderRadius: 8, padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer"
+                              background: "rgba(239, 68, 68, 0.25)",
+                              color: "#FCA5A5",
+                              border: `1px solid rgba(239, 68, 68, 0.4)`,
+                              borderRadius: 8,
+                              padding: "6px 12px",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: "pointer",
                             }}
                           >
                             Reject
                           </button>
                         </div>
                       ) : (
-                        <Badge label={r.status} variant={statusVariant(r.status)} />
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: r.status === "Approved" ? "rgba(16, 185, 129, 0.25)" : r.status === "Rejected" ? "rgba(239, 68, 68, 0.25)" : "rgba(245, 158, 11, 0.25)",
+                            color: r.status === "Approved" ? "#34D399" : r.status === "Rejected" ? "#FCA5A5" : "#FBBF24",
+                            padding: "3px 10px",
+                            borderRadius: 999,
+                            fontSize: 10,
+                            fontWeight: 700,
+                            border: `1px solid ${r.status === "Approved" ? "rgba(16, 185, 129, 0.4)" : r.status === "Rejected" ? "rgba(239, 68, 68, 0.4)" : "rgba(245, 158, 11, 0.4)"}`,
+                          }}
+                        >
+                          {r.status === "Approved" ? "✓ Approved" : r.status === "Rejected" ? "✕ Rejected" : "↺ Sent Back"}
+                        </span>
                       )}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
+
+            {/* Indicator dots */}
+            {filtered.length > 0 && (
+              <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 10, paddingBottom: 8 }}>
+                {filtered.map((_, i) => (
+                  <div
+                    key={i}
+                    onClick={() => {
+                      if (scrollRef.current) {
+                        scrollRef.current.scrollTo({ left: i * scrollRef.current.clientWidth, behavior: "smooth" });
+                      }
+                    }}
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: currentCardIndex === i ? T.primary : T.border,
+                      cursor: "pointer",
+                      transition: "all 0.3s",
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <div>

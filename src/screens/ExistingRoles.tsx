@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { T } from "../theme";
 import { STATUS_COLORS } from "../theme";
 import { useBreakpoint } from "../hooks";
@@ -129,6 +129,23 @@ function RolesTable({
 }) {
   const [sel, setSel] = useState<any>(null);
   const bp = useBreakpoint();
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const avatar = (name: string, size = 48, fs = 16) => {
+    const val = name || "RL";
+    return (
+      <div style={{
+        width: size, height: size, borderRadius: "50%",
+        background: "rgba(255,255,255,0.15)", color: "#fff",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontWeight: 800, fontSize: fs, flexShrink: 0,
+        border: "1px solid rgba(255,255,255,0.25)"
+      }}>
+        {val.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}
+      </div>
+    );
+  };
 
   const open = (r: any) => setSel(r);
   const close = () => setSel(null);
@@ -177,6 +194,16 @@ function RolesTable({
         </div>
 
         <div
+          ref={scrollRef}
+          onScroll={(e) => {
+            const scrollLeft = e.currentTarget.scrollLeft;
+            const cardWidth = e.currentTarget.clientWidth;
+            if (cardWidth > 0) {
+              const newIndex = Math.round(scrollLeft / cardWidth);
+              setCurrentCardIndex(newIndex);
+            }
+          }}
+          className="carousel-scroll"
           style={{
             display: "flex",
             overflowX: "auto",
@@ -185,7 +212,10 @@ function RolesTable({
             scrollbarWidth: "none",
             msOverflowStyle: "none",
             gap: 12,
-            paddingBottom: 4,
+            paddingBottom: 20,
+            margin: "0 -12px",
+            paddingLeft: 12,
+            paddingRight: 12,
           }}
         >
           {rows.map((r: any, idx: number) => {
@@ -196,60 +226,102 @@ function RolesTable({
                 onClick={() => open(r)}
                 style={{
                   flexShrink: 0,
-                  width: "100%",
+                  width: "calc(100% - 24px)",
                   scrollSnapAlign: "center",
-                  background: T.surface,
-                  borderRadius: 18,
-                  border: `1.5px solid ${T.border}`,
-                  overflow: "hidden",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                  borderRadius: 20,
+                  background: "linear-gradient(135deg, #72102a 0%, #3a0010 100%)",
+                  color: "#fff",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  padding: 24,
+                  position: "relative",
+                  boxShadow: "0 14px 40px rgba(0,0,0,0.25)",
+                  minHeight: 350,
                   cursor: "pointer",
                 }}
               >
-                {/* Header */}
+                {/* Pagination counter */}
                 <div
                   style={{
-                    background: `linear-gradient(135deg, ${T.primaryPale} 0%, ${T.canvas} 100%)`,
-                    padding: "16px 18px 14px",
-                    borderBottom: `1px solid ${T.border}`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
+                    position: "absolute",
+                    top: 12,
+                    right: 12,
+                    background: "rgba(255,255,255,0.15)",
+                    backdropFilter: "blur(8px)",
+                    padding: "4px 12px",
+                    borderRadius: 99,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "rgba(255,255,255,0.9)",
+                    border: "1px solid rgba(255,255,255,0.2)",
                   }}
                 >
-                  <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.role}</div>
-                    <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 4 }}>{r.dept}</div>
-                  </div>
-                  <div style={{ fontSize: 11, color: T.inkFaint, flexShrink: 0 }}>
-                    {idx + 1}/{rows.length}
+                  {idx + 1} of {rows.length}
+                </div>
+
+                <div>
+                  {/* Header */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 14, paddingRight: 40 }}>
+                    {avatar(r.role)}
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>{r.role}</h3>
+                      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 2 }}>
+                        {r.dept}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Details */}
-                <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 8, borderBottom: `1px solid ${T.border}` }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Role ID</span>
-                    <Mono v={r.id} />
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Experience</span>
-                    <span style={{ fontSize: 13, color: T.ink }}>{r.experience ? `${r.experience} yrs` : "—"}</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Salary Range</span>
-                    <span style={{ fontSize: 13, color: T.ink, fontWeight: 600 }}>{r.salaryRange ? `₹${r.salaryRange}` : "—"}</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Type</span>
-                    <Badge label={r.type} variant={r.type === "Full-time" ? "blue" : "teal"} />
-                  </div>
+                {/* Details (Glassmorphic) */}
+                <div
+                  style={{
+                    background: "rgba(255,255,255,0.08)",
+                    backdropFilter: "blur(8px)",
+                    borderRadius: 14,
+                    padding: 16,
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 10,
+                    marginTop: 16,
+                    flex: 1,
+                  }}
+                >
+                  {[
+                    { icon: "🆔", label: "Role ID", value: r.id },
+                    { icon: "⏳", label: "Experience", value: r.experience ? `${r.experience} yrs` : "—" },
+                    { icon: "💰", label: "Salary Range", value: r.salaryRange ? `₹${r.salaryRange}` : "—" },
+                    { icon: "💼", label: "Type", value: r.type },
+                  ].map((item, index) => (
+                    <div key={index} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                      <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>
+                          {item.label}
+                        </div>
+                        <div style={{ fontSize: 13, color: "#fff", fontWeight: 600, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {item.value}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Status action row */}
-                <div style={{ padding: "12px 18px", display: "flex", justifyContent: "space-between", alignItems: "center" }} onClick={(e) => e.stopPropagation()}>
+                <div
+                  style={{
+                    padding: "12px 0 0",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    borderTop: "1px solid rgba(255,255,255,0.1)",
+                    marginTop: 12,
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</span>
+                    <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>Status</span>
                     <select
                       value={r.currentStatus}
                       onChange={(e) => onStatusChange(r.id, e.target.value)}
@@ -276,6 +348,30 @@ function RolesTable({
             );
           })}
         </div>
+
+        {/* Indicator dots */}
+        {rows.length > 0 && (
+          <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 10, paddingBottom: 8 }}>
+            {rows.map((_, i) => (
+              <div
+                key={i}
+                onClick={() => {
+                  if (scrollRef.current) {
+                    scrollRef.current.scrollTo({ left: i * scrollRef.current.clientWidth, behavior: "smooth" });
+                  }
+                }}
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  background: currentCardIndex === i ? T.primary : T.border,
+                  cursor: "pointer",
+                  transition: "all 0.3s",
+                }}
+              />
+            ))}
+          </div>
+        )}
 
         <Modal open={!!sel} onClose={close} maxWidth={720}>
           {sel && (

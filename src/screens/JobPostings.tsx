@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { T } from "../theme";
 import { useBreakpoint, useHorizontalScroll } from "../hooks";
 import { Card, SectionTitle, Table, Mono, Badge, Input, Modal, ModalHeader, Btn } from "../components/ui";
@@ -16,8 +16,10 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
   const [search, setSearch] = useState("");
   const [selectedPostingId, setSelectedPostingId] = useState<string | null>(null);
   const [selectedJobForModal, setSelectedJobForModal] = useState<any>(null);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [filterActiveIndex, setFilterActiveIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const hScroll = useHorizontalScroll();
-
   const getJobDetails = (posting: any) => {
     const jr = (jobRequests || []).find((r) => r.role === posting.role);
     const er = (existingRoles || []).find((r) => r.role === posting.role);
@@ -117,6 +119,14 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
             <>
               <div
                 ref={hScroll.ref}
+                onScroll={(e) => {
+                  const scrollLeft = e.currentTarget.scrollLeft;
+                  const cardWidth = e.currentTarget.clientWidth;
+                  if (cardWidth > 0) {
+                    const newIndex = Math.round(scrollLeft / cardWidth);
+                    setFilterActiveIndex(newIndex);
+                  }
+                }}
                 style={{
                   display: "flex",
                   overflowX: "auto",
@@ -130,7 +140,14 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
               >
                 {/* All tile — full width */}
                 <div
-                  onClick={() => selectPosting(null)}
+                  onClick={() => {
+                    selectPosting(null);
+                    setFilterActiveIndex(0);
+                    if (hScroll.ref.current) {
+                      const cards = hScroll.ref.current.children;
+                      if (cards[0]) (cards[0] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                    }
+                  }}
                   style={{
                     flexShrink: 0, width: "100%", scrollSnapAlign: "center",
                     border: `2px solid ${!selectedPostingId ? T.primary : T.border}`,
@@ -156,14 +173,21 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
                   )}
                 </div>
 
-                {postings.map((p) => {
+                {postings.map((p, idx) => {
                   const isSelected = selectedPostingId === p.id;
                   const initials = p.role.split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
                   const details = getJobDetails(p);
                   return (
                     <div
                       key={p.id}
-                      onClick={() => selectPosting(p.id)}
+                      onClick={() => {
+                        selectPosting(p.id);
+                        setFilterActiveIndex(idx + 1);
+                        if (hScroll.ref.current) {
+                          const cards = hScroll.ref.current.children;
+                          if (cards[idx + 1]) (cards[idx + 1] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                        }
+                      }}
                       style={{
                         flexShrink: 0, width: "100%", scrollSnapAlign: "center",
                         border: `2px solid ${isSelected ? T.primary : T.border}`,
@@ -215,15 +239,16 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
                     onClick={() => {
                       if (id === null) selectPosting(null);
                       else selectPosting(id as string);
-                      if (scrollRef.current) {
-                        const cards = scrollRef.current.children;
+                      setFilterActiveIndex(i);
+                      if (hScroll.ref.current) {
+                        const cards = hScroll.ref.current.children;
                         if (cards[i]) (cards[i] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
                       }
                     }}
                     style={{
-                      width: selectedPostingId === id ? 20 : 6,
+                      width: filterActiveIndex === i ? 20 : 6,
                       height: 6, borderRadius: 99,
-                      background: selectedPostingId === id ? T.primary : T.border,
+                      background: filterActiveIndex === i ? T.primary : T.border,
                       cursor: "pointer", transition: "all 0.2s",
                     }}
                   />
@@ -305,6 +330,13 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
           </div>
 
           <div
+            ref={scrollRef}
+            onScroll={(e) => {
+              const scrollLeft = e.currentTarget.scrollLeft;
+              const cardWidth = e.currentTarget.clientWidth;
+              const newIndex = Math.round(scrollLeft / cardWidth);
+              setCurrentCardIndex(newIndex);
+            }}
             style={{
               display: "flex",
               overflowX: "auto",
@@ -312,73 +344,100 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
               WebkitOverflowScrolling: "touch",
               scrollbarWidth: "none",
               msOverflowStyle: "none",
-              gap: 12,
-              paddingBottom: 4,
+              gap: 16,
+              padding: "0 16px 20px",
+              margin: "0 -16px",
             }}
           >
             {filtered.map((p, idx) => {
+              const cardBackground = "linear-gradient(135deg, #72102a 0%, #3a0010 100%)";
               return (
                 <div
                   key={p.id}
                   onClick={() => setSelectedJobForModal(p)}
                   style={{
                     flexShrink: 0,
-                    width: "100%",
+                    minWidth: "calc(100% - 32px)",
                     scrollSnapAlign: "center",
-                    background: T.surface,
-                    borderRadius: 18,
-                    border: `1.5px solid ${T.border}`,
-                    overflow: "hidden",
-                    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                    background: cardBackground,
+                    color: "#fff",
+                    borderRadius: 20,
+                    padding: 24,
+                    position: "relative",
+                    boxShadow: "0 14px 40px rgba(0,0,0,0.25)",
                     cursor: "pointer",
+                    minHeight: 380,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
                   }}
                 >
-                  {/* Header */}
-                  <div
-                    style={{
-                      background: `linear-gradient(135deg, ${T.primaryPale} 0%, ${T.canvas} 100%)`,
-                      padding: "16px 18px 14px",
-                      borderBottom: `1px solid ${T.border}`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.role}</div>
-                      <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 4 }}>{p.channel}</div>
-                    </div>
-                    <div style={{ fontSize: 11, color: T.inkFaint, flexShrink: 0 }}>
-                      {idx + 1}/{filtered.length}
+                  {/* Pagination counter */}
+                  <div style={{ position: "absolute", top: 12, right: 12, background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)", padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.9)", border: "1px solid rgba(255,255,255,0.2)" }}>
+                    {idx + 1} of {filtered.length}
+                  </div>
+
+                  <div>
+                    {/* Header */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <div
+                        style={{
+                          width: 48, height: 48, borderRadius: "50%",
+                          background: "rgba(255,255,255,0.15)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 16, fontWeight: 800, color: "#fff", flexShrink: 0,
+                        }}
+                      >
+                        💼
+                      </div>
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>{p.role}</h3>
+                        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 2 }}>
+                          {p.channel}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Details */}
-                  <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 8, borderBottom: `1px solid ${T.border}` }}>
+                  {/* Details (Glassmorphic) */}
+                  <div
+                    style={{
+                      background: "rgba(255,255,255,0.1)",
+                      backdropFilter: "blur(8px)",
+                      borderRadius: 12,
+                      padding: 18,
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 12,
+                      marginTop: 16,
+                      flex: 1,
+                    }}
+                  >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Job ID</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Job ID</span>
                       <Mono v={p.id} />
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Posted</span>
-                      <span style={{ fontSize: 13, color: T.ink }}>{p.posted || "—"}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Posted</span>
+                      <span style={{ fontSize: 13, color: "#fff" }}>{p.posted || "—"}</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Expiry</span>
-                      <span style={{ fontSize: 13, color: T.ink }}>{p.expiry || "—"}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Expiry</span>
+                      <span style={{ fontSize: 13, color: "#fff" }}>{p.expiry || "—"}</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Applications</span>
-                      <span style={{ fontSize: 13, color: T.ink, fontWeight: 700 }}>{p.apps ?? 0}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Applications</span>
+                      <span style={{ fontSize: 13, color: "#fff", fontWeight: 700 }}>{p.apps ?? 0}</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</span>
                       <span
                         style={{
                           borderRadius: 999, padding: "4px 10px", fontSize: 11, fontWeight: 700,
-                          ...(p.status === "Published"
-                            ? { background: T.greenLight, color: T.green, border: `1px solid ${T.green}` }
-                            : { background: T.amberLight, color: T.amber, border: `1px solid ${T.amber}` }),
+                          background: p.status === "Published" ? "rgba(16, 185, 129, 0.2)" : "rgba(245, 158, 11, 0.2)",
+                          color: p.status === "Published" ? "#34D399" : "#FBBF24",
+                          border: `1px solid ${p.status === "Published" ? "rgba(16, 185, 129, 0.3)" : "rgba(245, 158, 11, 0.3)"}`,
                         }}
                       >
                         {p.status || "Unpublished"}
@@ -387,11 +446,11 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
                   </div>
 
                   {/* Actions */}
-                  <div style={{ padding: "12px 18px", display: "flex", justifyContent: "flex-end", gap: 8 }} onClick={(e) => e.stopPropagation()}>
+                  <div style={{ padding: "12px 0 0", display: "flex", justifyContent: "flex-end", gap: 8 }} onClick={(e) => e.stopPropagation()}>
                     {p.status === "Published" && (
                       <button
                         onClick={() => shareJob(p)}
-                        style={{ border: "none", background: T.blueLight, color: T.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+                        style={{ border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
                       >
                         Share
                       </button>
@@ -399,10 +458,10 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
                     <button
                       onClick={() => toggleStatus(p.id, p.status)}
                       style={{
-                        border: "none",
-                        background: p.status === "Published" ? "#FEE2E2" : T.greenLight,
-                        color: p.status === "Published" ? "#DC2626" : T.green,
-                        borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12,
+                        background: p.status === "Published" ? "rgba(239, 68, 68, 0.2)" : "rgba(16, 185, 129, 0.2)",
+                        color: p.status === "Published" ? "#FCA5A5" : "#34D399",
+                        border: `1px solid ${p.status === "Published" ? "rgba(239, 68, 68, 0.3)" : "rgba(16, 185, 129, 0.3)"}`,
+                        borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontWeight: 700, fontSize: 12,
                       }}
                     >
                       {p.status === "Published" ? "Unpublish" : "Publish"}
@@ -412,6 +471,26 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
               );
             })}
           </div>
+
+          {/* Dot indicators */}
+          {filtered.length > 0 && (
+            <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 10, paddingBottom: 8 }}>
+              {filtered.map((_, i) => (
+                <div
+                  key={i}
+                  onClick={() => scrollRef.current?.scrollTo({ left: (i * scrollRef.current.clientWidth), behavior: "smooth" })}
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: currentCardIndex === i ? T.primary : T.border,
+                    cursor: "pointer",
+                    transition: "all 0.3s",
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <Card>

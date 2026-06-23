@@ -23,6 +23,9 @@ export default function OfferManagement({
   const [selectedPostingId, setSelectedPostingId] = useState<string | null>(null);
 
   const [selectedOfferForModal, setSelectedOfferForModal] = useState<any>(null);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [filterActiveIndex, setFilterActiveIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const hScroll = useHorizontalScroll();
   const accentColor = T.blue;
@@ -87,7 +90,14 @@ export default function OfferManagement({
                 <span>
                   Filtering by <span style={{ color: accentColor }}>{selectedRole}</span>
                   <button
-                    onClick={() => selectPosting(null)}
+                    onClick={() => {
+                      selectPosting(null);
+                      setFilterActiveIndex(0);
+                      if (hScroll.ref.current) {
+                        const cards = hScroll.ref.current.children;
+                        if (cards[0]) (cards[0] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                      }
+                    }}
                     style={{ marginLeft: 8, fontSize: 11, color: T.inkFaint, background: "none", border: `1px solid ${T.border}`, borderRadius: 6, padding: "2px 8px", cursor: "pointer" }}
                   >
                     Clear ×
@@ -109,6 +119,14 @@ export default function OfferManagement({
             <>
               <div
                 ref={hScroll.ref}
+                onScroll={(e) => {
+                  const scrollLeft = e.currentTarget.scrollLeft;
+                  const cardWidth = e.currentTarget.clientWidth;
+                  if (cardWidth > 0) {
+                    const newIndex = Math.round(scrollLeft / cardWidth);
+                    setFilterActiveIndex(newIndex);
+                  }
+                }}
                 style={{
                   display: "flex",
                   overflowX: "auto",
@@ -121,7 +139,14 @@ export default function OfferManagement({
                 }}
               >
                 <div
-                  onClick={() => selectPosting(null)}
+                  onClick={() => {
+                    selectPosting(null);
+                    setFilterActiveIndex(0);
+                    if (hScroll.ref.current) {
+                      const cards = hScroll.ref.current.children;
+                      if (cards[0]) (cards[0] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                    }
+                  }}
                   style={{
                     flexShrink: 0, width: "100%", scrollSnapAlign: "center",
                     border: `2px solid ${!selectedPostingId ? accentColor : T.border}`,
@@ -147,13 +172,20 @@ export default function OfferManagement({
                   )}
                 </div>
 
-                {enrichedPostings.map((p) => {
+                {enrichedPostings.map((p, idx) => {
                   const isSelected = selectedPostingId === p.id;
                   const initials = p.role.split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
                   return (
                     <div
                       key={p.id}
-                      onClick={() => selectPosting(p.id)}
+                      onClick={() => {
+                        selectPosting(p.id);
+                        setFilterActiveIndex(idx + 1);
+                        if (hScroll.ref.current) {
+                          const cards = hScroll.ref.current.children;
+                          if (cards[idx + 1]) (cards[idx + 1] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                        }
+                      }}
                       style={{
                         flexShrink: 0, width: "100%", scrollSnapAlign: "center",
                         border: `2px solid ${isSelected ? accentColor : T.border}`,
@@ -197,6 +229,7 @@ export default function OfferManagement({
                 })}
               </div>
 
+              {/* Dot indicators */}
               <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 10 }}>
                 {[null, ...enrichedPostings.map((p) => p.id)].map((id, i) => (
                   <div
@@ -204,15 +237,16 @@ export default function OfferManagement({
                     onClick={() => {
                       if (id === null) selectPosting(null);
                       else selectPosting(id as string);
-                      if (scrollRef.current) {
-                        const cards = scrollRef.current.children;
+                      setFilterActiveIndex(i);
+                      if (hScroll.ref.current) {
+                        const cards = hScroll.ref.current.children;
                         if (cards[i]) (cards[i] as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
                       }
                     }}
                     style={{
-                      width: selectedPostingId === id ? 20 : 6,
+                      width: filterActiveIndex === i ? 20 : 6,
                       height: 6, borderRadius: 99,
-                      background: selectedPostingId === id ? accentColor : T.border,
+                      background: filterActiveIndex === i ? accentColor : T.border,
                       cursor: "pointer", transition: "all 0.2s",
                     }}
                   />
@@ -301,6 +335,13 @@ export default function OfferManagement({
           </div>
 
           <div
+            ref={scrollRef}
+            onScroll={(e) => {
+              const scrollLeft = e.currentTarget.scrollLeft;
+              const cardWidth = e.currentTarget.clientWidth;
+              const newIndex = Math.round(scrollLeft / cardWidth);
+              setCurrentCardIndex(newIndex);
+            }}
             style={{
               display: "flex",
               overflowX: "auto",
@@ -308,95 +349,134 @@ export default function OfferManagement({
               WebkitOverflowScrolling: "touch",
               scrollbarWidth: "none",
               msOverflowStyle: "none",
-              gap: 12,
-              paddingBottom: 4,
+              gap: 16,
+              padding: "0 16px 20px",
+              margin: "0 -16px",
             }}
           >
             {filteredOffers.map((o, idx) => {
               const interview = INTERVIEWS.find(inv => inv.candidate === o.candidate && inv.role === o.role);
+              const cardBackground = "linear-gradient(135deg, #72102a 0%, #3a0010 100%)";
               return (
                 <div
                   key={o.id}
                   onClick={() => setSelectedOfferForModal(o)}
                   style={{
                     flexShrink: 0,
-                    width: "100%",
+                    minWidth: "calc(100% - 32px)",
                     scrollSnapAlign: "center",
-                    background: T.surface,
-                    borderRadius: 18,
-                    border: `1.5px solid ${T.border}`,
-                    overflow: "hidden",
-                    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                    borderRadius: 20,
+                    background: cardBackground,
+                    color: "#fff",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    padding: 24,
+                    position: "relative",
+                    boxShadow: "0 14px 40px rgba(0,0,0,0.25)",
                     cursor: "pointer",
+                    minHeight: 380,
                   }}
                 >
-                  {/* Header */}
-                  <div
-                    style={{
-                      background: `linear-gradient(135deg, ${T.primaryPale} 0%, ${T.canvas} 100%)`,
-                      padding: "16px 18px 14px",
-                      borderBottom: `1px solid ${T.border}`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.candidate}</div>
-                      <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 4 }}>{o.role}</div>
-                    </div>
-                    <div style={{ fontSize: 11, color: T.inkFaint, flexShrink: 0 }}>
-                      {idx + 1}/{filteredOffers.length}
+                  {/* Pagination counter */}
+                  <div style={{ position: "absolute", top: 12, right: 12, background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)", padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.9)", border: "1px solid rgba(255,255,255,0.2)" }}>
+                    {idx + 1} of {filteredOffers.length}
+                  </div>
+
+                  <div>
+                    {/* Header info */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <div
+                        style={{
+                          width: 48, height: 48, borderRadius: "50%",
+                          background: "rgba(255,255,255,0.15)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 16, fontWeight: 800, color: "#fff", flexShrink: 0,
+                        }}
+                      >
+                        📄
+                      </div>
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>{o.candidate}</h3>
+                        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 2 }}>
+                          {o.role || "—"}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Details */}
-                  <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 8, borderBottom: `1px solid ${T.border}` }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Offer ID</span>
-                      <Mono v={o.id} />
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Interview Score</span>
-                      {interview && interview.score !== null ? (
-                        <div style={{
-                          display: "inline-flex", alignItems: "center", justifyContent: "center",
-                          width: 32, height: 32, borderRadius: "50%",
-                          background: "#E6F6ED", color: "#00796B", fontWeight: 800, fontSize: 12
-                        }}>
-                          {interview.score}
+                  {/* Details (Glassmorphic look) */}
+                  <div
+                    style={{
+                      background: "rgba(255,255,255,0.1)",
+                      backdropFilter: "blur(8px)",
+                      borderRadius: 12,
+                      padding: 18,
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 12,
+                      marginTop: 16,
+                      flex: 1,
+                    }}
+                  >
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      <div>
+                        <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Offer ID</div>
+                        <div style={{ fontSize: 12, fontWeight: 600 }}>{o.id}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Interview Score</div>
+                        <div style={{ fontSize: 12, fontWeight: 600 }}>
+                          {interview && interview.score !== null ? `${interview.score}` : "—"}
                         </div>
-                      ) : <span style={{ color: T.inkFaint }}>—</span>}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>CTC</div>
+                        <div style={{ fontSize: 12, fontWeight: 600 }}>{o.ctc || "—"}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Joining Date</div>
+                        <div style={{ fontSize: 12, fontWeight: 600 }}>{o.joining || "—"}</div>
+                      </div>
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</span>
-                      <Badge label={o.status} variant={statusVariant(o.status)} />
+
+                    <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 8, marginTop: 4 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div />
+                        <div>
+                          <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700, textAlign: "right" }}>Status</div>
+                          <div style={{ marginTop: 2, textAlign: "right" }}>
+                            <Badge label={o.status} variant={statusVariant(o.status)} />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <div style={{ padding: "12px 18px", display: "flex", justifyContent: "flex-end", gap: 8 }} onClick={(e) => e.stopPropagation()}>
+                  <div style={{ padding: "12px 0 0", display: "flex", justifyContent: "flex-end", gap: 8 }} onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={() => {
                         setGenForm({ candidate: o.candidate, role: o.role, ctc: "", expiry: "", joining: "" });
                         setGenRange(getRoleRange(o.role));
                         setShowGenerateModal(true);
                       }}
-                      style={{ border: "none", background: T.blueLight, color: T.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+                      style={{ border: "none", background: "rgba(255,255,255,0.2)", color: "#fff", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
                     >
                       Generate Offer
                     </button>
                     {o.ctc && o.issued && o.expiry ? (
                       <button
                         onClick={() => setViewOffer(o)}
-                        style={{ border: "none", background: T.blueLight, color: T.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+                        style={{ border: "none", background: "#fff", color: T.primary, borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
                       >
                         View Letter
                       </button>
                     ) : (
                       <button
                         disabled
-                        style={{ border: "none", background: "#E5E7EB", color: "#9CA3AF", borderRadius: 8, padding: "6px 12px", cursor: "not-allowed", fontWeight: 700, fontSize: 12, opacity: 0.6 }}
+                        style={{ border: "none", background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)", borderRadius: 8, padding: "8px 14px", cursor: "not-allowed", fontWeight: 700, fontSize: 12 }}
                       >
                         View Letter
                       </button>
@@ -406,6 +486,26 @@ export default function OfferManagement({
               );
             })}
           </div>
+
+          {/* Dot indicators */}
+          {filteredOffers.length > 0 && (
+            <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 10, paddingBottom: 8 }}>
+              {filteredOffers.map((_, i) => (
+                <div
+                  key={i}
+                  onClick={() => scrollRef.current?.scrollTo({ left: (i * scrollRef.current.clientWidth), behavior: "smooth" })}
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: currentCardIndex === i ? T.primary : T.border,
+                    cursor: "pointer",
+                    transition: "all 0.3s",
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <Card>
