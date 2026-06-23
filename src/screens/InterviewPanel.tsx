@@ -1,8 +1,8 @@
 import React, { useState, useRef } from "react";
 import { T } from "../theme";
 import { statusVariant } from "../theme";
-import { useBreakpoint } from "../hooks";
-import { Card, SectionTitle, Table, Mono, Badge, Btn, Modal, ModalHeader, FormField, Select, Input } from "../components/ui";
+import { useBreakpoint, useHorizontalScroll } from "../hooks";
+import { Card, SectionTitle, Table, Badge, Btn, Modal, ModalHeader, FormField, Select, Input } from "../components/ui";
 
 const TIME_OPTIONS = [
   { value: "9:00 AM", label: "9:00 AM" },
@@ -32,24 +32,22 @@ const getRoundOrdinal = (round: number) => {
 
 export default function InterviewPanel({
   jobApplications = [],
-  setJobApplications,
   generalApplications = [],
-  setGeneralApplications,
   jobPostings = [],
   interviews = [],
   setInterviews,
   panelists = [],
   setPanelists,
+  onGiveOffer,
 }: {
   jobApplications?: any[];
-  setJobApplications?: React.Dispatch<React.SetStateAction<any[]>>;
   generalApplications?: any[];
-  setGeneralApplications?: React.Dispatch<React.SetStateAction<any[]>>;
   jobPostings?: any[];
   interviews?: any[];
   setInterviews?: React.Dispatch<React.SetStateAction<any[]>>;
   panelists?: any[];
   setPanelists?: React.Dispatch<React.SetStateAction<any[]>>;
+  onGiveOffer?: (candidate: any) => void;
 }) {
   const bp = useBreakpoint();
   const isMobile = bp === "mobile";
@@ -67,6 +65,55 @@ export default function InterviewPanel({
   const [selectedAppDetail, setSelectedAppDetail] = useState<any>(null);
   const [showAddPanelistModal, setShowAddPanelistModal] = useState(false);
   const [reminderCandidate, setReminderCandidate] = useState<any>(null);
+
+  // Form validations for Add Panelist
+  const [panelistErrors, setPanelistErrors] = useState({ name: "", email: "", phone: "" });
+
+  const validateName = (name: string) => {
+    if (!name.trim()) return "Full Name is required.";
+    if (name.trim().length < 2) return "Full Name must be at least 2 characters.";
+    if (!/^[a-zA-Z\s.\-]+$/.test(name)) return "Full Name can only contain letters, spaces, dots, and hyphens.";
+    return "";
+  };
+
+  const validateEmail = (email: string) => {
+    if (!email.trim()) return "Email address is required.";
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email.trim())) return "Please enter a valid email address.";
+    return "";
+  };
+
+  const validatePhone = (phone: string) => {
+    if (!phone.trim()) return "Phone number is required.";
+    if (!/^\+?[0-9\s.\-()]+$/.test(phone)) return "Phone number contains invalid characters.";
+    const digits = phone.replace(/[^0-9]/g, "");
+    if (digits.length < 10) return "Phone number must have at least 10 digits.";
+    if (digits.length > 15) return "Phone number cannot exceed 15 digits.";
+    return "";
+  };
+
+  const handleNameChange = (val: string) => {
+    setNewPanelistName(val);
+    setPanelistErrors((prev) => ({ ...prev, name: validateName(val) }));
+  };
+
+  const handleEmailChange = (val: string) => {
+    setNewPanelistEmail(val);
+    setPanelistErrors((prev) => ({ ...prev, email: validateEmail(val) }));
+  };
+
+  const handlePhoneChange = (val: string) => {
+    setNewPanelistPhone(val);
+    setPanelistErrors((prev) => ({ ...prev, phone: validatePhone(val) }));
+  };
+
+  const closeAddPanelistModal = () => {
+    setShowAddPanelistModal(false);
+    setNewPanelistName("");
+    setNewPanelistEmail("");
+    setNewPanelistPhone("");
+    setPanelistErrors({ name: "", email: "", phone: "" });
+  };
 
   // Track the current active round view override per candidate (key: name-role)
   const [activeRoundOverrides, setActiveRoundOverrides] = useState<Record<string, number>>({});
@@ -87,7 +134,8 @@ export default function InterviewPanel({
   const [newPanelistEmail, setNewPanelistEmail] = useState("");
   const [newPanelistPhone, setNewPanelistPhone] = useState("");
 
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const hScroll = useHorizontalScroll();
+  const dateInputRef = useRef<HTMLInputElement>(null);
   const criteria = ["Subject Knowledge", "Communication Skills", "Demo Class / Task", "Classroom Management"];
 
   // Filter out candidates from Applications where status === "Shortlisted"
@@ -223,11 +271,14 @@ export default function InterviewPanel({
       return { ...c, displayRound: c.activeRound };
     });
 
+  const selectableCandidates = filteredCandidates.filter((c) => c.displayRound === c.activeRound);
+
   const isAllSelected =
-    filteredCandidates.length > 0 &&
-    filteredCandidates.every((c) => selectedCandidateKeys.includes(candidateKey(c)));
+    selectableCandidates.length > 0 &&
+    selectableCandidates.every((c) => selectedCandidateKeys.includes(candidateKey(c)));
 
   const toggleSelectCandidate = (c: any) => {
+    if (c.displayRound < c.activeRound) return; // ignore toggling for disabled/previous rounds
     const key = candidateKey(c);
     setSelectedCandidateKeys((prev) =>
       prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
@@ -236,9 +287,17 @@ export default function InterviewPanel({
 
   const toggleSelectAll = () => {
     if (isAllSelected) {
-      setSelectedCandidateKeys([]);
+      const selectableKeys = selectableCandidates.map(candidateKey);
+      setSelectedCandidateKeys((prev) => prev.filter((k) => !selectableKeys.includes(k)));
     } else {
-      setSelectedCandidateKeys(filteredCandidates.map(candidateKey));
+      const selectableKeys = selectableCandidates.map(candidateKey);
+      setSelectedCandidateKeys((prev) => {
+        const next = [...prev];
+        selectableKeys.forEach((k) => {
+          if (!next.includes(k)) next.push(k);
+        });
+        return next;
+      });
     }
   };
 
@@ -249,7 +308,7 @@ export default function InterviewPanel({
     }
     setActiveRoundOverrides((prev) => {
       const next = { ...prev };
-      filteredCandidates.forEach((c) => {
+      selectableCandidates.forEach((c) => {
         const key = candidateKey(c);
         if (selectedCandidateKeys.includes(key)) {
           next[key] = Math.min(10, c.activeRound + 1);
@@ -257,6 +316,7 @@ export default function InterviewPanel({
       });
       return next;
     });
+    setSelectedCandidateKeys([]);
   };
 
   const handleIncrementCandidateRound = (c: any, currentRound: number) => {
@@ -277,18 +337,33 @@ export default function InterviewPanel({
 
   const handleAddPanelist = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPanelistName || !newPanelistEmail || !newPanelistPhone) {
-      alert("Please fill all panelist fields.");
+    const nameErr = validateName(newPanelistName);
+    const emailErr = validateEmail(newPanelistEmail);
+    const phoneErr = validatePhone(newPanelistPhone);
+
+    if (nameErr || emailErr || phoneErr) {
+      setPanelistErrors({ name: nameErr, email: emailErr, phone: phoneErr });
       return;
     }
+
     if (!setPanelists) return;
     setPanelists((prev) => [
       ...prev,
-      { name: newPanelistName, email: newPanelistEmail, phone: newPanelistPhone },
+      { name: newPanelistName.trim(), email: newPanelistEmail.trim(), phone: newPanelistPhone.trim() },
     ]);
     setNewPanelistName("");
     setNewPanelistEmail("");
     setNewPanelistPhone("");
+    setPanelistErrors({ name: "", email: "", phone: "" });
+    setShowAddPanelistModal(false);
+  };
+
+  const handleGiveOffer = (c: any) => {
+    if (window.confirm(`Are you sure you want to give an offer to ${c.name} for the "${c.role}" role?`)) {
+      if (onGiveOffer) {
+        onGiveOffer(c);
+      }
+    }
   };
 
   const handleOpenSchedule = (candidate: any) => {
@@ -475,8 +550,8 @@ export default function InterviewPanel({
   };
 
   const scrollCarousel = (dir: "left" | "right") => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: dir === "left" ? -320 : 320, behavior: "smooth" });
+    if (hScroll.ref.current) {
+      hScroll.ref.current.scrollBy({ left: dir === "left" ? -320 : 320, behavior: "smooth" });
     }
   };
 
@@ -506,10 +581,11 @@ export default function InterviewPanel({
     </div>
   );
 
-  const actionBtnStyle = (variant: "primary" | "secondary" | "success" | "amber" | "reschedule") => ({
+  const actionBtnStyle = (variant: "primary" | "secondary" | "success" | "amber" | "reschedule", disabled = false) => ({
     border: "none",
-    background:
-      variant === "primary"
+    background: disabled
+      ? T.border
+      : variant === "primary"
         ? T.primaryLight
         : variant === "success"
           ? T.greenLight
@@ -518,8 +594,9 @@ export default function InterviewPanel({
             : variant === "reschedule"
               ? "#FFF3E0"
               : T.skyLight,
-    color:
-      variant === "primary"
+    color: disabled
+      ? T.inkFaint
+      : variant === "primary"
         ? T.primary
         : variant === "success"
           ? T.green
@@ -530,10 +607,11 @@ export default function InterviewPanel({
               : T.sky,
     borderRadius: 8,
     padding: "6px 10px",
-    cursor: "pointer",
+    cursor: disabled ? "not-allowed" : "pointer",
     fontWeight: 700 as const,
     fontSize: 11,
     whiteSpace: "nowrap" as const,
+    opacity: disabled ? 0.6 : 1,
   });
 
   const modeCell = (mode: string) => {
@@ -616,6 +694,7 @@ export default function InterviewPanel({
   const tableRows = filteredCandidates.map((c) => {
     const i = c.interview;
     const rnd = c.displayRound;
+    const isPreviousRound = c.displayRound < c.activeRound;
 
     if (isMobile) {
       return [
@@ -623,12 +702,13 @@ export default function InterviewPanel({
           <input
             type="checkbox"
             checked={selectedCandidateKeys.includes(candidateKey(c))}
+            disabled={isPreviousRound}
             onChange={(e) => {
               e.stopPropagation();
               toggleSelectCandidate(c);
             }}
             onClick={(e) => e.stopPropagation()}
-            style={{ width: 16, height: 16 }}
+            style={{ width: 16, height: 16, cursor: isPreviousRound ? "not-allowed" : "pointer" }}
           />
           {avatar(c.name, 28, 10)}
           <div>
@@ -642,11 +722,12 @@ export default function InterviewPanel({
         >
           <button
             onClick={() => handleDecrementCandidateRound(c, rnd)}
-            disabled={rnd <= 1}
+            disabled={rnd <= 1 || isPreviousRound}
             style={{
               width: 18, height: 18, borderRadius: 4, border: "none",
-              background: rnd <= 1 ? T.border : T.primary, color: "#fff",
-              cursor: rnd <= 1 ? "not-allowed" : "pointer",
+              background: (rnd <= 1 || isPreviousRound) ? T.border : T.primary,
+              color: (rnd <= 1 || isPreviousRound) ? T.inkFaint : "#fff",
+              cursor: (rnd <= 1 || isPreviousRound) ? "not-allowed" : "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: "bold"
             }}
           >
@@ -657,18 +738,39 @@ export default function InterviewPanel({
           </span>
           <button
             onClick={() => handleIncrementCandidateRound(c, rnd)}
-            disabled={rnd >= 10}
+            disabled={rnd >= 10 || isPreviousRound}
             style={{
               width: 18, height: 18, borderRadius: 4, border: "none",
-              background: rnd >= 10 ? T.border : T.primary, color: "#fff",
-              cursor: rnd >= 10 ? "not-allowed" : "pointer",
+              background: (rnd >= 10 || isPreviousRound) ? T.border : T.primary,
+              color: (rnd >= 10 || isPreviousRound) ? T.inkFaint : "#fff",
+              cursor: (rnd >= 10 || isPreviousRound) ? "not-allowed" : "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: "bold"
             }}
           >
             +
           </button>
         </div>,
-        <div>
+        <div
+          onClick={(e) => {
+            if (isPreviousRound) return;
+            e.stopPropagation();
+            handleOpenSchedule(c);
+          }}
+          style={{
+            cursor: isPreviousRound ? "default" : "pointer",
+            padding: "4px 8px",
+            borderRadius: 6,
+            transition: "background-color 0.15s ease",
+            display: "inline-block",
+          }}
+          onMouseEnter={(e) => {
+            if (!isPreviousRound) e.currentTarget.style.background = T.primaryLight;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+          }}
+          title={isPreviousRound ? "" : (i.date ? "Click to reschedule interview" : "Click to schedule interview")}
+        >
           {i.date ? (
             <>
               <div style={{ fontSize: 11, fontWeight: 600, color: T.ink }}>{i.date}</div>
@@ -682,49 +784,68 @@ export default function InterviewPanel({
           {!i.date ? (
             <button
               onClick={(e) => { e.stopPropagation(); handleOpenSchedule(c); }}
-              style={actionBtnStyle("primary")}
+              disabled={isPreviousRound}
+              style={actionBtnStyle("primary", isPreviousRound)}
+              className={isPreviousRound ? "" : "btn-action-hover"}
             >
               📅 Schedule
             </button>
           ) : (
             <button
               onClick={(e) => { e.stopPropagation(); handleOpenSchedule(c); }}
-              style={actionBtnStyle("reschedule")}
-              title={`Currently: ${i.date} at ${i.time}`}
+              disabled={isPreviousRound}
+              style={actionBtnStyle("reschedule", isPreviousRound)}
+              className={isPreviousRound ? "" : "btn-action-hover"}
+              title={isPreviousRound ? "" : `Currently: ${i.date} at ${i.time}`}
             >
               🔄 Reschedule
             </button>
           )}
           <button
             onClick={(e) => { e.stopPropagation(); setAssigningCandidate(c); }}
-            style={actionBtnStyle("amber")}
+            disabled={isPreviousRound}
+            style={actionBtnStyle("amber", isPreviousRound)}
+            className={isPreviousRound ? "" : "btn-action-hover"}
           >
             Panelist
           </button>
           {i.date && (
             <button
               onClick={(e) => { e.stopPropagation(); setReminderCandidate(c); }}
-              style={actionBtnStyle("secondary")}
-              title="Send reminder to panelists and candidate"
+              disabled={isPreviousRound}
+              style={actionBtnStyle("secondary", isPreviousRound)}
+              className={isPreviousRound ? "" : "btn-action-hover"}
+              title={isPreviousRound ? "" : "Send reminder to panelists and candidate"}
             >
               🔔 Reminder
             </button>
           )}
+          <button
+            onClick={(e) => { e.stopPropagation(); handleGiveOffer(c); }}
+            disabled={isPreviousRound}
+            style={actionBtnStyle("success", isPreviousRound)}
+            className={isPreviousRound ? "" : "btn-action-hover"}
+          >
+            📜 Give Offer
+          </button>
         </div>,
       ];
     }
 
     return [
-      <input
-        type="checkbox"
-        checked={selectedCandidateKeys.includes(candidateKey(c))}
-        onChange={(e) => {
-          e.stopPropagation();
-          toggleSelectCandidate(c);
-        }}
-        onClick={(e) => e.stopPropagation()}
-        style={{ width: 16, height: 16 }}
-      />,
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+        <input
+          type="checkbox"
+          checked={selectedCandidateKeys.includes(candidateKey(c))}
+          disabled={isPreviousRound}
+          onChange={(e) => {
+            e.stopPropagation();
+            toggleSelectCandidate(c);
+          }}
+          onClick={(e) => e.stopPropagation()}
+          style={{ width: 16, height: 16, cursor: isPreviousRound ? "not-allowed" : "pointer" }}
+        />
+      </div>,
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         {avatar(c.name, 32, 11)}
         <div>
@@ -739,11 +860,12 @@ export default function InterviewPanel({
       >
         <button
           onClick={() => handleDecrementCandidateRound(c, rnd)}
-          disabled={rnd <= 1}
+          disabled={rnd <= 1 || isPreviousRound}
           style={{
             width: 20, height: 20, borderRadius: 4, border: "none",
-            background: rnd <= 1 ? T.border : T.primary,
-            color: "#fff", fontWeight: "bold", cursor: rnd <= 1 ? "not-allowed" : "pointer",
+            background: (rnd <= 1 || isPreviousRound) ? T.border : T.primary,
+            color: (rnd <= 1 || isPreviousRound) ? T.inkFaint : "#fff", fontWeight: "bold",
+            cursor: (rnd <= 1 || isPreviousRound) ? "not-allowed" : "pointer",
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11
           }}
         >
@@ -754,11 +876,12 @@ export default function InterviewPanel({
         </span>
         <button
           onClick={() => handleIncrementCandidateRound(c, rnd)}
-          disabled={rnd >= 10}
+          disabled={rnd >= 10 || isPreviousRound}
           style={{
             width: 20, height: 20, borderRadius: 4, border: "none",
-            background: rnd >= 10 ? T.border : T.primary,
-            color: "#fff", fontWeight: "bold", cursor: rnd >= 10 ? "not-allowed" : "pointer",
+            background: (rnd >= 10 || isPreviousRound) ? T.border : T.primary,
+            color: (rnd >= 10 || isPreviousRound) ? T.inkFaint : "#fff", fontWeight: "bold",
+            cursor: (rnd >= 10 || isPreviousRound) ? "not-allowed" : "pointer",
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11
           }}
         >
@@ -769,7 +892,27 @@ export default function InterviewPanel({
         {i.panel && i.panel.length > 0 ? i.panel.join(", ") : <span style={{ color: T.inkFaint, fontStyle: "italic" }}>TBD</span>}
       </div>,
       modeCell(i.mode || "In-Person"),
-      <div>
+      <div
+        onClick={(e) => {
+          if (isPreviousRound) return;
+          e.stopPropagation();
+          handleOpenSchedule(c);
+        }}
+        style={{
+          cursor: isPreviousRound ? "default" : "pointer",
+          padding: "4px 8px",
+          borderRadius: 6,
+          transition: "background-color 0.15s ease",
+          display: "inline-block",
+        }}
+        onMouseEnter={(e) => {
+          if (!isPreviousRound) e.currentTarget.style.background = T.primaryLight;
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "transparent";
+        }}
+        title={isPreviousRound ? "" : (i.date ? "Click to reschedule interview" : "Click to schedule interview")}
+      >
         {i.date ? (
           <>
             <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{i.date}</div>
@@ -800,53 +943,80 @@ export default function InterviewPanel({
       ) : (
         <span style={{ color: T.inkFaint }}>—</span>
       ),
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "nowrap", whiteSpace: "nowrap" }}>
         {!i.date ? (
           <button
             onClick={(e) => { e.stopPropagation(); handleOpenSchedule(c); }}
-            style={actionBtnStyle("primary")}
+            disabled={isPreviousRound}
+            style={actionBtnStyle("primary", isPreviousRound)}
+            className={isPreviousRound ? "" : "btn-action-hover"}
           >
             📅 Schedule
           </button>
         ) : (
           <button
             onClick={(e) => { e.stopPropagation(); handleOpenSchedule(c); }}
+            disabled={isPreviousRound}
             style={{
-              ...actionBtnStyle("reschedule"),
+              ...actionBtnStyle("reschedule", isPreviousRound),
               display: "flex", alignItems: "center", gap: 4,
             }}
-            title={`Currently scheduled: ${i.date} at ${i.time}${i.mode ? " · " + i.mode : ""}`}
+            className={isPreviousRound ? "" : "btn-action-hover"}
+            title={isPreviousRound ? "" : `Currently scheduled: ${i.date} at ${i.time}${i.mode ? " · " + i.mode : ""}`}
           >
             🔄 Reschedule
           </button>
         )}
         <button
           onClick={(e) => { e.stopPropagation(); setAssigningCandidate(c); }}
-          style={actionBtnStyle("amber")}
+          disabled={isPreviousRound}
+          style={actionBtnStyle("amber", isPreviousRound)}
+          className={isPreviousRound ? "" : "btn-action-hover"}
         >
           Panelist
         </button>
         {i.date && (
           <button
             onClick={(e) => { e.stopPropagation(); setReminderCandidate(c); }}
-            style={actionBtnStyle("secondary")}
-            title="Send reminder to panelists and candidate"
+            disabled={isPreviousRound}
+            style={actionBtnStyle("secondary", isPreviousRound)}
+            className={isPreviousRound ? "" : "btn-action-hover"}
+            title={isPreviousRound ? "" : "Send reminder to panelists and candidate"}
           >
             🔔 Reminder
           </button>
         )}
+        <button
+          onClick={(e) => { e.stopPropagation(); handleGiveOffer(c); }}
+          disabled={isPreviousRound}
+          style={actionBtnStyle("success", isPreviousRound)}
+          className={isPreviousRound ? "" : "btn-action-hover"}
+        >
+          📜 Give Offer
+        </button>
       </div>,
     ];
   });
 
   return (
     <div>
+      <style>{`
+        .btn-action-hover {
+          transition: all 0.2s ease-in-out !important;
+        }
+        .btn-action-hover:hover {
+          transform: translateY(-1.5px) scale(1.02);
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+          filter: brightness(0.95);
+        }
+      `}</style>
       <SectionTitle
         title="Interview Panel"
         sub="Manage shortlisted candidates, schedule interviews, and assign panel members"
         action={
           <button
             onClick={() => setShowAddPanelistModal(true)}
+            className="btn-action-hover"
             style={{
               background: T.primary,
               color: "#fff",
@@ -868,9 +1038,21 @@ export default function InterviewPanel({
         }
       />
 
-      {/* Job filter carousel */}
+      {/* Job filter carousel — sticky on mobile */}
       {enrichedPostings.length > 0 && (
-        <div style={{ marginBottom: 20 }}>
+        <div style={{
+          marginBottom: 20,
+          position: isMobile ? "sticky" : "relative",
+          top: isMobile ? -16 : undefined,
+          zIndex: isMobile ? 50 : undefined,
+          background: isMobile ? T.canvas : undefined,
+          paddingTop: isMobile ? 12 : undefined,
+          paddingBottom: isMobile ? 4 : undefined,
+          marginLeft: isMobile ? -12 : undefined,
+          marginRight: isMobile ? -12 : undefined,
+          paddingLeft: isMobile ? 12 : undefined,
+          paddingRight: isMobile ? 12 : undefined,
+        }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: T.inkMid }}>
               {selectedPostingId ? (
@@ -899,7 +1081,7 @@ export default function InterviewPanel({
           {isMobile ? (
             <>
               <div
-                ref={scrollRef}
+                ref={hScroll.ref}
                 style={{
                   display: "flex",
                   overflowX: "auto",
@@ -1013,12 +1195,30 @@ export default function InterviewPanel({
               </div>
             </>
           ) : (
-            /* ── DESKTOP: multi-card side-scroll carousel ── */
-            <div
-              ref={scrollRef}
-              className="carousel-scroll"
-              style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", paddingBottom: 8, WebkitOverflowScrolling: "touch" }}
-            >
+            /* ── DESKTOP: premium inertia + drag carousel ── */
+            <div style={{ position: "relative" }}>
+              {/* Left fade */}
+              <div style={{
+                position: "absolute", left: 0, top: 0, bottom: 8, width: 40, zIndex: 2,
+                background: `linear-gradient(to right, ${T.canvas}, transparent)`,
+                pointerEvents: "none",
+              }} />
+              {/* Right fade */}
+              <div style={{
+                position: "absolute", right: 0, top: 0, bottom: 8, width: 40, zIndex: 2,
+                background: `linear-gradient(to left, ${T.canvas}, transparent)`,
+                pointerEvents: "none",
+              }} />
+              <div
+                ref={hScroll.ref}
+                className="carousel-scroll hscroll-track"
+                onWheel={hScroll.onWheel}
+                onMouseDown={hScroll.onMouseDown}
+                onMouseMove={hScroll.onMouseMove}
+                onMouseUp={hScroll.onMouseUp}
+                onMouseLeave={hScroll.onMouseLeave}
+                style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", paddingBottom: 8, WebkitOverflowScrolling: "touch", cursor: "grab", userSelect: "none" }}
+              >
               <div
                 onClick={() => selectPosting(null)}
                 style={{
@@ -1065,6 +1265,7 @@ export default function InterviewPanel({
                   </div>
                 );
               })}
+            </div>
             </div>
           )}
         </div>
@@ -1211,6 +1412,7 @@ export default function InterviewPanel({
                   const i = c.interview;
                   const rnd = c.displayRound;
                   const isScheduled = !!i.date;
+                  const isPreviousRound = c.displayRound < c.activeRound;
                   return (
                     <div
                       key={`${c.name}-${c.role}-${rnd}`}
@@ -1233,11 +1435,26 @@ export default function InterviewPanel({
                           borderBottom: `1px solid ${T.border}`,
                           display: "flex",
                           alignItems: "center",
-                          gap: 14,
+                          gap: 12,
                           cursor: "pointer",
                         }}
                         onClick={() => setSelectedAppDetail(c)}
                       >
+                        <input
+                          type="checkbox"
+                          checked={selectedCandidateKeys.includes(candidateKey(c))}
+                          disabled={isPreviousRound}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            toggleSelectCandidate(c);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            width: 18, height: 18,
+                            cursor: isPreviousRound ? "not-allowed" : "pointer",
+                            flexShrink: 0,
+                          }}
+                        />
                         {avatar(c.name, 48, 16)}
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 16, fontWeight: 800, color: T.ink, lineHeight: 1.2 }}>{c.name}</div>
@@ -1257,11 +1474,12 @@ export default function InterviewPanel({
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             <button
                               onClick={(e) => { e.stopPropagation(); handleDecrementCandidateRound(c, rnd); }}
-                              disabled={rnd <= 1}
+                              disabled={rnd <= 1 || isPreviousRound}
                               style={{
                                 width: 24, height: 24, borderRadius: 6, border: "none",
-                                background: rnd <= 1 ? T.border : T.primary, color: "#fff",
-                                cursor: rnd <= 1 ? "not-allowed" : "pointer",
+                                background: (rnd <= 1 || isPreviousRound) ? T.border : T.primary,
+                                color: (rnd <= 1 || isPreviousRound) ? T.inkFaint : "#fff",
+                                cursor: (rnd <= 1 || isPreviousRound) ? "not-allowed" : "pointer",
                                 display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: "bold",
                               }}
                             >−</button>
@@ -1274,11 +1492,12 @@ export default function InterviewPanel({
                             </span>
                             <button
                               onClick={(e) => { e.stopPropagation(); handleIncrementCandidateRound(c, rnd); }}
-                              disabled={rnd >= 10}
+                              disabled={rnd >= 10 || isPreviousRound}
                               style={{
                                 width: 24, height: 24, borderRadius: 6, border: "none",
-                                background: rnd >= 10 ? T.border : T.primary, color: "#fff",
-                                cursor: rnd >= 10 ? "not-allowed" : "pointer",
+                                background: (rnd >= 10 || isPreviousRound) ? T.border : T.primary,
+                                color: (rnd >= 10 || isPreviousRound) ? T.inkFaint : "#fff",
+                                cursor: (rnd >= 10 || isPreviousRound) ? "not-allowed" : "pointer",
                                 display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: "bold",
                               }}
                             >+</button>
@@ -1346,40 +1565,63 @@ export default function InterviewPanel({
                         {!isScheduled ? (
                           <button
                             onClick={(e) => { e.stopPropagation(); handleOpenSchedule(c); }}
+                            disabled={isPreviousRound}
                             style={{
                               flex: 1, padding: "10px 0", borderRadius: 10, border: "none",
-                              background: T.primaryLight, color: T.primary,
-                              fontSize: 13, fontWeight: 700, cursor: "pointer",
+                              background: isPreviousRound ? T.border : T.primaryLight,
+                              color: isPreviousRound ? T.inkFaint : T.primary,
+                              fontSize: 13, fontWeight: 700, cursor: isPreviousRound ? "not-allowed" : "pointer",
+                              opacity: isPreviousRound ? 0.6 : 1,
                             }}
                           >📅 Schedule</button>
                         ) : (
                           <button
                             onClick={(e) => { e.stopPropagation(); handleOpenSchedule(c); }}
+                            disabled={isPreviousRound}
                             style={{
                               flex: 1, padding: "10px 0", borderRadius: 10, border: "none",
-                              background: "#FFF3E0", color: "#E65100",
-                              fontSize: 13, fontWeight: 700, cursor: "pointer",
+                              background: isPreviousRound ? T.border : "#FFF3E0",
+                              color: isPreviousRound ? T.inkFaint : "#E65100",
+                              fontSize: 13, fontWeight: 700, cursor: isPreviousRound ? "not-allowed" : "pointer",
+                              opacity: isPreviousRound ? 0.6 : 1,
                             }}
                           >🔄 Reschedule</button>
                         )}
                         <button
                           onClick={(e) => { e.stopPropagation(); setAssigningCandidate(c); }}
+                          disabled={isPreviousRound}
                           style={{
                             flex: 1, padding: "10px 0", borderRadius: 10, border: "none",
-                            background: T.accentLight, color: T.accentDark,
-                            fontSize: 13, fontWeight: 700, cursor: "pointer",
+                            background: isPreviousRound ? T.border : T.accentLight,
+                            color: isPreviousRound ? T.inkFaint : T.accentDark,
+                            fontSize: 13, fontWeight: 700, cursor: isPreviousRound ? "not-allowed" : "pointer",
+                            opacity: isPreviousRound ? 0.6 : 1,
                           }}
                         >👥 Panelist</button>
-                        {isScheduled && i.status === "Pending" && (
+                        {isScheduled && (
                           <button
-                            onClick={(e) => { e.stopPropagation(); setEvalInterview(i); }}
+                            onClick={(e) => { e.stopPropagation(); setReminderCandidate(c); }}
+                            disabled={isPreviousRound}
                             style={{
-                              width: "100%", padding: "10px 0", borderRadius: 10, border: "none",
-                              background: T.greenLight, color: T.green,
-                              fontSize: 13, fontWeight: 700, cursor: "pointer",
+                              flex: 1, padding: "10px 0", borderRadius: 10, border: "none",
+                              background: isPreviousRound ? T.border : "#EDE7F6",
+                              color: isPreviousRound ? T.inkFaint : "#6A1B9A",
+                              fontSize: 13, fontWeight: 700, cursor: isPreviousRound ? "not-allowed" : "pointer",
+                              opacity: isPreviousRound ? 0.6 : 1,
                             }}
-                          >⭐ Evaluate</button>
+                          >🔔 Reminder</button>
                         )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleGiveOffer(c); }}
+                          disabled={isPreviousRound}
+                          style={{
+                            width: "100%", padding: "10px 0", borderRadius: 10, border: "none",
+                            background: isPreviousRound ? T.border : T.greenLight,
+                            color: isPreviousRound ? T.inkFaint : T.green,
+                            fontSize: 13, fontWeight: 700, cursor: isPreviousRound ? "not-allowed" : "pointer",
+                            opacity: isPreviousRound ? 0.6 : 1,
+                          }}
+                        >📜 Give Offer</button>
                       </div>
                     </div>
                   );
@@ -1473,6 +1715,8 @@ export default function InterviewPanel({
             cols={tableCols}
             onRowClick={(index) => setSelectedAppDetail(filteredCandidates[index])}
             rows={tableRows}
+            bordered={true}
+            widths={["45px", "170px", "110px", "95px", "120px", "85px", "110px", "60px", "55px", "360px"]}
           />
         </Card>
       )}
@@ -1519,11 +1763,33 @@ export default function InterviewPanel({
             )}
 
             <FormField label="Interview Date" required>
-              <Input
-                type="date"
-                value={scheduleForm.date}
-                onChange={(e) => setScheduleForm((p) => ({ ...p, date: e.target.value }))}
-              />
+              <div
+                onClick={() => dateInputRef.current?.showPicker?.()}
+                style={{ cursor: "pointer" }}
+              >
+                <input
+                  ref={dateInputRef}
+                  type="date"
+                  value={scheduleForm.date}
+                  onChange={(e) => setScheduleForm((p) => ({ ...p, date: e.target.value }))}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    (e.target as HTMLInputElement).showPicker?.();
+                  }}
+                  style={{
+                    border: `1.5px solid ${T.border}`,
+                    borderRadius: 8,
+                    padding: "8px 12px",
+                    fontSize: 13,
+                    color: T.ink,
+                    background: "#fff",
+                    outline: "none",
+                    width: "100%",
+                    boxSizing: "border-box",
+                    cursor: "pointer",
+                  }}
+                />
+              </div>
             </FormField>
 
             <FormField label="Time Slot" required>
@@ -1720,7 +1986,7 @@ export default function InterviewPanel({
                         <span style={{ fontSize: 12, fontWeight: 800, color: T.primary }}>{getRoundOrdinal(r)}</span>
                         <Badge label={roundInv.status} variant={statusVariant(roundInv.status)} />
                       </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 11, color: T.inkMid }}>
+                      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 8, fontSize: 11, color: T.inkMid }}>
                         <div><strong>Date & Time:</strong> {roundInv.date ? `${roundInv.date} at ${roundInv.time}` : "Not Scheduled"}</div>
                         <div><strong>Mode:</strong> {roundInv.mode || "In-Person"}</div>
                         <div><strong>Panel:</strong> {roundInv.panel?.join(", ") || "None"}</div>
@@ -1750,7 +2016,16 @@ export default function InterviewPanel({
               </div>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 20 }}>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
+              <Btn
+                label="Give Offer"
+                variant="success"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleGiveOffer(selectedAppDetail);
+                  setSelectedAppDetail(null);
+                }}
+              />
               <Btn label="Close" onClick={() => setSelectedAppDetail(null)} />
             </div>
           </>
@@ -1790,14 +2065,21 @@ export default function InterviewPanel({
               {criteria.map((c) => (
                 <div key={c} style={{ background: T.canvas, borderRadius: 10, padding: "12px 14px", border: `1px solid ${T.border}` }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: T.inkMid, marginBottom: 10 }}>{c}</div>
-                  <div style={{ display: "flex", gap: 6 }}>
+                  <div style={{ display: "flex", gap: isMobile ? 4 : 6, justifyContent: "space-between" }}>
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                       <div
                         key={n}
                         onClick={() => setScores((prev) => ({ ...prev, [c]: n }))}
                         style={{
-                          width: 36, height: 36, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 13, fontWeight: 700, cursor: "pointer",
+                          width: isMobile ? 26 : 36,
+                          height: isMobile ? 26 : 36,
+                          borderRadius: isMobile ? 6 : 8,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: isMobile ? 11 : 13,
+                          fontWeight: 700,
+                          cursor: "pointer",
                           background: scores[c] >= n ? T.primary : T.primaryLight,
                           color: scores[c] >= n ? "#fff" : T.primary,
                           border: `1.5px solid ${scores[c] >= n ? T.primary : T.border}`,
@@ -1858,7 +2140,7 @@ export default function InterviewPanel({
             display: "flex", alignItems: "center", justifyContent: "center",
             padding: 16,
           }}
-          onClick={() => { setShowAddPanelistModal(false); setNewPanelistName(""); setNewPanelistEmail(""); setNewPanelistPhone(""); }}
+          onClick={closeAddPanelistModal}
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -1886,7 +2168,7 @@ export default function InterviewPanel({
                 Register a panel member who can evaluate candidates
               </div>
               <button
-                onClick={() => { setShowAddPanelistModal(false); setNewPanelistName(""); setNewPanelistEmail(""); setNewPanelistPhone(""); }}
+                onClick={closeAddPanelistModal}
                 style={{
                   position: "absolute", top: 16, right: 16,
                   background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%",
@@ -1899,7 +2181,7 @@ export default function InterviewPanel({
             </div>
 
             {/* Form body */}
-            <form onSubmit={(e) => { handleAddPanelist(e); setShowAddPanelistModal(false); }} style={{ padding: 24 }}>
+            <form onSubmit={handleAddPanelist} style={{ padding: 24 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
                 {/* Name field */}
@@ -1912,11 +2194,11 @@ export default function InterviewPanel({
                     <input
                       placeholder="e.g. Dr. Anitha Krishnan"
                       value={newPanelistName}
-                      onChange={(e) => setNewPanelistName(e.target.value)}
+                      onChange={(e) => handleNameChange(e.target.value)}
                       required
                       style={{
                         width: "100%", boxSizing: "border-box",
-                        border: `1.5px solid ${T.border}`, borderRadius: 10,
+                        border: `1.5px solid ${panelistErrors.name ? T.red : T.border}`, borderRadius: 10,
                         padding: "11px 12px 11px 38px",
                         fontSize: 14, outline: "none", color: T.ink,
                         background: T.canvas,
@@ -1924,6 +2206,9 @@ export default function InterviewPanel({
                       }}
                     />
                   </div>
+                  {panelistErrors.name && (
+                    <div style={{ color: T.red, fontSize: 11, marginTop: 4, fontWeight: 600 }}>{panelistErrors.name}</div>
+                  )}
                 </div>
 
                 {/* Email field */}
@@ -1937,17 +2222,20 @@ export default function InterviewPanel({
                       type="email"
                       placeholder="e.g. anitha@school.edu"
                       value={newPanelistEmail}
-                      onChange={(e) => setNewPanelistEmail(e.target.value)}
+                      onChange={(e) => handleEmailChange(e.target.value)}
                       required
                       style={{
                         width: "100%", boxSizing: "border-box",
-                        border: `1.5px solid ${T.border}`, borderRadius: 10,
+                        border: `1.5px solid ${panelistErrors.email ? T.red : T.border}`, borderRadius: 10,
                         padding: "11px 12px 11px 38px",
                         fontSize: 14, outline: "none", color: T.ink,
                         background: T.canvas,
                       }}
                     />
                   </div>
+                  {panelistErrors.email && (
+                    <div style={{ color: T.red, fontSize: 11, marginTop: 4, fontWeight: 600 }}>{panelistErrors.email}</div>
+                  )}
                 </div>
 
                 {/* Phone field */}
@@ -1960,17 +2248,20 @@ export default function InterviewPanel({
                     <input
                       placeholder="e.g. +91 98765 43210"
                       value={newPanelistPhone}
-                      onChange={(e) => setNewPanelistPhone(e.target.value)}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
                       required
                       style={{
                         width: "100%", boxSizing: "border-box",
-                        border: `1.5px solid ${T.border}`, borderRadius: 10,
+                        border: `1.5px solid ${panelistErrors.phone ? T.red : T.border}`, borderRadius: 10,
                         padding: "11px 12px 11px 38px",
                         fontSize: 14, outline: "none", color: T.ink,
                         background: T.canvas,
                       }}
                     />
                   </div>
+                  {panelistErrors.phone && (
+                    <div style={{ color: T.red, fontSize: 11, marginTop: 4, fontWeight: 600 }}>{panelistErrors.phone}</div>
+                  )}
                 </div>
               </div>
 
@@ -1978,7 +2269,7 @@ export default function InterviewPanel({
               <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
                 <button
                   type="button"
-                  onClick={() => { setShowAddPanelistModal(false); setNewPanelistName(""); setNewPanelistEmail(""); setNewPanelistPhone(""); }}
+                  onClick={closeAddPanelistModal}
                   style={{
                     flex: 1, padding: "12px", borderRadius: 10, border: `1.5px solid ${T.border}`,
                     background: T.canvas, color: T.inkMid, fontSize: 14, fontWeight: 700, cursor: "pointer",
@@ -2002,15 +2293,135 @@ export default function InterviewPanel({
         </div>
       )}
 
-      {/* Send Reminder Success Modal */}
-      <Modal open={!!reminderCandidate} onClose={() => setReminderCandidate(null)} maxWidth={400}>
-        <div style={{ textAlign: "center", padding: "20px 10px" }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: T.ink, marginBottom: 6 }}>Reminder Sent!</div>
-          <div style={{ fontSize: 13, color: T.inkMid, lineHeight: 1.5, marginBottom: 20 }}>
-            Reminder sent to panelist(s) for <strong style={{ color: T.primary }}>{reminderCandidate?.name}</strong>!
+      {/* Send Reminder Modal */}
+      <Modal open={!!reminderCandidate} onClose={() => setReminderCandidate(null)} maxWidth={440}>
+        <div style={{ padding: "8px 4px" }}>
+          {/* Header */}
+          <div style={{ textAlign: "center", marginBottom: 20 }}>
+            <div style={{
+              width: 60, height: 60, borderRadius: "50%", margin: "0 auto 12px",
+              background: "linear-gradient(135deg, #7B1FA2, #9C27B0)",
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26,
+            }}>🔔</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: T.ink }}>Reminder Sent!</div>
+            <div style={{ fontSize: 13, color: T.inkMid, marginTop: 4 }}>
+              Interview reminder dispatched for{" "}
+              <strong style={{ color: T.primary }}>{reminderCandidate?.role}</strong>
+            </div>
           </div>
-          <Btn label="Close" onClick={() => setReminderCandidate(null)} style={{ width: "100%" }} />
+
+          {/* Recipients section */}
+          <div style={{
+            background: T.canvas, borderRadius: 12, border: `1px solid ${T.border}`,
+            overflow: "hidden", marginBottom: 16,
+          }}>
+            <div style={{
+              fontSize: 10, fontWeight: 800, color: T.inkFaint, textTransform: "uppercase",
+              letterSpacing: "0.1em", padding: "8px 14px", borderBottom: `1px solid ${T.border}`,
+              background: T.surface,
+            }}>
+              📬 Recipients
+            </div>
+
+            {/* Candidate row */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "12px 14px", borderBottom: `1px solid ${T.border}`,
+            }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 14, fontWeight: 800, color: "#fff",
+              }}>
+                {reminderCandidate?.name?.charAt(0) || "C"}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: T.ink }}>{reminderCandidate?.name}</div>
+                <div style={{ fontSize: 11, color: T.inkFaint, marginTop: 1 }}>{reminderCandidate?.email || "Candidate"}</div>
+              </div>
+              <div style={{
+                fontSize: 10, fontWeight: 700, borderRadius: 99, padding: "3px 9px",
+                background: T.primaryLight, color: T.primary,
+              }}>Candidate</div>
+            </div>
+
+            {/* Panelists rows */}
+            {(reminderCandidate?.interview?.panel?.length > 0
+              ? reminderCandidate.interview.panel
+              : ["No panelist assigned"]
+            ).map((p: string, idx: number) => (
+              <div key={idx} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "12px 14px",
+                borderBottom: idx < (reminderCandidate?.interview?.panel?.length || 1) - 1
+                  ? `1px solid ${T.border}` : "none",
+              }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                  background: p === "No panelist assigned" ? T.border : "#EDE7F6",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 14, fontWeight: 800,
+                  color: p === "No panelist assigned" ? T.inkFaint : "#6A1B9A",
+                }}>
+                  {p === "No panelist assigned" ? "?" : p.charAt(0)}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: p === "No panelist assigned" ? T.inkFaint : T.ink, fontStyle: p === "No panelist assigned" ? "italic" : "normal" }}>{p}</div>
+                  <div style={{ fontSize: 11, color: T.inkFaint, marginTop: 1 }}>
+                    {p === "No panelist assigned" ? "Assign a panelist first" : "Interview Panelist"}
+                  </div>
+                </div>
+                {p !== "No panelist assigned" && (
+                  <div style={{
+                    fontSize: 10, fontWeight: 700, borderRadius: 99, padding: "3px 9px",
+                    background: "#EDE7F6", color: "#6A1B9A",
+                  }}>Panelist</div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Interview details */}
+          {reminderCandidate?.interview?.date && (
+            <div style={{
+              background: T.primaryLight, borderRadius: 10, padding: "10px 14px",
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              marginBottom: 16, fontSize: 12, color: T.primary, fontWeight: 600,
+            }}>
+              <span>📅 {reminderCandidate.interview.date} · {reminderCandidate.interview.time}</span>
+              <span style={{
+                background: T.primary, color: "#fff", borderRadius: 6,
+                padding: "2px 8px", fontSize: 10, fontWeight: 700,
+              }}>{reminderCandidate.interview.mode || "In-Person"}</span>
+            </div>
+          )}
+
+          <button
+            onClick={() => {
+              // Write reminderSentAt into the matching interview record
+              if (setInterviews && reminderCandidate) {
+                const sentAt = new Date().toISOString();
+                setInterviews((prev: any[]) =>
+                  prev.map((i: any) =>
+                    i.candidate === reminderCandidate.name && i.role === reminderCandidate.role
+                      ? { ...i, reminderSentAt: sentAt }
+                      : i
+                  )
+                );
+              }
+              setReminderCandidate(null);
+            }}
+            style={{
+              width: "100%", padding: "13px", borderRadius: 12, border: "none",
+              background: "linear-gradient(135deg, #7B1FA2, #9C27B0)",
+              color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer",
+              boxShadow: "0 4px 16px rgba(123,31,162,0.35)",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            }}
+          >
+            🔔 Send Reminder
+          </button>
         </div>
       </Modal>
     </div>

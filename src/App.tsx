@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { T } from "./theme";
 import { useBreakpoint } from "./hooks";
 import { NAV, EXISTING_ROLES, POSTINGS, JOB_APPLICATIONS, GENERAL_APPLICATIONS, INTERVIEWS, OFFERS } from "./data";
@@ -25,7 +25,7 @@ const load = <T,>(key: string, fallback: T): T => {
 };
 
 export default function App() {
-  const [active, setActive] = useState("dashboard");
+  const [active, setActive] = useState("applications");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [roleRequests, setRoleRequests] = useState<any[]>(() => load("roleRequests", []));
@@ -54,10 +54,10 @@ export default function App() {
     email: `${name.toLowerCase().replace(". ", "_").replace(" ", "_")}@school.edu`,
     phone: "9876543210"
   }))));
-  const [selectedPanelists, setSelectedPanelists] = useState<string[]>(() => 
+  const [selectedPanelists] = useState<string[]>(() => 
     load("selectedPanelists", ["Dr. Roy", "Mr. Patel", "Ms. Nisha"])
   );
-  const [currentUser, setCurrentUser] = useState<string>(() => 
+  const [currentUser] = useState<string>(() => 
     load("currentUser", "admin")
   );
 
@@ -87,6 +87,24 @@ export default function App() {
   const pendingCount = approvalRequests.filter((r) => r.status === "Pending").length;
   const pageLabel = NAV.find((n) => n.id === active)?.label || "";
 
+  const handleGiveOffer = (candidate: any) => {
+    const exists = offers.some((o) => o.candidate === candidate.name && o.role === candidate.role);
+    if (!exists) {
+      const newOffer = {
+        id: `OFR-${Date.now()}`,
+        candidate: candidate.name,
+        role: candidate.role,
+        ctc: "",
+        issued: "",
+        expiry: "",
+        joining: "",
+        status: "Draft",
+      };
+      setOffers((prev) => [...prev, newOffer]);
+    }
+    setActive("offer-management");
+  };
+
   const renderScreen = () => {
     switch (active) {
       case "dashboard":
@@ -101,6 +119,7 @@ export default function App() {
             setApprovalRequests={setApprovalRequests}
             existingRoles={existingRoles}
             setExistingRoles={setExistingRoles}
+            onNavigateToExistingRoles={() => setActive("existing-roles")}
           />
         );
       case "job-requests":
@@ -113,6 +132,7 @@ export default function App() {
             jobPostings={jobPostings}
             setJobPostings={setJobPostings}
             existingRoles={existingRoles}
+            onNavigateToApplications={() => setActive("applications")}
           />
         );
       case "approval-requests":
@@ -126,7 +146,8 @@ export default function App() {
             setJobPostings={setJobPostings}
             setRoleRequests={setRoleRequests}
             setJobRequests={setJobRequests}
-            onNavigateToJobPostings={() => setActive("job-postings")}
+            onNavigateToApplications={() => setActive("applications")}
+            onNavigateToExistingRoles={() => setActive("existing-roles")}
           />
         );
       case "job-postings":
@@ -147,25 +168,19 @@ export default function App() {
             setGeneralApplications={setGeneralApplications}
             jobPostings={jobPostings}
             jobRequests={jobRequests}
-            existingRoles={existingRoles}
-            addOffer={(offer: any) => setOffers((prev) => [...prev, offer])}
           />
         );
       case "interview-panel":
         return (
           <InterviewPanel
             jobApplications={jobApplications}
-            setJobApplications={setJobApplications}
             generalApplications={generalApplications}
-            setGeneralApplications={setGeneralApplications}
             jobPostings={jobPostings}
             interviews={interviews}
             setInterviews={setInterviews}
             panelists={panelists}
             setPanelists={setPanelists}
-            selectedPanelists={selectedPanelists}
-            setSelectedPanelists={setSelectedPanelists}
-            currentUser={currentUser}
+            onGiveOffer={handleGiveOffer}
           />
         );
       case "panelist":
@@ -174,8 +189,6 @@ export default function App() {
             interviews={interviews}
             setInterviews={setInterviews}
             jobPostings={jobPostings}
-            panelists={panelists}
-            selectedPanelists={selectedPanelists}
             currentUser={currentUser}
           />
         );

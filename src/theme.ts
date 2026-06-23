@@ -8,6 +8,7 @@ export const T = {
   primaryMid: "#8B1F3A",
   primaryLight: "#F5E6EA",
   primaryPale: "#FDF5F7",
+  primaryDark: "#5C0C21",
 
   // Accent colors
   accent: GOLD,
@@ -37,6 +38,7 @@ export const T = {
   redLight: "#FEF2F2",
   teal: "#008B8B",
   tealLight: "#E0F5F5",
+  tealDark: "#006666",
   violet: "#6B21A8",
   violetLight: "#F3E8FF",
   sky: "#0369A1",

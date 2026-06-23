@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { T } from "../theme";
 import { statusVariant } from "../theme";
 import { useBreakpoint } from "../hooks";
-import { Card, SectionTitle, Table, Mono, Btn, Input, Badge, Modal, ModalHeader, FormField } from "../components/ui";
+import { Card, SectionTitle, Table, Mono, Btn, Input, Badge, FormField } from "../components/ui";
 
 interface RoleRequestsProps {
   roleRequests: any[];
@@ -10,6 +10,7 @@ interface RoleRequestsProps {
   setApprovalRequests: React.Dispatch<React.SetStateAction<any[]>>;
   existingRoles?: any[];
   setExistingRoles?: React.Dispatch<React.SetStateAction<any[]>>;
+  onNavigateToExistingRoles?: () => void;
 }
 
 const getStatusStyle = (status: string) => {
@@ -36,7 +37,7 @@ const emptyForm = () => ({
   comment: "",
 });
 
-export default function RoleRequests({ roleRequests, setRoleRequests, setApprovalRequests }: RoleRequestsProps) {
+export default function RoleRequests({ roleRequests, setRoleRequests, setApprovalRequests, setExistingRoles, onNavigateToExistingRoles }: RoleRequestsProps) {
   const bp = useBreakpoint();
   const isMobile = bp === "mobile";
 
@@ -114,26 +115,6 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
   const openNew = () => {
     setEditingId(null);
     setRoleForms([emptyForm()]);
-    setShowForm(true);
-  };
-
-  const openEdit = (r: any) => {
-    setEditingId(r.id);
-    let minSalary = "";
-    let maxSalary = "";
-    let minExperience = "";
-    let maxExperience = "";
-    if (r.salaryRange) {
-      const parts = r.salaryRange.split("-");
-      minSalary = parts[0] || "";
-      maxSalary = parts[1] || "";
-    }
-    if (r.experience) {
-      const parts = String(r.experience).split("-");
-      minExperience = parts[0] || "";
-      maxExperience = parts[1] || "";
-    }
-    setRoleForms([{ ...r, minSalary, maxSalary, minExperience, maxExperience }]);
     setShowForm(true);
   };
 
@@ -290,6 +271,26 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
           : apr
       )
     );
+
+    // Update existing roles
+    if (setExistingRoles) {
+      setExistingRoles((prev: any[]) => {
+        const exists = prev.some((x) => x.role === selectedRequest.role && x.dept === selectedRequest.dept);
+        if (exists) return prev;
+        const cleanedSalary = selectedRequest.salaryRange ? selectedRequest.salaryRange.replace(/^₹/, "") : "";
+        return [...prev, {
+          id: `ROL-${Date.now()}`, dept: selectedRequest.dept, role: selectedRequest.role, type: "Full-time",
+          headcount: 1, filled: 0, currentFilled: 0, status: "Inactive", currentStatus: "Inactive",
+          experience: selectedRequest.experience || "—",
+          salaryRange: cleanedSalary || "—",
+        }];
+      });
+    }
+
+    if (onNavigateToExistingRoles) {
+      setTimeout(() => { onNavigateToExistingRoles(); }, 300);
+    }
+
     setShowViewModal(false);
     setSelectedRequest(null);
     setOriginalRequest(null);
@@ -300,7 +301,9 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
     if (hasChanges()) {
       saveRoleRequestEdits(true);
     } else {
-      approveDirectly();
+      if (confirm("Are you sure you want to accept this request?")) {
+        approveDirectly();
+      }
     }
   };
 

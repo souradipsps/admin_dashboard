@@ -14,7 +14,8 @@ interface ApprovalRequestsProps {
   setJobPostings: React.Dispatch<React.SetStateAction<any[]>>;
   setRoleRequests: React.Dispatch<React.SetStateAction<any[]>>;
   setJobRequests: React.Dispatch<React.SetStateAction<any[]>>;
-  onNavigateToJobPostings?: () => void;
+  onNavigateToApplications?: () => void;
+  onNavigateToExistingRoles?: () => void;
 }
 
 const labelCss: React.CSSProperties = {
@@ -22,7 +23,7 @@ const labelCss: React.CSSProperties = {
   letterSpacing: "0.06em", marginBottom: 4,
 };
 
-export default function ApprovalRequests({ requests, setRequests, setExistingRoles, setJobPostings, setRoleRequests, setJobRequests, onNavigateToJobPostings }: ApprovalRequestsProps) {
+export default function ApprovalRequests({ requests, setRequests, setExistingRoles, setJobPostings, setRoleRequests, setJobRequests, onNavigateToApplications, onNavigateToExistingRoles }: ApprovalRequestsProps) {
   const bp = useBreakpoint();
   const isMobile = bp === "mobile";
   const [sel, setSel] = useState<any>(null);
@@ -64,6 +65,8 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
           if (String(item.id) !== String(r.sourceId)) return item;
           const updated2 = {
             ...item,
+            dept: r.dept,
+            role: r.role,
             status: action,
             comment: customComment || "",
             history: updated.history,
@@ -109,6 +112,9 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
           salaryRange: cleanedSalary || "—",
         }];
       });
+      if (onNavigateToExistingRoles) {
+        setTimeout(() => { onNavigateToExistingRoles(); }, 300);
+      }
     }
 
     if (action === "Approved" && r.type === "Job Request") {
@@ -118,10 +124,17 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
         return [...prev, {
           id: `POST-${Date.now()}`, role: r.role, channel: "Career Page",
           status: "Unpublished", posted: now, expiry: "30 Days", apps: 0,
+          location: r.location || "",
+          salary: r.salary || "",
+          vacancies: r.vacancies || "",
+          exp: r.exp || "",
+          qual: r.qual || "",
+          type: r.empType || "",
+          description: r.description || "",
         }];
       });
-      if (onNavigateToJobPostings) {
-        setTimeout(() => { onNavigateToJobPostings(); }, 300);
+      if (onNavigateToApplications) {
+        setTimeout(() => { onNavigateToApplications(); }, 300);
       }
     }
 
@@ -160,66 +173,7 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
     if (action !== "Sent Back") closeModal();
   };
 
-  const saveEdits = () => {
-    if (!sel) return;
-    let updatedSel = { ...sel };
-    if (sel.type === "Role Request") {
-      const minS = sel.minSalary ?? sel.salary?.replace(/^₹/, "").split("-")[0]?.trim() ?? "";
-      const maxS = sel.maxSalary ?? sel.salary?.replace(/^₹/, "").split("-")[1]?.trim() ?? "";
-      const minE = sel.minExp ?? (sel.experience ? String(sel.experience).split("-")[0]?.trim() : "");
-      const maxE = sel.maxExp ?? (sel.experience ? String(sel.experience).split("-")[1]?.trim() : "");
 
-      const errs: Record<string, string> = {};
-      if (minS && maxS && parseSal(minS) >= parseSal(maxS)) errs.minSalary = "Min salary must be less than max salary";
-      if (minE && maxE && parseFloat(minE) >= parseFloat(maxE)) errs.minExp = "Min experience must be less than max experience";
-      if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
-
-      updatedSel.salary = minS && maxS ? `₹${minS}-${maxS}` : sel.salary;
-      updatedSel.experience = minE && maxE ? `${minE}-${maxE}` : sel.experience;
-    }
-    if (sel.type === "Job Request") {
-      updatedSel.vacancies = sel.vacancies;
-      updatedSel.qual = sel.qual;
-      updatedSel.empType = sel.empType;
-      updatedSel.description = sel.description;
-    }
-    setFieldErrors({});
-    
-    // Save to requests list
-    setRequests((prev) => prev.map((item) => (item.id === sel.id ? updatedSel : item)));
-
-    // Save to roleRequests / jobRequests
-    if (sel.type === "Role Request") {
-      setRoleRequests((prev) =>
-        prev.map((item) =>
-          String(item.id) === String(sel.sourceId)
-            ? {
-                ...item,
-                salaryRange: updatedSel.salary ? updatedSel.salary.replace(/^₹/, "") : item.salaryRange,
-                experience: updatedSel.experience || item.experience,
-              }
-            : item
-        )
-      );
-    }
-    if (sel.type === "Job Request") {
-      setJobRequests((prev) =>
-        prev.map((item) =>
-          String(item.id) === String(sel.sourceId)
-            ? {
-                ...item,
-                vacancies: updatedSel.vacancies,
-                qual: updatedSel.qual,
-                type: updatedSel.empType,
-                description: updatedSel.description,
-              }
-            : item
-        )
-      );
-    }
-    
-    closeModal();
-  };
 
   const isPending = sel?.status === "Pending";
 
@@ -261,9 +215,13 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                   <Badge label={sel.type || "Request"} variant="blue" />
                   <Badge label={sel.status} variant={statusVariant(sel.status)} />
                 </div>
-                <div style={{ fontSize: 17, fontWeight: 800, color: T.ink }}>{sel.role}</div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: T.ink }}>
+                  {sel.type === "Role Request" ? "Role Request Details" : sel.role}
+                </div>
                 <div style={{ fontSize: 12, color: T.inkLight, marginTop: 3 }}>
-                  {sel.dept && sel.dept !== "N/A" ? `${sel.dept} · ` : ""}{sel.requestedBy} · {sel.date}
+                  {sel.type === "Role Request"
+                    ? `${sel.requestedBy} · ${sel.date}`
+                    : `${sel.dept && sel.dept !== "N/A" ? `${sel.dept} · ` : ""}${sel.requestedBy} · ${sel.date}`}
                 </div>
               </div>
               <button
@@ -280,6 +238,40 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
             {/* Modal body */}
             <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ background: T.canvas, borderRadius: 10, padding: 16, border: `1px solid ${T.border}`, display: "flex", flexDirection: "column", gap: 12 }}>
+                {/* Department — Role Request only */}
+                {sel.type === "Role Request" && (
+                  <div>
+                    <div style={labelCss}>Department</div>
+                    {sel.status === "Pending" ? (
+                      <input
+                        value={sel.dept || ""}
+                        onChange={(e) => setSel({ ...sel, dept: e.target.value })}
+                        placeholder="e.g. Science"
+                        style={{ width: "100%", padding: 9, border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box" as const, background: T.surface, color: T.ink }}
+                      />
+                    ) : (
+                      <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{sel.dept || "—"}</div>
+                    )}
+                  </div>
+                )}
+
+                {/* Role Name — Role Request only */}
+                {sel.type === "Role Request" && (
+                  <div>
+                    <div style={labelCss}>Role Name</div>
+                    {sel.status === "Pending" ? (
+                      <input
+                        value={sel.role || ""}
+                        onChange={(e) => setSel({ ...sel, role: e.target.value })}
+                        placeholder="e.g. Mathematics Teacher"
+                        style={{ width: "100%", padding: 9, border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box" as const, background: T.surface, color: T.ink }}
+                      />
+                    ) : (
+                      <div style={{ fontSize: 13, fontWeight: 700, color: T.ink }}>{sel.role || "—"}</div>
+                    )}
+                  </div>
+                )}
+
                 {/* Salary Range — Role Request only, editable when Pending */}
                 {(sel.salary || sel.type === "Role Request") && (
                   <div>
@@ -509,7 +501,16 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                   }}
                 />
                 {/* Accept button third */}
-                <Btn label="Accept" variant="success" small onClick={() => takeAction("Approved")} />
+                <Btn
+                  label="Accept"
+                  variant="success"
+                  small
+                  onClick={() => {
+                    if (confirm("Are you sure you want to accept this request?")) {
+                      takeAction("Approved");
+                    }
+                  }}
+                />
               </div>
             )}
           </div>
@@ -633,7 +634,11 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                       {r.status === "Pending" ? (
                         <div style={{ display: "flex", gap: 6 }}>
                           <button
-                            onClick={() => performAction(r, "Approved")}
+                            onClick={() => {
+                              if (confirm("Are you sure you want to accept this request?")) {
+                                performAction(r, "Approved");
+                              }
+                            }}
                             style={{
                               background: T.greenLight, color: T.green, border: `1.5px solid #A7F3D0`,
                               borderRadius: 8, padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer"
@@ -700,7 +705,9 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        performAction(r, "Approved");
+                        if (confirm("Are you sure you want to accept this request?")) {
+                          performAction(r, "Approved");
+                        }
                       }}
                       style={{
                         background: T.greenLight, color: T.green, border: `1.5px solid #A7F3D0`,

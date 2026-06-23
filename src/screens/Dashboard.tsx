@@ -1,4 +1,3 @@
-import React from "react";
 import { T } from "../theme";
 import { useBreakpoint } from "../hooks";
 import { Card, SectionTitle, Btn } from "../components/ui";
@@ -55,14 +54,6 @@ export default function Dashboard({ approvalRequests }: DashboardProps) {
     { dept: "Sports", filled: 0, total: 2 },
   ];
 
-  const sources = [
-    { src: "Job Portals", pct: 42 },
-    { src: "Referrals", pct: 28 },
-    { src: "Career Page", pct: 18 },
-    { src: "Walk-ins", pct: 12 },
-  ];
-  const srcColors = [T.primary, T.teal, T.accent, T.violet];
-
   const activity = [
     { dot: T.teal, text: "APP-2026-0006 — Deepak Nair rejected for Mathematics Teacher", time: "2h ago" },
     { dot: T.green, text: "OFR-2026-0002 accepted by Sonal Verma · Onboarding initiated", time: "4h ago" },
@@ -74,7 +65,6 @@ export default function Dashboard({ approvalRequests }: DashboardProps) {
   const kpiCols = isMobile ? "repeat(2,1fr)" : isTablet ? "repeat(3,1fr)" : "repeat(6,1fr)";
   const analyticsCols = isMobile ? "1fr 1fr" : "repeat(4,1fr)";
   const twoCol = isMobile ? "1fr" : "1fr 1fr";
-  const threeCol = isMobile ? "1fr" : isTablet ? "1fr 1fr" : "1fr 1fr 1fr";
 
   return (
     <div>

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { T } from "../theme";
-import { useBreakpoint } from "../hooks";
+import { useBreakpoint, useHorizontalScroll } from "../hooks";
 
 const MAROON = T.primary;
 const GOLD = T.accent;
@@ -74,20 +74,16 @@ export default function Panelist({
   interviews = [],
   setInterviews,
   jobPostings = [],
-  panelists = [],
-  selectedPanelists = [],
   currentUser = "admin",
 }: {
   interviews?: any[];
   setInterviews?: React.Dispatch<React.SetStateAction<any[]>>;
   jobPostings?: any[];
-  panelists?: any[];
-  selectedPanelists?: string[];
   currentUser?: string;
 }) {
   const bp = useBreakpoint();
   const isMobile = bp === "mobile";
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const hScroll = useHorizontalScroll();
 
   // Job filter
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -148,56 +144,55 @@ export default function Panelist({
   const selectJob = (id: string | null) =>
     setSelectedJobId((prev) => (prev === id ? null : id));
 
-  const scrollCarousel = (dir: "left" | "right") => {
-    scrollRef.current?.scrollBy({ left: dir === "left" ? -300 : 300, behavior: "smooth" });
+  const scrollCarousel = (dir: "left" | "right") =>
+    hScroll.ref.current?.scrollBy({ left: dir === "left" ? -300 : 300, behavior: "smooth" });
+
+  const openEval = (interview: any) => {
+    setSelectedInterview(interview);
+
+    setEvaluatorName(currentUser);
+
+    const existingEval = interview.evaluations?.find(
+      (e: any) => e.panelist === currentUser
+    );
+
+    if (existingEval) {
+      setScores(existingEval.scores || {});
+      setCustomFields(existingEval.customFields || []);
+      setNotes(existingEval.notes || "");
+      setRecommendation(existingEval.recommendation || "Strong Hire");
+    } else {
+      setScores({});
+      setCustomFields([]);
+      setNotes("");
+      setRecommendation("Strong Hire");
+    }
+
+    setNewField("");
   };
 
-            const openEval = (interview: any) => {
-            setSelectedInterview(interview);
+  const handleEvaluatorChange = (
+      interview: any,
+      panelistName: string
+    ) => {
+      setEvaluatorName(panelistName);
 
-            setEvaluatorName(currentUser);
+      const existingEval = interview.evaluations?.find(
+        (e: any) => e.panelist === panelistName
+      );
 
-            const existingEval = interview.evaluations?.find(
-              (e: any) => e.panelist === currentUser
-            );
-
-            if (existingEval) {
-              setScores(existingEval.scores || {});
-              setCustomFields(existingEval.customFields || []);
-              setNotes(existingEval.notes || "");
-              setRecommendation(existingEval.recommendation || "Strong Hire");
-            } else {
-              setScores({});
-              setCustomFields([]);
-              setNotes("");
-              setRecommendation("Strong Hire");
-            }
-
-            setNewField("");
-          };
-
-          const handleEvaluatorChange = (
-              interview: any,
-              panelistName: string
-            ) => {
-              setEvaluatorName(panelistName);
-
-              const existingEval = interview.evaluations?.find(
-                (e: any) => e.panelist === panelistName
-              );
-
-              if (existingEval) {
-                setScores(existingEval.scores || {});
-                setCustomFields(existingEval.customFields || []);
-                setNotes(existingEval.notes || "");
-                setRecommendation(existingEval.recommendation || "Strong Hire");
-              } else {
-                setScores({});
-                setCustomFields([]);
-                setNotes("");
-                setRecommendation("Strong Hire");
-              }
-            };
+      if (existingEval) {
+        setScores(existingEval.scores || {});
+        setCustomFields(existingEval.customFields || []);
+        setNotes(existingEval.notes || "");
+        setRecommendation(existingEval.recommendation || "Strong Hire");
+      } else {
+        setScores({});
+        setCustomFields([]);
+        setNotes("");
+        setRecommendation("Strong Hire");
+      }
+    };
 
   const updateScore = (field: string, value: number) =>
     setScores((prev) => ({ ...prev, [field]: value }));
@@ -319,6 +314,100 @@ export default function Panelist({
 
   return (
     <div>
+      <style>{`
+        @keyframes pulse-reminder {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+        /* ── Panelist action buttons ──────────────────────────── */
+        .pan-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 10px 18px;
+          border-radius: 10px;
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+          outline: none;
+          position: relative;
+          user-select: none;
+        }
+        /* Present — ghost default */
+        .pan-btn-present {
+          background: #DCFCE7;
+          color: #15803D;
+          border: 2px solid #16A34A;
+        }
+        .pan-btn-present:hover {
+          background: #16A34A;
+          color: #fff;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(22,163,74,0.35);
+        }
+        /* Present — SELECTED (active fill) */
+        .pan-btn-present-active {
+          background: #16A34A;
+          color: #fff;
+          border: 2px solid #15803D;
+          box-shadow: 0 4px 14px rgba(22,163,74,0.4);
+        }
+        .pan-btn-present-active:hover {
+          background: #15803D;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(22,163,74,0.5);
+        }
+        /* Absent — ghost default */
+        .pan-btn-absent {
+          background: #FEE2E2;
+          color: #DC2626;
+          border: 2px solid #DC2626;
+        }
+        .pan-btn-absent:hover {
+          background: #DC2626;
+          color: #fff;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(220,38,38,0.35);
+        }
+        /* Absent — SELECTED (active fill) */
+        .pan-btn-absent-active {
+          background: #DC2626;
+          color: #fff;
+          border: 2px solid #B91C1C;
+          box-shadow: 0 4px 14px rgba(220,38,38,0.4);
+        }
+        .pan-btn-absent-active:hover {
+          background: #B91C1C;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(220,38,38,0.5);
+        }
+        /* Join Interview */
+        .pan-btn-join {
+          background: rgba(114,16,42,0.08);
+          color: #72102a;
+          border: 2px solid #72102a;
+          text-decoration: none;
+        }
+        .pan-btn-join:hover {
+          background: #72102a;
+          color: #fff;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(114,16,42,0.35);
+        }
+        /* Evaluate */
+        .pan-btn-evaluate {
+          background: rgba(180,132,0,0.08);
+          color: #B48400;
+          border: 2px solid #B48400;
+        }
+        .pan-btn-evaluate:hover {
+          background: #B48400;
+          color: #fff;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(180,132,0,0.35);
+        }
+      `}</style>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: isMobile ? 20 : 26, fontWeight: 800, color: T.ink, margin: 0, letterSpacing: "-0.02em" }}>
@@ -372,7 +461,28 @@ export default function Panelist({
             )}
           </div>
 
-          <div ref={scrollRef} style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", paddingBottom: 8, WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}>
+          <div style={{ position: "relative" }}>
+            {/* Left fade */}
+            <div style={{
+              position: "absolute", left: 0, top: 0, bottom: 8, width: 40, zIndex: 2,
+              background: `linear-gradient(to right, ${T.canvas}, transparent)`,
+              pointerEvents: "none",
+            }} />
+            {/* Right fade */}
+            <div style={{
+              position: "absolute", right: 0, top: 0, bottom: 8, width: 40, zIndex: 2,
+              background: `linear-gradient(to left, ${T.canvas}, transparent)`,
+              pointerEvents: "none",
+            }} />
+            <div
+              ref={hScroll.ref}
+              onWheel={hScroll.onWheel}
+              onMouseDown={hScroll.onMouseDown}
+              onMouseMove={hScroll.onMouseMove}
+              onMouseUp={hScroll.onMouseUp}
+              onMouseLeave={hScroll.onMouseLeave}
+              style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", paddingBottom: 8, WebkitOverflowScrolling: "touch", scrollbarWidth: "none", cursor: "grab", userSelect: "none" }}
+            >
             {/* All tile */}
             <div
               onClick={() => selectJob(null)}
@@ -426,6 +536,7 @@ export default function Panelist({
                 </div>
               );
             })}
+            </div>
           </div>
         </div>
       )}
@@ -462,7 +573,6 @@ export default function Panelist({
             const totalScore = computeTotalScore(evaluations);
             const isCompleted = interview.status === "Completed";
             const isExpanded = expandedCards[cardKey] ?? evaluations.length > 0;
-            const allFields = [...DEFAULT_FIELDS];
 
             if (isMobile) {
               return (
@@ -485,6 +595,35 @@ export default function Panelist({
                     minHeight: 520,
                   }}
                 >
+                  {/* Reminder banner — shown when a reminder has been sent */}
+                  {interview.reminderSentAt && (
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!setInterviews) return;
+                        setInterviews((prev: any[]) =>
+                          prev.map((i: any) =>
+                            i.candidate === interview.candidate && i.role === interview.role && i.round === interview.round
+                              ? { ...i, reminderSentAt: undefined }
+                              : i
+                          )
+                        );
+                      }}
+                      style={{
+                        position: "absolute", top: 48, right: 12,
+                        background: "linear-gradient(135deg, #7B1FA2, #9C27B0)",
+                        color: "#fff", borderRadius: 10, padding: "7px 12px",
+                        fontSize: 11, fontWeight: 700, cursor: "pointer",
+                        display: "flex", alignItems: "center", gap: 6,
+                        animation: "pulse-reminder 2s infinite",
+                        boxShadow: "0 4px 14px rgba(123,31,162,0.5)",
+                      }}
+                      title="Click to dismiss reminder"
+                    >
+                      🔔 Reminder sent · {new Date(interview.reminderSentAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                  )}
+
                   {/* Pagination counter */}
                   <div style={{ position: "absolute", top: 12, right: 12, background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)", padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.9)", border: "1px solid rgba(255,255,255,0.2)" }}>
                     {idx + 1} of {filteredInterviews.length}
@@ -636,69 +775,40 @@ export default function Panelist({
                             href={interview.meetingLink}
                             target="_blank"
                             rel="noreferrer"
-                            style={{
-                              background: MAROON,
-                              color: "#fff",
-                              textDecoration: "none",
-                              padding: "10px 18px",
-                              borderRadius: 10,
-                              fontWeight: 700,
-                              fontSize: 13,
-                            }}
+                            className="pan-btn pan-btn-join"
                           >
                             🔗 Join Interview
                           </a>
                         )}
 
-                        {/* Attendance buttons only before evaluation */}
+                        {/* Attendance buttons — mobile card (ghost→solid on selection) */}
                         {(!interview.evaluations || interview.evaluations.length === 0) && (
                           <>
                             <button
                               onClick={() => markAttendance(interview, "Present")}
-                              style={{
-                                background: "#16A34A",
-                                color: "#fff",
-                                border: "none",
-                                padding: "10px 18px",
-                                borderRadius: 10,
-                                cursor: "pointer",
-                                fontWeight: 700,
-                              }}
+                              className={`pan-btn ${interview.attendance === "Present" ? "pan-btn-present-active" : "pan-btn-present"}`}
                             >
                               ✓ Present
                             </button>
 
                             <button
                               onClick={() => markAttendance(interview, "Absent")}
-                              style={{
-                                background: "#DC2626",
-                                color: "#fff",
-                                border: "none",
-                                padding: "10px 18px",
-                                borderRadius: 10,
-                                cursor: "pointer",
-                                fontWeight: 700,
-                              }}
+                              className={`pan-btn ${interview.attendance === "Absent" ? "pan-btn-absent-active" : "pan-btn-absent"}`}
                             >
                               ✕ Absent
                             </button>
                           </>
                         )}
 
-                        {/* Evaluate only if Present */}
+                        {/* Evaluate — mobile card */}
                         {interview.attendance === "Present" && (
                           <button
-                            onClick={() => openEval(interview)}
-                            style={{
-                              border: "none",
-                              background: GOLD,
-                              color: "#fff",
-                              padding: "10px 20px",
-                              borderRadius: 10,
-                              cursor: "pointer",
-                              fontWeight: 700,
-                              fontSize: 13,
+                            onClick={() => {
+                              const res = canEvaluate(interview);
+                              if (!res.allowed) { alert(res.reason); return; }
+                              openEval(interview);
                             }}
+                            className="pan-btn pan-btn-evaluate"
                           >
                             ⭐ Evaluate Candidate
                           </button>
@@ -762,6 +872,43 @@ export default function Panelist({
                       )}
                     </div>
                   </div>
+
+                  {/* Reminder banner on desktop card */}
+                  {interview.reminderSentAt && (
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!setInterviews) return;
+                        setInterviews((prev: any[]) =>
+                          prev.map((i: any) =>
+                            i.candidate === interview.candidate && i.role === interview.role && i.round === interview.round
+                              ? { ...i, reminderSentAt: undefined }
+                              : i
+                          )
+                        );
+                      }}
+                      style={{
+                        margin: "0 26px 0",
+                        background: "linear-gradient(135deg, #EDE7F6, #F3E5F5)",
+                        border: "1.5px solid #CE93D8",
+                        borderRadius: 10, padding: "10px 16px",
+                        display: "flex", alignItems: "center", gap: 10,
+                        cursor: "pointer",
+                        animation: "pulse-reminder 2s infinite",
+                      }}
+                      title="Click to dismiss reminder"
+                    >
+                      <span style={{ fontSize: 18 }}>🔔</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: "#6A1B9A" }}>Reminder Sent</div>
+                        <div style={{ fontSize: 11, color: "#9C27B0", marginTop: 1 }}>
+                          Reminder dispatched to panelist(s) &amp; candidate at{" "}
+                          {new Date(interview.reminderSentAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                      </div>
+                      <span style={{ fontSize: 11, color: "#9C27B0", fontWeight: 600, whiteSpace: "nowrap" }}>Tap to dismiss ×</span>
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ padding: "16px 18px 14px", display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3, minmax(0, 1fr))", gap: 10 }}>
@@ -902,66 +1049,37 @@ export default function Panelist({
                       href={interview.meetingLink}
                       target="_blank"
                       rel="noreferrer"
-                      style={{
-                        background: MAROON,
-                        color: "#fff",
-                        textDecoration: "none",
-                        padding: "10px 18px",
-                        borderRadius: 10,
-                        fontWeight: 700,
-                        fontSize: 13,
-                      }}
+                      className="pan-btn pan-btn-join"
                     >
                       🔗 Join Interview
                     </a>
                   )}
 
-                  {/* Present Button */}
+                  {/* Present Button — desktop card */}
                   <button
                     onClick={() => markAttendance(interview, "Present")}
-                    style={{
-                      background: "#16A34A",
-                      color: "#fff",
-                      border: "none",
-                      padding: "10px 18px",
-                      borderRadius: 10,
-                      cursor: "pointer",
-                      fontWeight: 700,
-                    }}
+                    className={`pan-btn ${interview.attendance === "Present" ? "pan-btn-present-active" : "pan-btn-present"}`}
                   >
                     ✓ Present
                   </button>
 
-                  {/* Absent Button */}
+                  {/* Absent Button — desktop card */}
                   <button
                     onClick={() => markAttendance(interview, "Absent")}
-                    style={{
-                      background: "#DC2626",
-                      color: "#fff",
-                      border: "none",
-                      padding: "10px 18px",
-                      borderRadius: 10,
-                      cursor: "pointer",
-                      fontWeight: 700,
-                    }}
+                    className={`pan-btn ${interview.attendance === "Absent" ? "pan-btn-absent-active" : "pan-btn-absent"}`}
                   >
                     ✕ Absent
                   </button>
 
-                  {/* Show Evaluate only if Present */}
+                  {/* Evaluate — desktop card */}
                   {interview.attendance === "Present" && (
                     <button
-                      onClick={() => openEval(interview)}
-                      style={{
-                        border: "none",
-                        background: GOLD,
-                        color: "#fff",
-                        padding: "10px 20px",
-                        borderRadius: 10,
-                        cursor: "pointer",
-                        fontWeight: 700,
-                        fontSize: 13,
+                      onClick={() => {
+                        const res = canEvaluate(interview);
+                        if (!res.allowed) { alert(res.reason); return; }
+                        openEval(interview);
                       }}
+                      className="pan-btn pan-btn-evaluate"
                     >
                       ⭐ Evaluate Candidate
                     </button>

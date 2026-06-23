@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { T } from "../theme";
 import { statusVariant } from "../theme";
-import { useBreakpoint } from "../hooks";
+import { useBreakpoint, useHorizontalScroll } from "../hooks";
 import { Card, SectionTitle, Table, Mono, Badge, Btn, Modal, ModalHeader, FormField, Input } from "../components/ui";
 import { EXISTING_ROLES, INTERVIEWS } from "../data";
 
@@ -24,7 +24,7 @@ export default function OfferManagement({
 
   const [selectedOfferForModal, setSelectedOfferForModal] = useState<any>(null);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const hScroll = useHorizontalScroll();
   const accentColor = T.blue;
   const accentPale = T.bluePale;
 
@@ -65,9 +65,7 @@ export default function OfferManagement({
   };
 
   const scrollCarousel = (dir: "left" | "right") => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: dir === "left" ? -320 : 320, behavior: "smooth" });
-    }
+    hScroll.ref.current?.scrollBy({ left: dir === "left" ? -320 : 320, behavior: "smooth" });
   };
 
   const selectPosting = (id: string | null) => {
@@ -110,7 +108,7 @@ export default function OfferManagement({
           {isMobile ? (
             <>
               <div
-                ref={scrollRef}
+                ref={hScroll.ref}
                 style={{
                   display: "flex",
                   overflowX: "auto",
@@ -222,11 +220,19 @@ export default function OfferManagement({
               </div>
             </>
           ) : (
-            <div
-              ref={scrollRef}
-              className="carousel-scroll"
-              style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", paddingBottom: 8, WebkitOverflowScrolling: "touch" }}
-            >
+            <div style={{ position: "relative" }}>
+              <div style={{ position: "absolute", left: 0, top: 0, bottom: 8, width: 40, zIndex: 2, background: `linear-gradient(to right, ${T.canvas}, transparent)`, pointerEvents: "none" }} />
+              <div style={{ position: "absolute", right: 0, top: 0, bottom: 8, width: 40, zIndex: 2, background: `linear-gradient(to left, ${T.canvas}, transparent)`, pointerEvents: "none" }} />
+              <div
+                ref={hScroll.ref}
+                className="carousel-scroll hscroll-track"
+                onWheel={hScroll.onWheel}
+                onMouseDown={hScroll.onMouseDown}
+                onMouseMove={hScroll.onMouseMove}
+                onMouseUp={hScroll.onMouseUp}
+                onMouseLeave={hScroll.onMouseLeave}
+                style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", paddingBottom: 8, WebkitOverflowScrolling: "touch", cursor: "grab", userSelect: "none" }}
+              >
               <div
                 onClick={() => selectPosting(null)}
                 style={{
@@ -273,6 +279,7 @@ export default function OfferManagement({
                   </div>
                 );
               })}
+            </div>
             </div>
           )}
         </div>

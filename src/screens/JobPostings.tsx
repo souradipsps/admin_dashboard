@@ -1,6 +1,6 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { T } from "../theme";
-import { useBreakpoint } from "../hooks";
+import { useBreakpoint, useHorizontalScroll } from "../hooks";
 import { Card, SectionTitle, Table, Mono, Badge, Input, Modal, ModalHeader, Btn } from "../components/ui";
 
 interface JobPostingsProps {
@@ -16,20 +16,20 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
   const [search, setSearch] = useState("");
   const [selectedPostingId, setSelectedPostingId] = useState<string | null>(null);
   const [selectedJobForModal, setSelectedJobForModal] = useState<any>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const hScroll = useHorizontalScroll();
 
   const getJobDetails = (posting: any) => {
     const jr = (jobRequests || []).find((r) => r.role === posting.role);
     const er = (existingRoles || []).find((r) => r.role === posting.role);
     return {
-      vacancies: jr?.vacancies || "—",
-      exp: jr?.exp || er?.experience || "—",
-      qual: jr?.qual || "—",
-      type: jr?.type || er?.type || "—",
-      salary: jr?.salary || er?.salaryRange || "—",
-      location: jr?.location || "—",
-      description: jr?.description || "—",
-      justification: jr?.justification || "—",
+      vacancies: posting.vacancies || jr?.vacancies || "—",
+      exp: posting.exp || jr?.exp || er?.experience || "—",
+      qual: posting.qual || jr?.qual || "—",
+      type: posting.type || jr?.type || er?.type || "—",
+      salary: posting.salary || jr?.salary || er?.salaryRange || "—",
+      location: posting.location || jr?.location || "—",
+      description: posting.description || jr?.description || "—",
+      justification: posting.justification || jr?.justification || "—",
     };
   };
 
@@ -41,9 +41,7 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
   };
 
   const scrollCarousel = (dir: "left" | "right") => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: dir === "left" ? -320 : 320, behavior: "smooth" });
-    }
+    hScroll.ref.current?.scrollBy({ left: dir === "left" ? -320 : 320, behavior: "smooth" });
   };
 
   const filtered = postings.filter(
@@ -118,7 +116,7 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
           {isMobile ? (
             <>
               <div
-                ref={scrollRef}
+                ref={hScroll.ref}
                 style={{
                   display: "flex",
                   overflowX: "auto",
@@ -234,11 +232,19 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
             </>
           ) : (
             /* ── DESKTOP: multi-card side-scroll carousel ── */
-            <div
-              ref={scrollRef}
-              className="carousel-scroll"
-              style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", paddingBottom: 8, WebkitOverflowScrolling: "touch" }}
-            >
+            <div style={{ position: "relative" }}>
+              <div style={{ position: "absolute", left: 0, top: 0, bottom: 8, width: 40, zIndex: 2, background: `linear-gradient(to right, ${T.canvas}, transparent)`, pointerEvents: "none" }} />
+              <div style={{ position: "absolute", right: 0, top: 0, bottom: 8, width: 40, zIndex: 2, background: `linear-gradient(to left, ${T.canvas}, transparent)`, pointerEvents: "none" }} />
+              <div
+                ref={hScroll.ref}
+                className="carousel-scroll hscroll-track"
+                onWheel={hScroll.onWheel}
+                onMouseDown={hScroll.onMouseDown}
+                onMouseMove={hScroll.onMouseMove}
+                onMouseUp={hScroll.onMouseUp}
+                onMouseLeave={hScroll.onMouseLeave}
+                style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", paddingBottom: 8, WebkitOverflowScrolling: "touch", cursor: "grab", userSelect: "none" }}
+              >
               <div
                 onClick={() => selectPosting(null)}
                 style={{
@@ -286,6 +292,7 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
                   </div>
                 );
               })}
+            </div>
             </div>
           )}
         </div>
@@ -519,8 +526,8 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
                   );
                 }}
               />
-              <Btn label="Close" variant="ghost" onClick={() => setSelectedJobForModal(null)} />
             </div>
+
           </Modal>
         );
       })()}

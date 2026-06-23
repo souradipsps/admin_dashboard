@@ -68,12 +68,14 @@ export const Btn = ({
   small = false,
   onClick,
   style = {},
+  className = "",
 }: {
   label: string;
   variant?: string;
   small?: boolean;
   onClick?: (e: React.MouseEvent) => void;
   style?: React.CSSProperties;
+  className?: string;
 }) => {
   const variants: Record<string, { bg: string; color: string; border: string }> = {
     primary: { bg: T.primary, color: "#fff", border: T.primary },
@@ -90,6 +92,7 @@ export const Btn = ({
   return (
     <button
       onClick={onClick}
+      className={className}
       style={{
         background: v.bg,
         color: v.color,
@@ -193,11 +196,15 @@ export const Table = ({
   rows,
   onRowClick,
   onRowDoubleClick,
+  bordered = false,
+  widths,
 }: {
   cols: string[];
   rows: React.ReactNode[][];
   onRowClick?: (rowIndex: number) => void;
   onRowDoubleClick?: (rowIndex: number) => void;
+  bordered?: boolean;
+  widths?: string[];
 }) => {
   const bp = useBreakpoint();
   if (bp === "mobile") {
@@ -250,15 +257,15 @@ export const Table = ({
   }
   return (
     <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, border: bordered ? `1px solid ${T.border}` : "none" }}>
         <thead>
-          <tr style={{ background: T.canvas, borderBottom: `1px solid ${T.border}` }}>
-            {cols.map((c) => (
+          <tr style={{ background: T.canvas, borderBottom: `1.5px solid ${T.border}` }}>
+            {cols.map((c, j) => (
               <th
                 key={c}
                 style={{
-                  textAlign: "left",
-                  padding: "10px 16px",
+                  textAlign: j === 0 || j === 7 || j === 8 ? "center" : "left",
+                  padding: "12px 16px",
                   fontSize: 11,
                   fontWeight: 700,
                   color: T.inkLight,
@@ -266,6 +273,8 @@ export const Table = ({
                   textTransform: "uppercase",
                   whiteSpace: "normal",
                   wordBreak: "break-word",
+                  borderRight: (bordered && j < cols.length - 1) ? `1px solid ${T.border}` : "none",
+                  width: widths ? widths[j] : undefined,
                 }}
               >
                 {c}
@@ -288,7 +297,20 @@ export const Table = ({
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
               {row.map((cell, j) => (
-                <td key={j} style={{ padding: "13px 16px", verticalAlign: "middle", color: T.ink, whiteSpace: "normal", wordBreak: "break-word", maxWidth: 220 }}>
+                <td
+                  key={j}
+                  style={{
+                    padding: "13px 16px",
+                    verticalAlign: "middle",
+                    color: T.ink,
+                    whiteSpace: "normal",
+                    wordBreak: "break-word",
+                    maxWidth: widths ? undefined : 220,
+                    borderRight: (bordered && j < row.length - 1) ? `1px solid ${T.border}` : "none",
+                    width: widths ? widths[j] : undefined,
+                    textAlign: j === 0 || j === 7 || j === 8 ? "center" : "left",
+                  }}
+                >
                   {cell}
                 </td>
               ))}
@@ -431,6 +453,21 @@ export const Modal = ({
 export const ModalHeader = ({ title, onClose }: { title: string; onClose: () => void }) => (
   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
     <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: T.ink }}>{title}</h2>
+    <button
+      onClick={onClose}
+      style={{
+        background: "none",
+        border: "none",
+        fontSize: 22,
+        fontWeight: "bold",
+        color: T.inkFaint,
+        cursor: "pointer",
+        lineHeight: 1,
+        padding: 4,
+      }}
+    >
+      ×
+    </button>
   </div>
 );
 

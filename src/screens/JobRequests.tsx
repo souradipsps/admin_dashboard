@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { T } from "../theme";
 import { statusVariant } from "../theme";
 import { useBreakpoint } from "../hooks";
-import { Card, SectionTitle, Table, Mono, Btn, Input, Select, Badge, Modal, ModalHeader, FormField } from "../components/ui";
-import { ROLE_OPTIONS, VACANCY_OPTIONS, EXP_OPTIONS, QUAL_OPTIONS, TYPE_OPTIONS, SALARY_OPTIONS } from "../data";
+import { Card, SectionTitle, Table, Mono, Btn, Input, Select, Badge, FormField } from "../components/ui";
+import { VACANCY_OPTIONS, QUAL_OPTIONS, TYPE_OPTIONS } from "../data";
 
 interface JobRequestsProps {
   jobRequests: any[];
@@ -13,6 +13,7 @@ interface JobRequestsProps {
   jobPostings: any[];
   setJobPostings: React.Dispatch<React.SetStateAction<any[]>>;
   existingRoles: any[];
+  onNavigateToApplications?: () => void;
 }
 
 const getStatusStyle = (status: string) => {
@@ -40,7 +41,7 @@ const emptyForm = () => ({
   comment: "",
 });
 
-export default function JobRequests({ jobRequests, setJobRequests, approvalRequests, setApprovalRequests, jobPostings, setJobPostings, existingRoles }: JobRequestsProps) {
+export default function JobRequests({ jobRequests, setJobRequests, setApprovalRequests, setJobPostings, existingRoles, onNavigateToApplications }: JobRequestsProps) {
   const bp = useBreakpoint();
   const isMobile = bp === "mobile";
 
@@ -94,6 +95,7 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
           ? {
               ...apr,
               role: updated.role,
+              location: updated.location,
               salary: updated.salary,
               vacancies: updated.vacancies,
               exp: updated.exp,
@@ -170,6 +172,9 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
         },
       ];
     });
+    if (onNavigateToApplications) {
+      setTimeout(() => { onNavigateToApplications(); }, 300);
+    }
     setShowViewModal(false);
     setSelectedRequest(null);
     setOriginalRequest(null);
@@ -181,7 +186,9 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
     if (hasChanges()) {
       saveJobRequestEdits(true);
     } else {
-      approveDirectly();
+      if (confirm("Are you sure you want to accept this request?")) {
+        approveDirectly();
+      }
     }
   };
 
@@ -205,11 +212,7 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
     setShowForm(true);
   };
 
-  const openEdit = (r: any) => {
-    setEditingId(r.id);
-    setJobForms([{ ...r }]);
-    setShowForm(true);
-  };
+
 
   const submitRequests = () => {
     if (editingId !== null) {
@@ -220,6 +223,7 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
             ? {
                 ...apr,
                 role: jobForms[0].role,
+                location: jobForms[0].location,
                 salary: jobForms[0].salary,
                 vacancies: jobForms[0].vacancies,
                 exp: jobForms[0].exp,
@@ -250,6 +254,7 @@ export default function JobRequests({ jobRequests, setJobRequests, approvalReque
           role: r.role,
           requestedBy: "Current User",
           date: now,
+          location: r.location,
           salary: r.salary,
           vacancies: r.vacancies,
           exp: r.exp,

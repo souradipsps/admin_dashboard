@@ -1,6 +1,6 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { T, statusVariant } from "../theme";
-import { useBreakpoint } from "../hooks";
+import { useBreakpoint, useHorizontalScroll } from "../hooks";
 import { Card, SectionTitle, Table, Mono, Badge, Input, Btn, Modal, ModalHeader, Select, FormField } from "../components/ui";
 
 const STATUS_OPTIONS = [
@@ -25,28 +25,23 @@ export default function Applications({
   setGeneralApplications: React.Dispatch<React.SetStateAction<any[]>>;
   jobPostings?: any[];
   jobRequests?: any[];
-  existingRoles: any[];
-  addOffer: (offer: any) => void;
 }) {
   const bp = useBreakpoint();
   const isMobile = bp === "mobile";
 
-  const [tab, setTab] = useState<Tab>("job");
+  const [tab, setTab] = useState<Tab>("general");
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [selectedApp, setSelectedApp] = useState<any>(null);
   const [statusModalApp, setStatusModalApp] = useState<any>(null);
   const [newStatus, setNewStatus] = useState("");
   const [selectedPostingId, setSelectedPostingId] = useState<string | null>(null);
-  const [offerModalApp, setOfferModalApp] = useState<any>(null);
-  const [offerForm, setOfferForm] = useState({ ctc: "", expiry: "", joining: "" });
-  const [offerRange, setOfferRange] = useState<{ min: number; max: number; label: string } | null>(null);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const hScroll = useHorizontalScroll();
   // lastTapRef is no longer needed for double-tap (using native onDoubleClick),
   // kept as empty ref so no other code breaks.
-  const lastTapTimeRef = useRef<Record<string, number>>({});
+  const lastTapTimeRef = { current: {} as Record<string, number> };
 
   const statuses = ["All", "Shortlisted", "Applied", "Rejected"];
   const isJob = tab === "job";
@@ -58,10 +53,10 @@ export default function Applications({
     const genAppCount = generalApplications.filter((a) => a.preferredRole === p.role).length;
     return {
       ...p,
-      exp: jr?.exp || "—",
-      type: jr?.type || "Full-time",
-      qual: jr?.qual || "—",
-      sal: jr?.sal || "—",
+      exp: p.exp || jr?.exp || "—",
+      type: p.type || jr?.type || "Full-time",
+      qual: p.qual || jr?.qual || "—",
+      sal: p.salary || jr?.sal || "—",
       jobAppCount,
       genAppCount,
     };
@@ -78,25 +73,36 @@ export default function Applications({
     ? generalApplications.filter((a) => a.preferredRole === selectedRole)
     : generalApplications;
 
-  const data = isJob ? baseJobData : baseGenData;
   const setData = isJob ? setJobApplications : setGeneralApplications;
 
-  const filtered = data
+  const filteredJobApplications = baseJobData
     .filter((a) => filter === "All" || a.status === filter)
     .filter(
       (a) =>
         a.name.toLowerCase().includes(search.toLowerCase()) ||
-        (a.role || a.preferredRole || "").toLowerCase().includes(search.toLowerCase()) ||
+        (a.role || "").toLowerCase().includes(search.toLowerCase()) ||
         a.email.toLowerCase().includes(search.toLowerCase()),
     );
+
+  const filteredGenApplications = baseGenData
+    .filter((a) => filter === "All" || a.status === filter)
+    .filter(
+      (a) =>
+        a.name.toLowerCase().includes(search.toLowerCase()) ||
+        (a.preferredRole || "").toLowerCase().includes(search.toLowerCase()) ||
+        a.email.toLowerCase().includes(search.toLowerCase()),
+    );
+
+  const filtered = isJob ? filteredJobApplications : filteredGenApplications;
+  const data = isJob ? baseJobData : baseGenData;
 
   const counts = statuses.slice(1).reduce((acc, s) => {
     acc[s] = data.filter((a) => a.status === s).length;
     return acc;
   }, {} as Record<string, number>);
 
-  const jobCount = jobApplications.length;
-  const genCount = generalApplications.length;
+  const jobCount = filteredJobApplications.length;
+  const genCount = filteredGenApplications.length;
 
   const updateStatus = (app: any, status: string) => {
     setData((prev: any[]) => prev.map((a) => (a.id === app.id ? { ...a, status } : a)));
@@ -105,8 +111,8 @@ export default function Applications({
   };
 
   const scrollCarousel = (dir: "left" | "right") => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: dir === "left" ? -320 : 320, behavior: "smooth" });
+    if (hScroll.ref.current) {
+      hScroll.ref.current.scrollBy({ left: dir === "left" ? -320 : 320, behavior: "smooth" });
     }
   };
 
@@ -130,7 +136,7 @@ export default function Applications({
     </div>
   );
 
-  const actionBtnStyle = (variant: "view" | "status" | "shortlist" | "reject") => {
+  const actionBtnStyle = (variant: "view" | "status" | "shortlist" | "reject" | "offer") => {
     const common = {
       border: "none",
       borderRadius: 8,
@@ -164,6 +170,14 @@ export default function Applications({
       };
     }
 
+    if (variant === "offer") {
+      return {
+        ...common,
+        background: T.accentLight,
+        color: T.accentDark,
+      };
+    }
+
     return {
       ...common,
       background: T.redLight,
@@ -171,71 +185,53 @@ export default function Applications({
     };
   };
 
-  const parseSalaryRange = (salaryRange: string) => {
-    const trimmed = salaryRange.replace(/[₹, ]/g, "");
-    const parts = trimmed.split("-").map((part) => parseInt(part, 10)).filter((value) => !Number.isNaN(value));
-    if (parts.length !== 2) return null;
-    return {
-      min: parts[0],
-      max: parts[1],
-      label: `₹${parts[0].toLocaleString()} - ₹${parts[1].toLocaleString()}`,
-    };
-  };
 
-  const getRoleRange = (role: string) => {
-    const roleDef = existingRoles.find((r: any) => r.role === role || r.role.toLowerCase() === role.toLowerCase());
-    return roleDef?.salaryRange ? parseSalaryRange(roleDef.salaryRange) : null;
-  };
-
-  const openOfferModal = (app: any) => {
-    const roleName = isJob ? app.role : app.preferredRole || "";
-    const range = getRoleRange(roleName);
-    setOfferModalApp(app);
-    setOfferRange(range);
-    setOfferForm({ ctc: "", expiry: "", joining: "" });
-  };
-
-  const closeOfferModal = () => {
-    setOfferModalApp(null);
-    setOfferForm({ ctc: "", expiry: "", joining: "" });
-    setOfferRange(null);
-  };
-
-  const handleGenerateOffer = () => {
-    if (!offerModalApp) return;
-    if (!offerForm.ctc || !offerForm.expiry || !offerForm.joining) {
-      alert("Please fill all required fields.");
-      return;
-    }
-    const ctcNumber = Number(offerForm.ctc);
-    if (!ctcNumber || ctcNumber <= 0) {
-      alert("Please enter a valid CTC amount.");
-      return;
-    }
-    if (offerRange && (ctcNumber < offerRange.min || ctcNumber > offerRange.max)) {
-      alert(`CTC must be between ${offerRange.label}.`);
-      return;
-    }
-    const roleName = isJob ? offerModalApp.role : offerModalApp.preferredRole || "";
-    addOffer({
-      id: `OFR-${Date.now()}`,
-      candidate: offerModalApp.name,
-      role: roleName,
-      ctc: `₹${ctcNumber.toLocaleString()}/mo`,
-      issued: new Date().toISOString().split("T")[0],
-      expiry: offerForm.expiry,
-      joining: offerForm.joining,
-      status: "Sent",
-    });
-    closeOfferModal();
-  };
 
   const accentColor = isJob ? T.blue : T.tealDark;
-  const accentLight = isJob ? T.blueLight : T.tealLight;
   const accentPale = isJob ? T.bluePale : T.tealLight;
 
   return (
     <div>
+      <style>{`
+        .btn-shortlist {
+          transition: all 0.2s ease-in-out !important;
+        }
+        .btn-shortlist:hover {
+          background-color: #059669 !important;
+          color: #ffffff !important;
+          transform: translateY(-1.5px);
+          box-shadow: 0 4px 10px rgba(5, 150, 105, 0.25);
+        }
+        .btn-reject {
+          transition: all 0.2s ease-in-out !important;
+        }
+        .btn-reject:hover {
+          background-color: #DC2626 !important;
+          color: #ffffff !important;
+          transform: translateY(-1.5px);
+          box-shadow: 0 4px 10px rgba(220, 38, 38, 0.25);
+        }
+        .btn-shortlist-mobile {
+          transition: all 0.2s ease-in-out !important;
+        }
+        .btn-shortlist-mobile:hover {
+          transform: translateY(-1.5px);
+          box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+        .btn-reject-mobile {
+          transition: all 0.2s ease-in-out !important;
+        }
+        .btn-reject-mobile:hover {
+          transform: translateY(-1.5px);
+          box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+        .hscroll-track {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .hscroll-track::-webkit-scrollbar { display: none; }
+        .hscroll-track:active { cursor: grabbing !important; }
+      `}</style>
       <SectionTitle title="Applications" sub="Track every candidate from application to final decision" />
 
       {/* Unified carousel — always visible, filters both tabs */}
@@ -275,7 +271,7 @@ export default function Applications({
           {isMobile ? (
             <>
               <div
-                ref={scrollRef}
+                ref={hScroll.ref}
                 style={{
                   display: "flex",
                   overflowX: "auto",
@@ -419,15 +415,36 @@ export default function Applications({
               </div>
             </>
           ) : (
-            /* ── DESKTOP: multi-card side-scroll carousel ── */
-            <div
-              ref={scrollRef}
-              className="carousel-scroll"
-              style={{
-                display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory",
-                paddingBottom: 8, WebkitOverflowScrolling: "touch",
-              }}
-            >
+            /* ── DESKTOP: premium inertia + drag carousel ── */
+            <div style={{ position: "relative" }}>
+              {/* Left fade edge */}
+              <div style={{
+                position: "absolute", left: 0, top: 0, bottom: 8, width: 40, zIndex: 2,
+                background: `linear-gradient(to right, ${T.canvas}, transparent)`,
+                pointerEvents: "none", borderRadius: "14px 0 0 14px",
+              }} />
+              {/* Right fade edge */}
+              <div style={{
+                position: "absolute", right: 0, top: 0, bottom: 8, width: 40, zIndex: 2,
+                background: `linear-gradient(to left, ${T.canvas}, transparent)`,
+                pointerEvents: "none", borderRadius: "0 14px 14px 0",
+              }} />
+              <div
+                ref={hScroll.ref}
+                className="carousel-scroll hscroll-track"
+                onWheel={hScroll.onWheel}
+                onMouseDown={hScroll.onMouseDown}
+                onMouseMove={hScroll.onMouseMove}
+                onMouseUp={hScroll.onMouseUp}
+                onMouseLeave={hScroll.onMouseLeave}
+                style={{
+                  display: "flex", gap: 14, overflowX: "auto",
+                  scrollSnapType: "x mandatory",
+                  paddingBottom: 8, WebkitOverflowScrolling: "touch",
+                  cursor: "grab",
+                  userSelect: "none",
+                }}
+              >
               {/* All tile */}
               <div
                 onClick={() => selectPosting(null)}
@@ -518,6 +535,7 @@ export default function Applications({
                   </div>
                 );
               })}
+            </div>
             </div>
           )}
         </div>
@@ -720,53 +738,54 @@ export default function Applications({
                   <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 8, marginTop: 4 }}>
                     <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Email</div>
                     <div style={{ fontSize: 12, overflow: "hidden", textOverflow: "ellipsis" }}>{a.email}</div>
-                    
                   </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div style={{ display: "flex", gap: 8, width: "100%", flexWrap: "wrap" }}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        updateStatus(a, "Shortlisted");
-                      }}
-                      style={{
-                        flex: 1,
-                        background: isShortlisted ? T.green : T.greenLight,
-                        color: isShortlisted ? "#fff" : T.green,
-                        border: "none",
-                        borderRadius: 8,
-                        padding: "10px 16px",
-                        fontSize: 13,
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
-                      }}
-                    >
-                      Shortlist
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        updateStatus(a, "Rejected");
-                      }}
-                      style={{
-                        flex: 1,
-                        background: isRejected ? T.red : T.redLight,
-                        color: isRejected ? "#fff" : T.red,
-                        border: "none",
-                        borderRadius: 8,
-                        padding: "10px 16px",
-                        fontSize: 13,
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
-                      }}
-                    >
-                      Reject
-                    </button>
-                  </div>
+                <div style={{ display: "flex", gap: 8, width: "100%", flexWrap: "wrap", marginTop: 12 }}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateStatus(a, "Shortlisted");
+                    }}
+                    style={{
+                      flex: 1,
+                      background: isShortlisted ? T.green : T.greenLight,
+                      color: isShortlisted ? "#fff" : T.green,
+                      border: "none",
+                      borderRadius: 8,
+                      padding: "10px 16px",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+                    }}
+                    className="btn-shortlist-mobile"
+                  >
+                    Shortlist
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateStatus(a, "Rejected");
+                    }}
+                    style={{
+                      flex: 1,
+                      background: isRejected ? T.red : T.redLight,
+                      color: isRejected ? "#fff" : T.red,
+                      border: "none",
+                      borderRadius: 8,
+                      padding: "10px 16px",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+                    }}
+                    className="btn-reject-mobile"
+                  >
+                    Reject
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -779,7 +798,7 @@ export default function Applications({
           {/* Dot indicators */}
           {filtered.length > 0 && (
             <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 10, paddingBottom: 8 }}>
-              {filtered.map((a, i) => (
+              {filtered.map((_, i) => (
                 <div
                   key={i}
                   onClick={() => scrollRef.current?.scrollTo({ left: (i * scrollRef.current.clientWidth), behavior: "smooth" })}
@@ -836,7 +855,6 @@ export default function Applications({
                 <span style={{ fontWeight: 600, color: a.referredBy && a.referredBy !== "None" ? T.accentDark : T.inkLight }}>{a.referredBy || "—"}</span>,
                 a.applied,
                 <Badge label={a.status} variant={statusVariant(a.status)} />,
-                
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   <button
                     onClick={(e) => {
@@ -844,6 +862,7 @@ export default function Applications({
                       updateStatus(a, "Shortlisted");
                     }}
                     style={actionBtnStyle("shortlist")}
+                    className="btn-shortlist"
                   >
                     Shortlist
                   </button>
@@ -853,6 +872,7 @@ export default function Applications({
                       updateStatus(a, "Rejected");
                     }}
                     style={actionBtnStyle("reject")}
+                    className="btn-reject"
                   >
                     Reject
                   </button>
@@ -879,7 +899,6 @@ export default function Applications({
                 a.qualification || "—",
                 a.applied,
                 <Badge label={a.status} variant={statusVariant(a.status)} />,
-                
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   <button
                     onClick={(e) => {
@@ -887,6 +906,7 @@ export default function Applications({
                       updateStatus(a, "Shortlisted");
                     }}
                     style={actionBtnStyle("shortlist")}
+                    className="btn-shortlist"
                   >
                     Shortlist
                   </button>
@@ -896,6 +916,7 @@ export default function Applications({
                       updateStatus(a, "Rejected");
                     }}
                     style={actionBtnStyle("reject")}
+                    className="btn-reject"
                   >
                     Reject
                   </button>
@@ -906,63 +927,6 @@ export default function Applications({
         </Card>
       )}
 
-      <Modal open={!!offerModalApp} onClose={closeOfferModal} maxWidth={520}>
-        {offerModalApp && (
-          <>
-            <ModalHeader title="Generate Offer Letter" onClose={closeOfferModal} />
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14, marginBottom: 14 }}>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: T.inkLight, marginBottom: 6 }}>Candidate</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: T.ink }}>{offerModalApp.name}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: T.inkLight, marginBottom: 6 }}>Role</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: T.ink }}>{isJob ? offerModalApp.role : offerModalApp.preferredRole || "—"}</div>
-              </div>
-              <div>
-                <FormField label="CTC (Monthly)" required>
-                  <Input
-                    type="number"
-                    placeholder={offerRange ? offerRange.label : "Enter monthly CTC"}
-                    value={offerForm.ctc}
-                    onChange={(e) => setOfferForm((p) => ({ ...p, ctc: e.target.value }))}
-                    style={{ width: "100%" }}
-                  />
-                  {offerRange && (
-                    <div style={{ marginTop: 6, fontSize: 11, color: T.inkLight }}>
-                      Allowed range: {offerRange.label}
-                    </div>
-                  )}
-                </FormField>
-              </div>
-              <div>
-                <FormField label="Offer Expiry Date" required>
-                  <Input
-                    type="date"
-                    value={offerForm.expiry}
-                    onChange={(e) => setOfferForm((p) => ({ ...p, expiry: e.target.value }))}
-                    style={{ width: "100%" }}
-                  />
-                </FormField>
-              </div>
-              <div>
-                <FormField label="Expected Joining Date" required>
-                  <Input
-                    type="date"
-                    value={offerForm.joining}
-                    onChange={(e) => setOfferForm((p) => ({ ...p, joining: e.target.value }))}
-                    style={{ width: "100%" }}
-                  />
-                </FormField>
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 10 }}>
-              <Btn label="Generate Offer" onClick={handleGenerateOffer} />
-              <Btn label="Cancel" variant="ghost" onClick={closeOfferModal} />
-            </div>
-          </>
-        )}
-      </Modal>
 
       {/* Detail Modal */}
       <Modal open={!!selectedApp} onClose={() => setSelectedApp(null)} maxWidth={680}>
@@ -1050,8 +1014,19 @@ export default function Applications({
                   ))}
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <Btn label="Close" onClick={() => setSelectedApp(null)} />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <Btn
+                label="Shortlist"
+                variant={selectedApp.status === "Shortlisted" ? "success" : "outline"}
+                className="btn-shortlist"
+                onClick={() => updateStatus(selectedApp, "Shortlisted")}
+              />
+              <Btn
+                label="Reject"
+                variant={selectedApp.status === "Rejected" ? "danger" : "outline"}
+                className="btn-reject"
+                onClick={() => updateStatus(selectedApp, "Rejected")}
+              />
             </div>
           </>
         )}
