@@ -1,0 +1,14 @@
+name: Keep Render App Awake
+
+on:
+  schedule:
+    # Runs every 20 minutes to keep the Render free-tier instance active
+    - cron: '*/20 * * * *'
+  workflow_dispatch: # Allows manual trigger from the GitHub Actions tab
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Website
+        run: curl -sI https://admin-dashboard-eto9.onrender.com
