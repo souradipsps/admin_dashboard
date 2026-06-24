@@ -313,6 +313,273 @@ export default function Panelist({
     </div>
   );
 
+  const renderEvaluationForm = (interview: any, isMobileCard: boolean) => {
+    return (
+      <div
+        style={{
+          borderLeft: isMobileCard ? "none" : `1px solid ${T.border}`,
+          borderTop: isMobileCard ? "1px solid rgba(255,255,255,0.15)" : "none",
+          background: isMobileCard ? "rgba(255,255,255,0.03)" : T.canvas,
+          padding: isMobileCard ? "20px 0" : "24px 30px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 18,
+          boxSizing: "border-box",
+        }}
+      >
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${isMobileCard ? "rgba(255,255,255,0.15)" : T.border}`, paddingBottom: 12 }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: isMobileCard ? "#fff" : T.ink }}>
+              Candidate Evaluation
+            </h3>
+            <div style={{ marginTop: 2, fontSize: 11, color: isMobileCard ? "rgba(255,255,255,0.7)" : T.inkLight }}>
+              Evaluating as <strong>{evaluatorName}</strong>
+            </div>
+          </div>
+          <button
+            onClick={() => setSelectedInterview(null)}
+            style={{
+              background: isMobileCard ? "rgba(255,255,255,0.1)" : "none",
+              border: `1.5px solid ${isMobileCard ? "rgba(255,255,255,0.2)" : T.border}`,
+              borderRadius: 6,
+              padding: "4px 10px", fontSize: 11, fontWeight: 700,
+              color: isMobileCard ? "#fff" : T.inkMid,
+              cursor: "pointer", transition: "all 0.15s"
+            }}
+            className="btn-action-hover"
+          >
+            ✕ Cancel
+          </button>
+        </div>
+
+        {/* Evaluator identity select if admin */}
+        {currentUser === "admin" && (
+          <div style={{ padding: 12, background: isMobileCard ? "rgba(255,255,255,0.05)" : "#fff", borderRadius: 8, border: `1px solid ${isMobileCard ? "rgba(255,255,255,0.15)" : T.border}` }}>
+            <label style={{ display: "block", fontWeight: 700, marginBottom: 6, fontSize: 9, color: isMobileCard ? "rgba(255,255,255,0.5)" : T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Evaluating as
+            </label>
+            <select
+              value={evaluatorName}
+              onChange={(e) => handleEvaluatorChange(interview, e.target.value)}
+              style={{
+                width: "100%", padding: "6px 10px", borderRadius: 6,
+                border: `1.5px solid ${isMobileCard ? "rgba(255,255,255,0.2)" : T.border}`,
+                fontSize: 12, fontWeight: 600,
+                color: isMobileCard ? "#fff" : T.inkMid,
+                background: isMobileCard ? "#3a0010" : "#fff",
+                cursor: "pointer", outline: "none"
+              }}
+            >
+              <option value={currentUser}>{currentUser}</option>
+              {(interview.panel || [])
+                .filter((name: string) => name !== currentUser)
+                .map((name: string) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+            </select>
+          </div>
+        )}
+
+        {/* Scorecard */}
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: isMobileCard ? "rgba(255,255,255,0.5)" : T.inkLight, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 12 }}>
+            Evaluation Scorecard
+          </div>
+          
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {[...DEFAULT_FIELDS, ...customFields].map((field) => {
+              const hasScore = scores[field] !== undefined;
+              const displayScore = scores[field] || 0;
+              const activeColor = isMobileCard ? T.accent : MAROON;
+              return (
+                <div
+                  key={field}
+                  style={{
+                    padding: "10px 12px",
+                    border: `1px solid ${isMobileCard ? "rgba(255,255,255,0.12)" : T.border}`,
+                    borderRadius: 8,
+                    background: isMobileCard ? "rgba(255,255,255,0.03)" : T.canvas
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <span style={{ fontWeight: 700, fontSize: 13, color: isMobileCard ? "#fff" : T.ink }}>{field}</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: hasScore ? activeColor : (isMobileCard ? "rgba(255,255,255,0.4)" : T.inkFaint) }}>
+                      {hasScore ? `${displayScore} / 5` : "Not Rated"}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {[1, 2, 3, 4, 5].map((n) => {
+                      const isSelected = scores[field] === n;
+                      const isFilled = displayScore >= n;
+                      return (
+                        <button
+                          key={n}
+                          onClick={() => updateScore(field, n)}
+                          style={{
+                            flex: 1, height: 32, borderRadius: 6, cursor: "pointer",
+                            fontWeight: 800, fontSize: 13, transition: "all 0.15s",
+                            background: isSelected ? activeColor : isFilled ? `${activeColor}33` : (isMobileCard ? "rgba(255,255,255,0.08)" : "#fff"),
+                            color: isSelected ? (isMobileCard ? "#3a0010" : "#fff") : isFilled ? activeColor : (isMobileCard ? "rgba(255,255,255,0.6)" : T.inkMid),
+                            border: `1px solid ${isFilled ? `${activeColor}66` : (isMobileCard ? "rgba(255,255,255,0.15)" : T.border)}`,
+                            boxShadow: isSelected ? `0 2px 6px ${activeColor}33` : "none"
+                          }}
+                        >
+                          {n}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Score Preview (if rated) */}
+        {Object.keys(scores).length > 0 && (
+          <div
+            style={{
+              padding: "12px 16px",
+              background: isMobileCard ? "rgba(52, 211, 153, 0.15)" : T.greenLight,
+              borderRadius: 10,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              border: `1px solid ${isMobileCard ? "rgba(52, 211, 153, 0.3)" : `${T.green}33`}`
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: isMobileCard ? "#34D399" : T.green }}>Overall Score</div>
+              <div style={{ fontSize: 11, color: isMobileCard ? "rgba(255,255,255,0.7)" : T.inkMid, marginTop: 2 }}>Average score based on criteria above</div>
+            </div>
+            <ScoreCircle score={computeScore(scores) ?? 0} />
+          </div>
+        )}
+
+        {/* Add Custom criteria */}
+        <div style={{ borderTop: `1px solid ${isMobileCard ? "rgba(255,255,255,0.15)" : T.border}`, paddingTop: 16 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: isMobileCard ? "rgba(255,255,255,0.5)" : T.inkLight, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>
+            Add Custom Field
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              value={newField}
+              onChange={(e) => setNewField(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addCustomField()}
+              placeholder="e.g. Technical Skills..."
+              style={{
+                flex: 1, padding: "8px 12px", borderRadius: 8,
+                border: `1.5px solid ${isMobileCard ? "rgba(255,255,255,0.2)" : T.border}`,
+                fontSize: 12.5,
+                color: isMobileCard ? "#fff" : T.ink,
+                background: isMobileCard ? "rgba(255,255,255,0.1)" : "#fff",
+                outline: "none"
+              }}
+            />
+            <button
+              onClick={addCustomField}
+              style={{
+                background: isMobileCard ? "rgba(255,255,255,0.2)" : T.inkMid,
+                color: "#fff", border: "none", padding: "8px 16px", borderRadius: 8,
+                cursor: "pointer", fontWeight: 700, fontSize: 12
+              }}
+            >
+              Add
+            </button>
+          </div>
+        </div>
+
+        {/* Recommendation */}
+        <div style={{ borderTop: `1px solid ${isMobileCard ? "rgba(255,255,255,0.15)" : T.border}`, paddingTop: 16 }}>
+          <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 10, color: isMobileCard ? "rgba(255,255,255,0.5)" : T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            Recommendation <span style={{ color: T.red }}>*</span>
+          </label>
+          <div style={{ display: "flex", gap: 6 }}>
+            {["Strong Hire", "Hire", "Hold", "Reject"].map((rOption) => {
+              const rc = REC_COLORS[rOption];
+              const isActive = recommendation === rOption;
+              return (
+                <button
+                  key={rOption}
+                  onClick={() => setRecommendation(rOption)}
+                  style={{
+                    flex: 1, padding: "8px 0", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, transition: "all 0.15s",
+                    background: isActive ? rc.color : (isMobileCard ? "rgba(255,255,255,0.08)" : T.canvas),
+                    color: isActive ? "#fff" : (isMobileCard ? "rgba(255,255,255,0.7)" : T.inkMid),
+                    border: `1.5px solid ${isActive ? rc.color : (isMobileCard ? "rgba(255,255,255,0.15)" : T.border)}`,
+                    boxShadow: isActive ? `0 2px 8px ${rc.color}44` : "none"
+                  }}
+                >
+                  {rOption}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Interview notes */}
+        <div style={{ borderTop: `1px solid ${isMobileCard ? "rgba(255,255,255,0.15)" : T.border}`, paddingTop: 16 }}>
+          <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 10, color: isMobileCard ? "rgba(255,255,255,0.5)" : T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            Interview Notes
+          </label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={4}
+            style={{
+              width: "100%", padding: "10px 12px", borderRadius: 8,
+              border: `1.5px solid ${isMobileCard ? "rgba(255,255,255,0.2)" : T.border}`,
+              fontSize: 12.5,
+              color: isMobileCard ? "#fff" : T.ink,
+              background: isMobileCard ? "rgba(255,255,255,0.1)" : "#fff",
+              resize: "none", boxSizing: "border-box", outline: "none"
+            }}
+            placeholder="Provide detailed feedback on candidate performance, strengths, and areas of concern..."
+          />
+        </div>
+
+        {/* Footer actions */}
+        <div
+          style={{
+            padding: "16px 0 0",
+            borderTop: `1px solid ${isMobileCard ? "rgba(255,255,255,0.15)" : T.border}`,
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 10,
+            background: isMobileCard ? "transparent" : T.canvas
+          }}
+        >
+          <button
+            onClick={() => setSelectedInterview(null)}
+            style={{
+              padding: "8px 16px", borderRadius: 8,
+              border: `1.5px solid ${isMobileCard ? "rgba(255,255,255,0.25)" : T.border}`,
+              cursor: "pointer", fontWeight: 600,
+              background: isMobileCard ? "rgba(255,255,255,0.1)" : "#fff",
+              color: isMobileCard ? "#fff" : T.inkMid,
+              fontSize: 12
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            style={{
+              background: isMobileCard ? T.accent : MAROON,
+              color: isMobileCard ? "#3a0010" : "#fff",
+              border: "none", padding: "8px 20px", borderRadius: 8,
+              cursor: "pointer", fontWeight: 700, fontSize: 13,
+              boxShadow: `0 4px 12px ${isMobileCard ? T.accent : MAROON}33`
+            }}
+          >
+            Submit Evaluation
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -749,6 +1016,7 @@ export default function Panelist({
               const totalScore = computeTotalScore(evaluations);
               const isCompleted = interview.status === "Completed";
               const isExpanded = expandedCards[cardKey] ?? evaluations.length > 0;
+              const isBeingEvaluated = selectedInterview && selectedInterview.candidate === interview.candidate && selectedInterview.role === interview.role && selectedInterview.round === interview.round;
 
               if (isMobile) {
                 const cardBackground = "linear-gradient(135deg, #72102a 0%, #3a0010 100%)";
@@ -767,7 +1035,7 @@ export default function Panelist({
                       padding: 24,
                       position: "relative",
                       boxShadow: "0 14px 40px rgba(0,0,0,0.25)",
-                      minHeight: 480,
+                      minHeight: isBeingEvaluated ? "auto" : 480,
                     }}
                   >
                     {/* Reminder banner inside mobile card */}
@@ -1036,22 +1304,27 @@ export default function Panelist({
                       {interview.attendance === "Present" && (
                         <button
                           onClick={() => {
+                            if (isBeingEvaluated) {
+                              setSelectedInterview(null);
+                              return;
+                            }
                             const res = canEvaluate(interview);
                             if (!res.allowed) { alert(res.reason); return; }
                             openEval(interview);
                           }}
                           style={{
                             justifyContent: "center", width: "100%",
-                            background: "rgba(52, 211, 153, 0.2)",
-                            color: "#34D399",
-                            border: "1px solid rgba(52, 211, 153, 0.3)",
+                            background: isBeingEvaluated ? "rgba(239, 68, 68, 0.25)" : "rgba(52, 211, 153, 0.2)",
+                            color: isBeingEvaluated ? "#FCA5A5" : "#34D399",
+                            border: `1px solid ${isBeingEvaluated ? "rgba(239, 68, 68, 0.4)" : "rgba(52, 211, 153, 0.3)"}`,
                             borderRadius: 8, padding: "10px 0", fontWeight: 700, fontSize: 13, cursor: "pointer"
                           }}
                         >
-                          ⭐ Evaluate Candidate
+                          {isBeingEvaluated ? "✕ Close Evaluation" : "⭐ Evaluate Candidate"}
                         </button>
                       )}
                     </div>
+                    {isBeingEvaluated && renderEvaluationForm(interview, true)}
                   </div>
                 );
               }
@@ -1062,20 +1335,23 @@ export default function Panelist({
                 style={{
                   background: "#fff",
                   borderRadius: 24,
-                  border: `1px solid ${T.border}`,
-                  boxShadow: "0 18px 40px rgba(0,0,0,0.08)",
+                  border: isBeingEvaluated ? `2px solid ${T.primary}` : `1px solid ${T.border}`,
+                  boxShadow: isBeingEvaluated ? `0 18px 40px ${T.primary}18` : "0 18px 40px rgba(0,0,0,0.08)",
                   overflow: "hidden",
                   flexShrink: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
+                  display: isBeingEvaluated ? "grid" : "flex",
+                  flexDirection: isBeingEvaluated ? undefined : "column",
+                  gridTemplateColumns: isBeingEvaluated ? "1fr 1fr" : undefined,
+                  justifyContent: isBeingEvaluated ? undefined : "space-between",
                   width: undefined,
                   maxWidth: undefined,
                   height: undefined,
                   minHeight: undefined,
                   scrollSnapAlign: undefined,
+                  transition: "all 0.3s ease",
                 }}
               >
+                <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%" }}>
                 {/* Card header */}
                 <div style={{ padding: isMobile ? "20px 20px 18px" : "24px 26px 20px", background: T.surface }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
@@ -1313,16 +1589,27 @@ export default function Panelist({
                   {interview.attendance === "Present" && (
                     <button
                       onClick={() => {
+                        if (isBeingEvaluated) {
+                          setSelectedInterview(null);
+                          return;
+                        }
                         const res = canEvaluate(interview);
                         if (!res.allowed) { alert(res.reason); return; }
                         openEval(interview);
                       }}
-                      className="pan-btn pan-btn-evaluate"
+                      className={`pan-btn ${isBeingEvaluated ? "pan-btn-absent-active" : "pan-btn-evaluate"}`}
+                      style={{
+                        background: isBeingEvaluated ? "rgba(239, 68, 68, 0.25)" : undefined,
+                        color: isBeingEvaluated ? "#EF4444" : undefined,
+                        border: isBeingEvaluated ? "1px solid rgba(239, 68, 68, 0.4)" : undefined,
+                      }}
                     >
-                      ⭐ Evaluate Candidate
+                      {isBeingEvaluated ? "✕ Close Evaluation" : "⭐ Evaluate Candidate"}
                     </button>
                   )}
                 </div>
+                </div>
+                {isBeingEvaluated && renderEvaluationForm(interview, false)}
               </div>
             );
           })}
@@ -1348,217 +1635,7 @@ export default function Panelist({
         </>
       )}
 
-      {/* ── Evaluation Drawer ─────────────────────────────────────────────────── */}
-      {selectedInterview && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.3)", backdropFilter: "blur(4px)", display: "flex", justifyContent: "flex-end", zIndex: 9999 }}>
-          {/* Backdrop click to close */}
-          <div onClick={() => setSelectedInterview(null)} style={{ position: "absolute", inset: 0, zIndex: 1 }} />
 
-          {/* Drawer container */}
-          <div
-            style={{
-              position: "relative",
-              zIndex: 2,
-              width: "100%",
-              maxWidth: 540,
-              height: "100%",
-              background: "#fff",
-              boxShadow: "-8px 0 32px rgba(15, 23, 42, 0.08)",
-              display: "flex",
-              flexDirection: "column",
-              animation: "slideInRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards"
-            }}
-          >
-            {/* Header */}
-            <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: T.canvas }}>
-              <div>
-                <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: T.ink, fontFamily: font.heading }}>
-                  {currentUser === "admin" && evaluatorName && evaluatorName !== "__custom" ? "Edit Panelist Evaluation" : "Candidate Evaluation"}
-                </h2>
-                <div style={{ marginTop: 4, fontSize: 12, color: T.inkLight, fontFamily: font.body }}>
-                  <strong>{selectedInterview.candidate}</strong> · {selectedInterview.role} · Round {selectedInterview.round || 1}
-                </div>
-              </div>
-              <button
-                onClick={() => setSelectedInterview(null)}
-                style={{
-                  background: T.border + "44", border: "none", color: T.inkMid,
-                  borderRadius: "50%", width: 30, height: 30, cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 16, transition: "all 0.2s"
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.transform = "rotate(90deg)"; e.currentTarget.style.color = T.primary; }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = "rotate(0deg)"; e.currentTarget.style.color = T.inkMid; }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Content Body */}
-            <div style={{ flex: 1, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
-              
-              {/* Evaluator identity */}
-              <div style={{ padding: 14, background: T.canvas, borderRadius: 10, border: `1px solid ${T.border}` }}>
-                <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 10, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Evaluating as
-                </label>
-                <select
-                  value={evaluatorName}
-                  onChange={(e) => handleEvaluatorChange(selectedInterview, e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "8px 12px",
-                    borderRadius: 8,
-                    border: `1.5px solid ${T.border}`,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: T.inkMid,
-                    background: "#fff",
-                    cursor: "pointer",
-                    outline: "none"
-                  }}
-                >
-                  <option value={currentUser}>{currentUser}</option>
-                  {(selectedInterview.panel || [])
-                    .filter((name: string) => name !== currentUser)
-                    .map((name: string) => (
-                      <option key={name} value={name}>{name}</option>
-                    ))}
-                </select>
-              </div>
-
-              {/* Scorecard */}
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 12 }}>
-                  Evaluation Scorecard
-                </div>
-                
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                  {[...DEFAULT_FIELDS, ...customFields].map((field) => (
-                    <div key={field} style={{ padding: "10px 12px", border: `1px solid ${T.border}`, borderRadius: 8, background: T.canvas }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                        <span style={{ fontWeight: 700, fontSize: 13, color: T.ink }}>{field}</span>
-                        <span style={{ fontSize: 11, fontWeight: 800, color: scores[field] ? MAROON : T.inkFaint }}>
-                          {scores[field] ? `${scores[field]} / 5` : "Not Rated"}
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        {[1, 2, 3, 4, 5].map((n) => {
-                          const isSelected = scores[field] === n;
-                          const isFilled = (scores[field] || 0) >= n;
-                          return (
-                            <button
-                              key={n}
-                              onClick={() => updateScore(field, n)}
-                              style={{
-                                flex: 1, height: 32, borderRadius: 6, cursor: "pointer",
-                                fontWeight: 800, fontSize: 13, transition: "all 0.15s",
-                                background: isSelected ? MAROON : isFilled ? MAROON + "33" : "#fff",
-                                color: isSelected ? "#fff" : isFilled ? MAROON : T.inkMid,
-                                border: `1px solid ${isFilled ? MAROON + "66" : T.border}`,
-                                boxShadow: isSelected ? `0 2px 6px ${MAROON}33` : "none"
-                              }}
-                            >
-                              {n}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Score Preview (if rated) */}
-              {Object.keys(scores).length > 0 && (
-                <div style={{ padding: "12px 16px", background: T.greenLight, borderRadius: 10, display: "flex", justifyContent: "space-between", alignItems: "center", border: `1px solid ${T.green}33` }}>
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: T.green }}>Overall Score</div>
-                    <div style={{ fontSize: 11, color: T.inkMid, marginTop: 2 }}>Average score based on criteria above</div>
-                  </div>
-                  <ScoreCircle score={computeScore(scores) ?? 0} />
-                </div>
-              )}
-
-              {/* Add Custom criteria */}
-              <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>
-                  Add Custom Field
-                </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <input
-                    value={newField}
-                    onChange={(e) => setNewField(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && addCustomField()}
-                    placeholder="e.g. Technical Skills, Cultural fit..."
-                    style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: `1.5px solid ${T.border}`, fontSize: 12.5, color: T.ink, background: "#fff", outline: "none" }}
-                  />
-                  <button onClick={addCustomField} style={{ background: T.inkMid, color: "#fff", border: "none", padding: "8px 16px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12 }}>
-                    Add
-                  </button>
-                </div>
-              </div>
-
-              {/* Recommendation */}
-              <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 16 }}>
-                <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 10, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Recommendation <span style={{ color: T.red }}>*</span>
-                </label>
-                <div style={{ display: "flex", gap: 6 }}>
-                  {["Strong Hire", "Hire", "Hold", "Reject"].map((rOption) => {
-                    const rc = REC_COLORS[rOption];
-                    const isActive = recommendation === rOption;
-                    return (
-                      <button
-                        key={rOption}
-                        onClick={() => setRecommendation(rOption)}
-                        style={{
-                          flex: 1, padding: "8px 0", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, transition: "all 0.15s",
-                          background: isActive ? rc.color : T.canvas,
-                          color: isActive ? "#fff" : T.inkMid,
-                          border: `1.5px solid ${isActive ? rc.color : T.border}`,
-                          boxShadow: isActive ? `0 2px 8px ${rc.color}44` : "none"
-                        }}
-                      >
-                        {rOption}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Interview notes */}
-              <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 16 }}>
-                <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 10, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Interview Notes
-                </label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={4}
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: `1.5px solid ${T.border}`, fontSize: 12.5, color: T.ink, background: "#fff", resize: "none", boxSizing: "border-box", outline: "none" }}
-                  placeholder="Provide detailed feedback on candidate performance, strengths, and areas of concern..."
-                />
-              </div>
-
-            </div>
-
-            {/* Footer actions */}
-            <div style={{ padding: "16px 24px", borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "flex-end", gap: 10, background: T.canvas }}>
-              <button onClick={() => setSelectedInterview(null)} style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${T.border}`, cursor: "pointer", fontWeight: 600, background: "#fff", color: T.inkMid, fontSize: 12 }}>
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                style={{ background: MAROON, color: "#fff", border: "none", padding: "8px 20px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 13, boxShadow: `0 4px 12px ${MAROON}33` }}
-              >
-                Submit Evaluation
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
     </div>
   );
 }
