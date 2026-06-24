@@ -156,7 +156,7 @@ function RolesTable({
       <Modal open={!!sel} onClose={close} maxWidth={520}>
         <div>
           <ModalHeader title="" onClose={close} />
-          
+
           <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20, borderBottom: `1px solid ${T.border}`, paddingBottom: 16 }}>
             <div style={{
               width: 50, height: 50, borderRadius: 12,
@@ -195,7 +195,7 @@ function RolesTable({
               { label: "Work Experience Required", value: sel.experience ? `${sel.experience} years` : "No experience required" },
               { label: "Salary Budget (Annual)", value: <strong style={{ color: T.tealDark }}>{sel.salaryRange || "—"}</strong> },
               {
-                label: "Status Toggle",
+                label: "Status",
                 value: (
                   <select
                     value={sel.currentStatus}
