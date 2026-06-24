@@ -16,6 +16,7 @@ export default function ExistingRoles({ roles, setRoles }: ExistingRolesProps) {
   const [deptFilter, setDeptFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [search, setSearch] = useState("");
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const depts = ["All", ...new Set(roles.map((r) => r.dept))];
   const statuses = ["All", "Active", "Inactive"];
@@ -29,7 +30,7 @@ export default function ExistingRoles({ roles, setRoles }: ExistingRolesProps) {
   };
 
   const handleDeleteRole = (roleId: string) => {
-    setRoles((prev) => prev.filter((r) => r.id !== roleId));
+    setDeleteConfirmId(roleId);
   };
 
   const filtered = roles
@@ -111,6 +112,29 @@ export default function ExistingRoles({ roles, setRoles }: ExistingRolesProps) {
 
       {/* Details modal for role */}
       <RoleDetailsModal />
+
+      {/* Delete Confirmation Modal */}
+      <Modal open={!!deleteConfirmId} onClose={() => setDeleteConfirmId(null)} maxWidth={400}>
+        <ModalHeader title="Confirm Deletion" onClose={() => setDeleteConfirmId(null)} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 16, padding: "10px 0" }}>
+          <div style={{ fontSize: 14, color: T.ink, lineHeight: 1.5 }}>
+            Are you sure you want to delete this existing role? This action cannot be undone.
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
+            <Btn label="Cancel" onClick={() => setDeleteConfirmId(null)} />
+            <Btn
+              label="Delete"
+              variant="danger"
+              onClick={() => {
+                if (deleteConfirmId) {
+                  setRoles((prev) => prev.filter((r) => r.id !== deleteConfirmId));
+                  setDeleteConfirmId(null);
+                }
+              }}
+            />
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
