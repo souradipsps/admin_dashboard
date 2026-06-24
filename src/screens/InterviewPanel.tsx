@@ -58,6 +58,7 @@ export default function InterviewPanel({
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [evalInterview, setEvalInterview] = useState<any>(null);
+  const [inlineEvalKey, setInlineEvalKey] = useState<string | null>(null);
   const [scores, setScores] = useState<ScoreState>({});
   const [recommendation, setRecommendation] = useState("");
   const [remarks, setRemarks] = useState("");
@@ -1435,7 +1436,7 @@ export default function InterviewPanel({
                   <th style={{ padding: "12px 10px", textAlign: "left", fontSize: font.xs, fontWeight: font.bold, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", verticalAlign: "middle" }}>Schedule</th>
                   <th style={{ padding: "12px 10px", textAlign: "left", fontSize: font.xs, fontWeight: font.bold, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", verticalAlign: "middle", width: 100 }}>Mode</th>
                   <th style={{ padding: "12px 10px", textAlign: "left", fontSize: font.xs, fontWeight: font.bold, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", verticalAlign: "middle", width: 80 }}>Link</th>
-                  <th style={{ padding: "12px 10px", textAlign: "right", fontSize: font.xs, fontWeight: font.bold, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", verticalAlign: "middle" }}>Actions</th>
+                  <th style={{ padding: "12px 10px", textAlign: "center", fontSize: font.xs, fontWeight: font.bold, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", verticalAlign: "middle" }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1446,8 +1447,8 @@ export default function InterviewPanel({
                   const isChecked = selectedCandidateKeys.includes(candidateKey(c));
 
                   return (
+                    <React.Fragment key={candidateKey(c)}>
                     <tr
-                      key={candidateKey(c)}
                       onClick={() => setSelectedAppDetail(c)}
                       style={{
                         borderBottom: `1px solid ${T.border}`,
@@ -1562,23 +1563,22 @@ export default function InterviewPanel({
 
                       {/* Schedule */}
                       <td style={{ padding: "12px 10px", verticalAlign: "middle" }} onClick={(e) => e.stopPropagation()}>
-                        <div
-                          onClick={(e) => { if (!isPreviousRound) { e.stopPropagation(); handleOpenSchedule(c); } }}
-                          style={{
-                            cursor: isPreviousRound ? "default" : "pointer",
-                            fontSize: 12,
-                            fontWeight: 600,
-                            color: i.date ? T.ink : T.inkFaint,
-                            textDecoration: i.date ? "none" : "underline",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {i.date ? (
+                        {i.date ? (
+                          <div
+                            onClick={(e) => { if (!isPreviousRound) { e.stopPropagation(); handleOpenSchedule(c); } }}
+                            style={{
+                              cursor: isPreviousRound ? "default" : "pointer",
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: T.ink,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
                             <span>{i.date} at {i.time}</span>
-                          ) : (
-                            <span>📅 Schedule</span>
-                          )}
-                        </div>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: 11, color: T.inkFaint }}>—</span>
+                        )}
                       </td>
 
                       {/* Mode */}
@@ -1611,8 +1611,8 @@ export default function InterviewPanel({
                       </td>
 
                       {/* Actions */}
-                      <td style={{ padding: "12px 10px", textAlign: "right", verticalAlign: "middle" }} onClick={(e) => e.stopPropagation()}>
-                        <div style={{ display: "grid", gridTemplateColumns: "105px 75px 90px 65px", gap: 6, justifyContent: "flex-end", alignItems: "center" }}>
+                      <td style={{ padding: "12px 10px", textAlign: "center", verticalAlign: "middle" }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ display: "grid", gridTemplateColumns: "105px 75px 90px 80px 65px", gap: 6, justifyContent: "center", alignItems: "center" }}>
                           {!i.date ? (
                             <button
                               onClick={() => handleOpenSchedule(c)}
@@ -1654,6 +1654,36 @@ export default function InterviewPanel({
                             <div style={{ width: 90 }} />
                           )}
                           <button
+                            onClick={() => {
+                              const key = candidateKey(c);
+                              if (inlineEvalKey === key) {
+                                setInlineEvalKey(null);
+                                setScores({});
+                                setRecommendation("");
+                                setRemarks("");
+                              } else {
+                                setInlineEvalKey(key);
+                                setScores({});
+                                setRecommendation("");
+                                setRemarks("");
+                              }
+                            }}
+                            disabled={isPreviousRound}
+                            style={{
+                              ...actionBtnStyle(
+                                inlineEvalKey === candidateKey(c) ? "primary" : "secondary",
+                                isPreviousRound
+                              ),
+                              width: "100%",
+                              textAlign: "center",
+                              background: inlineEvalKey === candidateKey(c) ? T.primary : actionBtnStyle("secondary", isPreviousRound).background,
+                              color: inlineEvalKey === candidateKey(c) ? "#fff" : actionBtnStyle("secondary", isPreviousRound).color,
+                            }}
+                            className={isPreviousRound ? "" : "btn-action-hover"}
+                          >
+                            {inlineEvalKey === candidateKey(c) ? "✕ Close" : "📝 Evaluate"}
+                          </button>
+                          <button
                             onClick={() => handleGiveOffer(c)}
                             disabled={isPreviousRound}
                             style={{ ...actionBtnStyle("success", isPreviousRound), width: "100%", textAlign: "center" }}
@@ -1664,6 +1694,190 @@ export default function InterviewPanel({
                         </div>
                       </td>
                     </tr>
+
+                    {/* Inline Evaluation Form Row */}
+                    {inlineEvalKey === candidateKey(c) && (
+                      <tr>
+                        <td colSpan={8} style={{ padding: 0, background: T.canvas, borderBottom: `2px solid ${T.primary}22` }}>
+                          <div
+                            style={{
+                              padding: "20px 24px",
+                              background: `linear-gradient(135deg, ${T.primaryLight} 0%, ${T.canvas} 100%)`,
+                              borderTop: `2px solid ${T.primary}33`,
+                            }}
+                          >
+                            {/* Header */}
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                <span style={{ fontSize: 16, fontWeight: 800, color: T.primary }}>📝 Evaluate — {c.name}</span>
+                                <span style={{ fontSize: 12, color: T.inkMid, fontWeight: 600 }}>
+                                  {c.role} · {getRoundOrdinal(rnd)}
+                                  {i.date ? ` · ${i.date} at ${i.time}` : ""}
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  setInlineEvalKey(null);
+                                  setScores({});
+                                  setRecommendation("");
+                                  setRemarks("");
+                                }}
+                                style={{
+                                  background: "none", border: `1.5px solid ${T.border}`, borderRadius: 8,
+                                  padding: "4px 12px", fontSize: 12, fontWeight: 700, color: T.inkMid,
+                                  cursor: "pointer",
+                                }}
+                                className="btn-action-hover"
+                              >
+                                ✕ Close
+                              </button>
+                            </div>
+
+                            {/* Scoring Grid */}
+                            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                              {criteria.map((cr) => (
+                                <div key={cr} style={{ background: T.white, borderRadius: 10, padding: "12px 14px", border: `1px solid ${T.border}` }}>
+                                  <div style={{ fontSize: 12, fontWeight: 700, color: T.inkMid, marginBottom: 10 }}>{cr}</div>
+                                  <div style={{ display: "flex", gap: 6, justifyContent: "space-between" }}>
+                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                                      <div
+                                        key={n}
+                                        onClick={() => setScores((prev) => ({ ...prev, [cr]: n }))}
+                                        style={{
+                                          width: 32, height: 32, borderRadius: 8,
+                                          display: "flex", alignItems: "center", justifyContent: "center",
+                                          fontSize: 12, fontWeight: 700, cursor: "pointer",
+                                          background: scores[cr] >= n ? T.primary : T.primaryLight,
+                                          color: scores[cr] >= n ? "#fff" : T.primary,
+                                          border: `1.5px solid ${scores[cr] >= n ? T.primary : T.border}`,
+                                          transition: "all 0.1s",
+                                        }}
+                                      >
+                                        {n}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Recommendation + Remarks row */}
+                            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start", marginBottom: 16 }}>
+                              <div style={{ flex: "0 0 auto" }}>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: T.inkMid, marginBottom: 6 }}>Overall Recommendation</div>
+                                <div style={{ display: "flex", gap: 8 }}>
+                                  {["Selected", "Hold", "Rejected"].map((r) => (
+                                    <button
+                                      key={r}
+                                      onClick={() => setRecommendation(r)}
+                                      style={{
+                                        border: `1.5px solid ${recommendation === r ? T.primary : T.border}`,
+                                        borderRadius: 8, padding: "8px 18px", fontSize: 13, fontWeight: 700,
+                                        background: recommendation === r ? T.primaryLight : T.white,
+                                        color: recommendation === r ? T.primary : T.inkMid,
+                                        cursor: "pointer",
+                                      }}
+                                      className="btn-action-hover"
+                                    >
+                                      {r}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              <div style={{ flex: 1, minWidth: 200 }}>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: T.inkMid, marginBottom: 6 }}>Remarks</div>
+                                <textarea
+                                  placeholder="Any additional remarks…"
+                                  value={remarks}
+                                  onChange={(e) => setRemarks(e.target.value)}
+                                  style={{
+                                    border: `1.5px solid ${T.border}`, borderRadius: 8, padding: 10,
+                                    fontSize: 13, width: "100%", minHeight: 48, resize: "vertical",
+                                    boxSizing: "border-box", outline: "none", color: T.ink,
+                                    background: T.white,
+                                  }}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Submit actions */}
+                            <div style={{ display: "flex", gap: 10 }}>
+                              <button
+                                onClick={() => {
+                                  if (!recommendation) {
+                                    alert("Please select a recommendation.");
+                                    return;
+                                  }
+                                  if (!setInterviews) return;
+                                  const scoreValues = Object.values(scores);
+                                  const avgScore = scoreValues.length > 0 ? Math.round((scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length) * 20) : null;
+                                  setInterviews((prev) => {
+                                    const exists = prev.some(
+                                      (iv) => iv.candidate === c.name && iv.role === c.role && iv.round === rnd
+                                    );
+                                    if (exists) {
+                                      return prev.map((iv) =>
+                                        iv.candidate === c.name && iv.role === c.role && iv.round === rnd
+                                          ? { ...iv, score: avgScore, rec: recommendation, status: "Completed", remarks }
+                                          : iv
+                                      );
+                                    } else {
+                                      return [
+                                        ...prev,
+                                        {
+                                          id: i.id || `INT-${Date.now()}`,
+                                          candidate: c.name,
+                                          role: c.role,
+                                          date: i.date || "",
+                                          time: i.time || "",
+                                          panel: i.panel || [],
+                                          score: avgScore,
+                                          rec: recommendation,
+                                          status: "Completed",
+                                          mode: i.mode || "In-Person",
+                                          meetingLink: i.meetingLink || "",
+                                          round: rnd,
+                                          remarks,
+                                        },
+                                      ];
+                                    }
+                                  });
+                                  setInlineEvalKey(null);
+                                  setScores({});
+                                  setRecommendation("");
+                                  setRemarks("");
+                                }}
+                                style={{
+                                  background: T.primary, color: "#fff", border: "none", borderRadius: 10,
+                                  padding: "9px 22px", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                                  boxShadow: `0 4px 12px ${T.primary}33`,
+                                }}
+                                className="btn-action-hover"
+                              >
+                                ✓ Submit Evaluation
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setInlineEvalKey(null);
+                                  setScores({});
+                                  setRecommendation("");
+                                  setRemarks("");
+                                }}
+                                style={{
+                                  background: "none", border: `1.5px solid ${T.border}`, borderRadius: 10,
+                                  padding: "9px 22px", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                                  color: T.inkMid,
+                                }}
+                                className="btn-action-hover"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    </React.Fragment>
                   );
                 })}
 
