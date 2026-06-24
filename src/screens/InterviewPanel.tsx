@@ -767,24 +767,41 @@ export default function InterviewPanel({
                     border: `2px solid ${!selectedPostingId ? T.primary : T.border}`,
                     borderRadius: 16, padding: "18px 20px", cursor: "pointer",
                     background: !selectedPostingId ? T.primaryLight : T.surface,
-                    display: "flex", flexDirection: "row", alignItems: "center", gap: 16,
                     transition: "all 0.2s",
                     boxShadow: !selectedPostingId ? `0 4px 20px ${T.primary}22` : "0 1px 4px rgba(0,0,0,0.05)",
+                    display: "flex", flexDirection: "column", justifyContent: "space-between",
                   }}
                 >
-                  <div style={{
-                    width: 52, height: 52, borderRadius: "50%", flexShrink: 0,
-                    background: !selectedPostingId ? T.primary : T.border,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 22, color: "#fff",
-                  }}>◈</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: !selectedPostingId ? T.primary : T.ink }}>All Shortlisted</div>
-                    <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 2 }}>{shortlistedCandidates.length} total candidates</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{
+                      width: 52, height: 52, borderRadius: "50%", flexShrink: 0,
+                      background: !selectedPostingId ? T.primary : "#E2E8F0",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 20, color: !selectedPostingId ? "#fff" : T.inkMid,
+                      fontWeight: 800,
+                    }}>◈</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: T.ink, lineHeight: 1.3 }}>All Shortlisted</div>
+                      <div style={{ fontSize: 11, color: T.inkFaint, marginTop: 2 }}>Universal Filter</div>
+                    </div>
+                    {!selectedPostingId && (
+                      <div style={{ background: T.primary, color: "#fff", borderRadius: 99, padding: "4px 12px", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>Active</div>
+                    )}
                   </div>
-                  {!selectedPostingId && (
-                    <div style={{ background: T.primary, color: "#fff", borderRadius: 99, padding: "4px 12px", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>Active</div>
-                  )}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14, gap: 8 }}>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <span style={{
+                        fontSize: 11, borderRadius: 99, padding: "3px 10px", fontWeight: 700,
+                        background: !selectedPostingId ? "rgba(255,255,255,0.25)" : T.canvas,
+                        color: !selectedPostingId ? T.primary : T.inkLight,
+                        border: !selectedPostingId ? `1px solid rgba(255,255,255,0.3)` : `1px solid ${T.border}`,
+                      }}>All Jobs</span>
+                    </div>
+                    <div style={{ flexShrink: 0, textAlign: "right" }}>
+                      <span style={{ fontSize: 18, fontWeight: 800, color: !selectedPostingId ? T.primary : T.ink }}>{shortlistedCandidates.length}</span>
+                      <span style={{ fontSize: 10, color: T.inkFaint, display: "block", lineHeight: 1 }}>shortlisted</span>
+                    </div>
+                  </div>
                 </div>
 
                 {enrichedPostings.map((p, idx) => {

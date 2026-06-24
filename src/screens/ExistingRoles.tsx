@@ -182,7 +182,15 @@ function RolesTable({
         <div>
           <ModalHeader title="" onClose={close} />
 
-          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20, borderBottom: `1px solid ${T.border}`, paddingBottom: 16 }}>
+          {/* Gradient Banner Header */}
+          <div style={{
+            background: "linear-gradient(135deg, #72102a 0%, #3a0010 100%)",
+            margin: "-4px -24px 0",
+            padding: "24px 28px 20px",
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+          }}>
             <div style={{
               width: 54, height: 54, borderRadius: 14,
               background: "rgba(255,255,255,0.15)",

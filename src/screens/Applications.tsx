@@ -586,68 +586,47 @@ export default function Applications({
       </div>
 
       {isMobile ? (
+        <>
+        <div style={{ fontSize: 12, color: T.inkFaint, fontWeight: 600, marginBottom: 8, textAlign: "center" }}>
+          {filtered.length} applicant{filtered.length !== 1 ? "s" : ""}
+        </div>
         <div
           ref={scrollRef}
+          onScroll={(e) => {
+            const scrollLeft = e.currentTarget.scrollLeft;
+            const cardWidth = e.currentTarget.clientWidth;
+            if (cardWidth > 0) {
+              const newIndex = Math.round(scrollLeft / cardWidth);
+              setCurrentCardIndex(newIndex);
+            }
+          }}
+          className="carousel-scroll"
           style={{
             display: "flex",
             overflowX: "auto",
+            scrollSnapType: "x mandatory",
             WebkitOverflowScrolling: "touch",
             scrollbarWidth: "none",
             msOverflowStyle: "none",
-            gap: 16,
-            padding: "0 16px 20px",
-            margin: "0 -16px",
+            gap: 12,
+            paddingBottom: 20,
+            margin: "0 -12px",
+            paddingLeft: 12,
+            paddingRight: 12,
           }}>
           {filtered.map((a, idx) => {
-            let touchStartX = 0;
-            const handleTouchStart = (e: React.TouchEvent) => {
-              touchStartX = e.touches[0].clientX;
-            };
-            const handleTouchEnd = (e: React.TouchEvent) => {
-              const touchEndX = e.changedTouches[0].clientX;
-              const diff = touchEndX - touchStartX;
-              const now = Date.now();
-              const lastTap = lastTapTimeRef.current[a.id] ?? 0;
-              // Detect double tap (within 300ms and minimal horizontal movement)
-              if (now - lastTap < 300 && Math.abs(diff) < 30) {
-                // Double tap: open details modal
-                setSelectedApp(a);
-                // Reset last tap to avoid triple taps
-                lastTapTimeRef.current[a.id] = 0;
-                return; // skip swipe handling
-              }
-              // Update last tap timestamp for next detection
-              lastTapTimeRef.current[a.id] = now;
-              // Swipe handling
-              if (diff > 80) {
-                // Right swipe → show previous candidate
-                if (idx > 0) {
-                  setCurrentCardIndex(idx - 1);
-                }
-              } else if (diff < -80) {
-                // Left swipe → show next candidate
-                if (idx < filtered.length - 1) {
-                  setCurrentCardIndex(idx + 1);
-                }
-              }
-            };
-
-
-
             const isShortlisted = a.status === "Shortlisted";
             const isRejected = a.status === "Rejected";
             const cardBackground = "linear-gradient(135deg, #72102a 0%, #3a0010 100%)";
-            const cardTitle = a.name;
-            const nameFade = 1;
 
             return (
               <div
                 key={a.id}
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
+                onClick={() => setSelectedApp(a)}
                 style={{
                   flexShrink: 0,
-                  minWidth: "calc(100% - 32px)",
+                  width: "calc(100% - 24px)",
+                  scrollSnapAlign: "center",
                   borderRadius: 20,
                   background: cardBackground,
                   color: "#fff",
@@ -658,8 +637,8 @@ export default function Applications({
                   position: "relative",
                   boxShadow: "0 14px 40px rgba(0,0,0,0.25)",
                   cursor: "pointer",
-                  minHeight: 520,
-                }}              >
+                  minHeight: 380,
+                }}>
                 {/* Pagination counter */}
                 <div style={{ position: "absolute", top: 12, right: 12, background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)", padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.9)", border: "1px solid rgba(255,255,255,0.2)" }}>
                   {idx + 1} of {filtered.length}
@@ -667,108 +646,92 @@ export default function Applications({
 
                 <div>
                   {/* Header info */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                    {avatar(a.name, 56, 16)}
-                     <div style={{ paddingRight: 64 }}>
-                       <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff", opacity: nameFade }}>{cardTitle}</h3>
-                       <div style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 2, opacity: nameFade }}>
-                         {isJob ? a.role : a.preferredRole || "—"}
-                       </div>
-                     </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14, paddingRight: 40 }}>
+                    {avatar(a.name, 48, 16)}
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>{a.name}</h3>
+                      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 2 }}>
+                        {isJob ? a.role : a.preferredRole || "—"}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {/* Details (Glassmorphic look) */}
                 <div
                   style={{
-                    background: "rgba(255,255,255,0.1)",
+                    background: "rgba(255,255,255,0.08)",
                     backdropFilter: "blur(8px)",
-                    borderRadius: 12,
-                    padding: 18,
-                    border: "1px solid rgba(255,255,255,0.15)",
+                    borderRadius: 14,
+                    padding: 16,
+                    border: "1px solid rgba(255,255,255,0.12)",
                     display: "flex",
                     flexDirection: "column",
-                    gap: 14,
-                    minHeight: 260,
+                    gap: 10,
+                    marginTop: 16,
+                    flex: 1,
                   }}
                 >
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <div>
-                      <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>App ID</div>
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>{a.id}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Experience</div>
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>{a.exp}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Applied</div>
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>{a.applied}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Status</div>
-                      <div style={{ marginTop: 2 }}>
-                        <Badge label={a.status} variant={statusVariant(a.status)} />
+                  {[
+                    { icon: "🆔", label: "App ID", value: a.id },
+                    { icon: "⏳", label: "Experience", value: a.exp },
+                    { icon: "📅", label: "Applied", value: a.applied },
+                    { icon: "✉️", label: "Email", value: a.email },
+                    ...(isJob && a.referredBy ? [{ icon: "👤", label: "Referred By", value: a.referredBy }] : []),
+                  ].map((item, index) => (
+                    <div key={index} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                      <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>
+                          {item.label}
+                        </div>
+                        <div style={{ fontSize: 13, color: "#fff", fontWeight: 600, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {item.value}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ))}
 
-                  {isJob && a.referredBy && (
-                    <div>
-                      <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Referred By</div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: T.accent }}>{a.referredBy}</div>
-                    </div>
-                  )}
-
-                  <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 8, marginTop: 4 }}>
-                    <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Email</div>
-                    <div style={{ fontSize: 12, overflow: "hidden", textOverflow: "ellipsis" }}>{a.email}</div>
+                  <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 8, marginTop: 4, display: "flex", justifyContent: "flex-end" }}>
+                    <Badge label={a.status} variant={statusVariant(a.status)} />
                   </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div style={{ display: "flex", gap: 8, width: "100%", flexWrap: "wrap", marginTop: 12 }}>
+                <div style={{ display: "flex", gap: 8, width: "100%", marginTop: 14 }} onClick={(e) => e.stopPropagation()}>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      updateStatus(a, "Shortlisted");
-                    }}
+                    onClick={() => updateStatus(a, "Shortlisted")}
                     style={{
                       flex: 1,
                       background: isShortlisted ? T.green : T.greenLight,
                       color: isShortlisted ? "#fff" : T.green,
                       border: "none",
-                      borderRadius: 8,
-                      padding: "10px 16px",
+                      borderRadius: 10,
+                      padding: "10px 14px",
                       fontSize: 13,
                       fontWeight: 700,
                       cursor: "pointer",
                       boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
                     }}
-                    className="btn-shortlist-mobile"
                   >
-                    Shortlist
+                    {isShortlisted ? "✓ Shortlisted" : "Shortlist"}
                   </button>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      updateStatus(a, "Rejected");
-                    }}
+                    onClick={() => updateStatus(a, "Rejected")}
                     style={{
                       flex: 1,
                       background: isRejected ? T.red : T.redLight,
                       color: isRejected ? "#fff" : T.red,
                       border: "none",
-                      borderRadius: 8,
-                      padding: "10px 16px",
+                      borderRadius: 10,
+                      padding: "10px 14px",
                       fontSize: 13,
                       fontWeight: 700,
                       cursor: "pointer",
                       boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
                     }}
-                    className="btn-reject-mobile"
                   >
-                    Reject
+                    {isRejected ? "✗ Rejected" : "Reject"}
                   </button>
                 </div>
               </div>
@@ -779,27 +742,32 @@ export default function Applications({
               No records found.
             </div>
           )}
-
-          {/* Dot indicators */}
-          {filtered.length > 0 && (
-            <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 10, paddingBottom: 8 }}>
-              {filtered.map((_, i) => (
-                <div
-                  key={i}
-                  onClick={() => scrollRef.current?.scrollTo({ left: (i * scrollRef.current.clientWidth), behavior: "smooth" })}
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: currentCardIndex === i ? T.tealDark : T.border,
-                    cursor: "pointer",
-                    transition: "all 0.3s",
-                  }}
-                />
-              ))}
-            </div>
-          )}
         </div>
+
+        {/* Dot indicators — outside scroll container */}
+        {filtered.length > 0 && (
+          <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 10, paddingBottom: 8 }}>
+            {filtered.map((_, i) => (
+              <div
+                key={i}
+                onClick={() => {
+                  if (scrollRef.current) {
+                    scrollRef.current.scrollTo({ left: i * scrollRef.current.clientWidth, behavior: "smooth" });
+                  }
+                }}
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  background: currentCardIndex === i ? T.primary : T.border,
+                  cursor: "pointer",
+                  transition: "all 0.3s",
+                }}
+              />
+            ))}
+          </div>
+          )}
+        </>
       ) : (
         <Card>
           <div style={{
@@ -913,107 +881,142 @@ export default function Applications({
       )}
 
 
-      {/* Detail Modal */}
-      <Modal open={!!selectedApp} onClose={() => setSelectedApp(null)} maxWidth={680}>
+      <Modal open={!!selectedApp} onClose={() => setSelectedApp(null)} maxWidth={600}>
         {selectedApp && (
-          <>
+          <div style={{ overflow: "hidden" }}>
             <ModalHeader title={isJob ? "Job Application Details" : "General Application Details"} onClose={() => setSelectedApp(null)} />
-            <div
-              style={{
-                display: "flex", alignItems: isMobile ? "flex-start" : "center",
-                flexDirection: isMobile ? "column" : "row", gap: 16, marginBottom: 20,
-                padding: 16, background: isJob ? T.blueLight : T.tealLight, borderRadius: 12,
-              }}
-            >
-              {avatar(selectedApp.name, isMobile ? 48 : 56, isMobile ? 16 : 18)}
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: T.ink }}>{selectedApp.name}</div>
-                <div style={{ color: T.inkLight, fontSize: 13, marginTop: 2 }}>
-                  {isJob ? selectedApp.role : selectedApp.preferredRole}
+
+            {/* Gradient Banner Header */}
+            <div style={{
+              background: "linear-gradient(135deg, #72102a 0%, #3a0010 100%)",
+              margin: isMobile ? "-4px -16px 0" : "-4px -24px 0",
+              padding: isMobile ? "20px 20px 18px" : "24px 28px 20px",
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              flexWrap: "wrap",
+            }}>
+              <div style={{
+                width: 52, height: 52, borderRadius: 14,
+                background: "rgba(255,255,255,0.15)",
+                backdropFilter: "blur(8px)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 18, fontWeight: 800, color: "#fff", flexShrink: 0,
+              }}>
+                {selectedApp.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>
+                  {isJob ? selectedApp.role : selectedApp.preferredRole || "Candidate"}
                 </div>
-                <div style={{ marginTop: 6 }}>
-                  <Badge label={selectedApp.status} variant={statusVariant(selectedApp.status)} />
+                <h3 style={{ margin: 0, fontSize: isMobile ? 17 : 19, fontWeight: 900, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {selectedApp.name}
+                </h3>
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
+                <span style={{
+                  fontSize: 11, fontWeight: 700, borderRadius: 99, padding: "5px 14px",
+                  background: selectedApp.status === "Shortlisted" ? "rgba(52,211,153,0.2)" : selectedApp.status === "Rejected" ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.12)",
+                  color: selectedApp.status === "Shortlisted" ? "#6EE7B7" : selectedApp.status === "Rejected" ? "#FCA5A5" : "rgba(255,255,255,0.7)",
+                  border: `1px solid ${selectedApp.status === "Shortlisted" ? "rgba(110,231,183,0.35)" : selectedApp.status === "Rejected" ? "rgba(252,165,165,0.35)" : "rgba(255,255,255,0.18)"}`,
+                  letterSpacing: "0.02em",
+                }}>
+                  {selectedApp.status}
+                </span>
+              </div>
+            </div>
+
+            {/* Details Grid */}
+            <div style={{ padding: "20px 0 0" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
+                {(isJob
+                  ? [
+                      { icon: "🆔", label: "Application ID", value: selectedApp.id },
+                      { icon: "💼", label: "Role Applied", value: selectedApp.role },
+                      { icon: "📋", label: "Job Posting", value: selectedApp.jobPostingId || "—" },
+                      { icon: "⏳", label: "Experience", value: selectedApp.exp },
+                      { icon: "🎓", label: "Qualification", value: selectedApp.qualification || "—" },
+                      { icon: "👤", label: "Referred By", value: selectedApp.referredBy || "—" },
+                      { icon: "📅", label: "Applied Date", value: selectedApp.applied },
+                      { icon: "✉️", label: "Email", value: selectedApp.email },
+                      { icon: "📞", label: "Phone", value: selectedApp.phone || "—" },
+                    ]
+                  : [
+                      { icon: "🆔", label: "Application ID", value: selectedApp.id },
+                      { icon: "💼", label: "Preferred Role", value: selectedApp.preferredRole || "—" },
+                      { icon: "🏢", label: "Preferred Dept", value: selectedApp.preferredDept || "—" },
+                      { icon: "⏳", label: "Experience", value: selectedApp.exp },
+                      { icon: "🎓", label: "Qualification", value: selectedApp.qualification || "—" },
+                      { icon: "📅", label: "Applied Date", value: selectedApp.applied },
+                      { icon: "✉️", label: "Email", value: selectedApp.email },
+                      { icon: "📞", label: "Phone", value: selectedApp.phone || "—" },
+                    ]
+                ).map((item, idx) => (
+                  <div key={idx} style={{
+                    padding: "12px 14px", background: T.canvas, border: `1px solid ${T.border}`,
+                    borderRadius: 10, display: "flex", alignItems: "center", gap: 12,
+                  }}>
+                    <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1 }}>{item.icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>
+                        {item.label}
+                      </div>
+                      <div style={{ fontSize: 13, color: T.ink, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {item.value}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Action Footer */}
+              <div style={{
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+                justifyContent: "space-between",
+                alignItems: isMobile ? "stretch" : "center",
+                marginTop: 20,
+                borderTop: `1px solid ${T.border}`,
+                paddingTop: 16,
+                gap: 10,
+              }}>
+                <a
+                  href={selectedApp.resume || "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => {
+                    if (!selectedApp.resume) {
+                      e.preventDefault();
+                      alert("Resume not available.");
+                    }
+                  }}
+                  style={{
+                    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+                    padding: "9px 16px", borderRadius: 10,
+                    background: T.canvas, border: `1.5px solid ${T.border}`,
+                    color: T.blue, textDecoration: "none", fontWeight: 700, fontSize: 13,
+                  }}
+                >
+                  📄 View Resume
+                </a>
+                <div style={{ display: "flex", gap: 8, width: isMobile ? "100%" : "auto" }}>
+                  <Btn
+                    label={selectedApp.status === "Shortlisted" ? "✓ Shortlisted" : "Shortlist"}
+                    variant={selectedApp.status === "Shortlisted" ? "success" : "outline"}
+                    onClick={() => updateStatus(selectedApp, "Shortlisted")}
+                    style={{ flex: isMobile ? 1 : undefined }}
+                  />
+                  <Btn
+                    label={selectedApp.status === "Rejected" ? "✗ Rejected" : "Reject"}
+                    variant={selectedApp.status === "Rejected" ? "danger" : "outline"}
+                    onClick={() => updateStatus(selectedApp, "Rejected")}
+                    style={{ flex: isMobile ? 1 : undefined }}
+                  />
                 </div>
               </div>
-              <a
-                href={selectedApp.resume || "#"}
-                target="_blank"
-                rel="noreferrer"
-                onClick={(e) => {
-                  if (!selectedApp.resume) {
-                    e.preventDefault();
-                    alert("Resume not available.");
-                  }
-                }}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "8px 14px",
-                  borderRadius: 8,
-                  background: T.blue,
-                  color: "#fff",
-                  textDecoration: "none",
-                  fontWeight: 700,
-                  fontSize: 13,
-                }}
-              >
-                View Resume
-              </a>
             </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16, marginBottom: 20 }}>
-              {isJob
-                ? [
-                    ["Application ID", selectedApp.id],
-                    ["Status", selectedApp.status],
-                    ["Role Applied", selectedApp.role],
-                    ["Job Posting", selectedApp.jobPostingId || "—"],
-                    ["Experience", selectedApp.exp],
-                    ["Qualification", selectedApp.qualification || "—"],
-                    ["Referred By", selectedApp.referredBy || "—"],
-                    ["Applied Date", selectedApp.applied],
-                    ["Email", selectedApp.email],
-                    ["Phone", selectedApp.phone || "—"],
-                  ].map(([label, value]) => (
-                    <div key={label}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>{label}</div>
-                      <div style={{ fontSize: 14, color: T.ink }}>{value}</div>
-                    </div>
-                  ))
-                : [
-                    ["Application ID", selectedApp.id],
-                    ["Status", selectedApp.status],
-                    ["Preferred Role", selectedApp.preferredRole || "—"],
-                    ["Preferred Dept", selectedApp.preferredDept || "—"],
-                    ["Experience", selectedApp.exp],
-                    ["Qualification", selectedApp.qualification || "—"],
-                    ["Applied Date", selectedApp.applied],
-                    ["Email", selectedApp.email],
-                    ["Phone", selectedApp.phone || "—"],
-                  ].map(([label, value]) => (
-                    <div key={label}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>{label}</div>
-                      <div style={{ fontSize: 14, color: T.ink }}>{value}</div>
-                    </div>
-                  ))}
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-              <Btn
-                label="Shortlist"
-                variant={selectedApp.status === "Shortlisted" ? "success" : "outline"}
-                className="btn-shortlist"
-                onClick={() => updateStatus(selectedApp, "Shortlisted")}
-              />
-              <Btn
-                label="Reject"
-                variant={selectedApp.status === "Rejected" ? "danger" : "outline"}
-                className="btn-reject"
-                onClick={() => updateStatus(selectedApp, "Rejected")}
-              />
-            </div>
-          </>
+          </div>
         )}
       </Modal>
 

@@ -621,7 +621,6 @@ export default function OfferManagement({
                   }}
                 />
               )}
-              <Btn label="Close" variant="ghost" onClick={() => setSelectedOfferForModal(null)} />
             </div>
           </>
         )}
@@ -649,7 +648,6 @@ export default function OfferManagement({
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <Btn label="Download PDF" variant="outline" onClick={() => alert("PDF download would be implemented here.")} />
-              <Btn label="Close" variant="ghost" onClick={() => setViewOffer(null)} />
             </div>
           </>
         )}

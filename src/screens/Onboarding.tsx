@@ -15,7 +15,7 @@ const TASK_LABELS = [
   "Check In"
 ];
 
-export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }) {
+export default function Onboarding({ jobPostings = [], offers = [] }: { jobPostings?: any[]; offers?: any[] }) {
   const bp = useBreakpoint();
   const isMobile = bp === "mobile";
   const hScroll = useHorizontalScroll();
@@ -68,6 +68,43 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
   useEffect(() => {
     localStorage.setItem("onboardingRecords", JSON.stringify(records));
   }, [records]);
+
+  // Auto-add accepted offers to onboarding records
+  useEffect(() => {
+    if (!offers || offers.length === 0) return;
+    const acceptedOffers = offers.filter((o) => o.status === "Accepted");
+    if (acceptedOffers.length === 0) return;
+
+    setRecords((prev) => {
+      let updated = [...prev];
+      let changed = false;
+      for (const o of acceptedOffers) {
+        const alreadyExists = updated.some(
+          (r) => r.name?.toLowerCase() === o.candidate?.toLowerCase() && r.role?.toLowerCase() === o.role?.toLowerCase()
+        );
+        if (!alreadyExists) {
+          changed = true;
+          updated.push({
+            id: `ONB-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            name: o.candidate,
+            role: o.role,
+            joining: o.joining || "—",
+            empId: "—",
+            status: "Documents Pending",
+            tasks: {
+              profile: "Verified",
+              offer: "Verified",
+              docsUpload: "Verified",
+              docsVerify: "Pending",
+              bgc: "Pending",
+              checkin: false,
+            },
+          });
+        }
+      }
+      return changed ? updated : prev;
+    });
+  }, [offers]);
 
   const ALL_APPS = [...JOB_APPLICATIONS, ...GENERAL_APPLICATIONS.map((a) => ({ ...a, role: a.preferredRole }))];
 
@@ -879,8 +916,79 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {TASK_LABELS.map((t, i) => {
                     const key = TASK_KEYS[i];
-                    if (key === "checkin") return null;
                     const val = currentRecord.tasks[key];
+
+                    // Check In step — show inline but gated
+                    if (key === "checkin") {
+                      const allPriorVerified = (["profile", "offer", "docsUpload", "docsVerify", "bgc"] as const).every(
+                        (k) => currentRecord.tasks[k] === "Verified"
+                      );
+                      const isDone = !!val;
+                      const canCheckIn = isDone || allPriorVerified;
+
+                      return (
+                        <button
+                          key={t}
+                          onClick={() => {
+                            if (!canCheckIn) return;
+                            toggleTask(currentRecord.id, "checkin");
+                          }}
+                          disabled={!canCheckIn}
+                          style={{
+                            display: "flex", alignItems: "center", justifyContent: "space-between",
+                            cursor: canCheckIn ? "pointer" : "not-allowed",
+                            padding: "12px 16px", borderRadius: 10,
+                            background: isDone
+                              ? T.greenLight
+                              : canCheckIn
+                                ? "linear-gradient(135deg, #EFF6FF 0%, #E0F2FE 100%)"
+                                : T.canvas,
+                            border: `1.5px solid ${isDone ? "#A7F3D0" : canCheckIn ? T.blue : T.border}`,
+                            width: "100%", textAlign: "left", transition: "all 0.2s",
+                            opacity: canCheckIn ? 1 : 0.55,
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <span style={{
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              width: 22, height: 22, borderRadius: "50%",
+                              border: `2px solid ${isDone ? T.green : canCheckIn ? T.blue : T.inkFaint}`,
+                              background: isDone ? T.green : "transparent",
+                              color: "#fff", fontSize: 11, fontWeight: 800
+                            }}>
+                              {isDone ? "✓" : canCheckIn ? "" : "🔒"}
+                            </span>
+                            <div>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: isDone ? "#065F46" : canCheckIn ? T.blue : T.inkFaint }}>
+                                {t}
+                              </span>
+                              {!canCheckIn && (
+                                <div style={{ fontSize: 10, color: T.inkFaint, marginTop: 2 }}>
+                                  Complete all verification steps first
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {canCheckIn && !isDone && (
+                            <span style={{
+                              fontSize: 11, fontWeight: 700, color: "#fff",
+                              background: T.blue, borderRadius: 6, padding: "4px 12px",
+                            }}>
+                              Check In Now
+                            </span>
+                          )}
+                          {isDone && (
+                            <span style={{
+                              fontSize: 11, fontWeight: 700, color: T.green,
+                              background: "rgba(16,185,129,0.1)", borderRadius: 6, padding: "4px 12px",
+                            }}>
+                              ✓ Checked In
+                            </span>
+                          )}
+                        </button>
+                      );
+                    }
+
                     const isSpecialField = key === "profile" || key === "offer" || key === "docsUpload" || key === "docsVerify" || key === "bgc";
 
                     if (isSpecialField) {
@@ -1016,37 +1124,6 @@ export default function Onboarding({ jobPostings = [] }: { jobPostings?: any[] }
                 </div>
               </div>
 
-              {(() => {
-                const canCheckIn = currentRecord.tasks.checkin || ["profile", "offer", "docsUpload", "docsVerify", "bgc"].every(k => currentRecord.tasks[k] === "Verified");
-                return (
-                  <div style={{ marginTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ fontSize: 12, color: T.red, fontWeight: 500 }}>
-                      {!canCheckIn && "★ All steps must be verified before Check In"}
-                    </div>
-                    <button
-                      onClick={() => {
-                        if (!canCheckIn) return;
-                        toggleTask(currentRecord.id, "checkin");
-                        setSelectedRecord(null);
-                      }}
-                      style={{
-                        background: canCheckIn ? (currentRecord.tasks.checkin ? T.green : T.blue) : T.canvas,
-                        color: canCheckIn ? "#fff" : T.inkFaint,
-                        border: canCheckIn ? "none" : `1px solid ${T.border}`,
-                        borderRadius: 8,
-                        padding: "8px 20px",
-                        fontSize: 13,
-                        fontWeight: 700,
-                        cursor: canCheckIn ? "pointer" : "not-allowed",
-                        transition: "all 0.2s"
-                      }}
-                      disabled={!canCheckIn}
-                    >
-                      {currentRecord.tasks.checkin ? "Checked In" : "Check In"}
-                    </button>
-                  </div>
-                );
-              })()}
             </>
           );
         })()}

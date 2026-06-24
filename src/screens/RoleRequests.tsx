@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { T } from "../theme";
 import { statusVariant } from "../theme";
 import { useBreakpoint } from "../hooks";
-import { Card, SectionTitle, Table, Mono, Btn, Input, Badge, FormField } from "../components/ui";
+import { Card, SectionTitle, Table, Mono, Btn, Input, Badge, FormField, Modal, ModalHeader, Textarea } from "../components/ui";
 
 interface RoleRequestsProps {
   roleRequests: any[];
@@ -427,16 +427,48 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
         </div>
       ))}
 
-      {showForm && (
-        <div style={{ marginBottom: 20 }}>
+      <Modal open={showForm} onClose={() => { setShowForm(false); setEditingId(null); setRoleForms([emptyForm()]); }} maxWidth={620}>
+        <ModalHeader title={editingId ? "Edit Role Request" : "New Role Request"} onClose={() => { setShowForm(false); setEditingId(null); setRoleForms([emptyForm()]); }} />
+        
+        {/* Gradient Banner Header */}
+        <div style={{
+          background: "linear-gradient(135deg, #72102a 0%, #3a0010 100%)",
+          margin: isMobile ? "-16px -16px 20px -16px" : "-24px -24px 20px -24px",
+          padding: "20px 24px",
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+        }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: "rgba(255,255,255,0.15)",
+            backdropFilter: "blur(8px)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 22, flexShrink: 0,
+          }}>
+            📂
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>
+              {editingId ? "Modify Role Request Details" : "Raise New Headcount Request"}
+            </div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", marginTop: 2 }}>
+              Provide job details and salary specifications to start the approval workflow.
+            </div>
+          </div>
+        </div>
+
+        {/* Scrollable forms container */}
+        <div style={{ maxHeight: "55vh", overflowY: "auto", paddingRight: 4, margin: "0 -4px" }}>
           {roleForms.map((form, index) => (
-            <Card key={form.id} style={{ padding: 20, marginBottom: 16, borderTop: `3px solid ${T.blue}` }}>
+            <Card key={form.id} hover={false} style={{ padding: 18, marginBottom: 16, border: `1px solid ${T.border}`, background: T.canvas }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <div style={{ fontSize: 16, fontWeight: 800, color: T.ink }}>
-                  {editingId ? "Edit Role Request" : `Role Request #${index + 1}`}
+                <div style={{ fontSize: 14, fontWeight: 800, color: T.ink }}>
+                  {editingId ? "Role Details" : `Role Request #${index + 1}`}
                 </div>
                 {roleForms.length > 1 && (
-                  <button onClick={() => removeForm(index)} style={{ border: "none", background: "#FEE2E2", color: "#DC2626", padding: "6px 12px", borderRadius: 8, cursor: "pointer", fontWeight: 700 }}>
+                  <button onClick={() => removeForm(index)} style={{ border: "none", background: "#FEE2E2", color: "#DC2626", padding: "6px 12px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12 }}>
                     Remove
                   </button>
                 )}
@@ -507,23 +539,24 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                 </div>
               </div>
               <FormField label="Justification" required>
-                <textarea
+                <Textarea
                   value={form.just}
                   onChange={(e) => updateForm(index, "just", e.target.value)}
                   placeholder="Why is this role needed?"
-                  style={{ width: "100%", minHeight: 90, border: `1.5px solid ${T.border}`, borderRadius: 8, padding: 12, resize: "vertical", outline: "none", fontSize: 13, boxSizing: "border-box" }}
+                  rows={3}
                 />
               </FormField>
             </Card>
           ))}
-
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
-            <Btn label="Submit Request" onClick={submitRequests} />
-            {!editingId && <Btn label="+ Add More" variant="outline" onClick={() => setRoleForms((p) => [...p, emptyForm()])} />}
-            <Btn label="Cancel" variant="ghost" onClick={() => { setShowForm(false); setEditingId(null); setRoleForms([emptyForm()]); }} />
-          </div>
         </div>
-      )}
+
+        {/* Footer actions */}
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end", marginTop: 20, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
+          {!editingId && <Btn label="+ Add More" variant="outline" onClick={() => setRoleForms((p) => [...p, emptyForm()])} style={{ marginRight: "auto" }} />}
+          <Btn label="Cancel" variant="ghost" onClick={() => { setShowForm(false); setEditingId(null); setRoleForms([emptyForm()]); }} />
+          <Btn label="Submit Request" onClick={submitRequests} />
+        </div>
+      </Modal>
 
       {isMobile ? (
         <div style={{ marginBottom: 4 }}>

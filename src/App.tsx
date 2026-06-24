@@ -195,7 +195,7 @@ export default function App() {
       case "offer-management":
         return <OfferManagement offers={offers} setOffers={setOffers} jobPostings={jobPostings} />;
       case "onboarding":
-        return <Onboarding jobPostings={jobPostings} />;
+        return <Onboarding jobPostings={jobPostings} offers={offers} />;
       default:
         return <Dashboard approvalRequests={approvalRequests} />;
     }
