@@ -574,31 +574,87 @@ export default function OfferManagement({
         {selectedOfferForModal && (
           <>
             <ModalHeader title="Offer Details" onClose={() => setSelectedOfferForModal(null)} />
-            <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-              <Badge label={selectedOfferForModal.status} variant={statusVariant(selectedOfferForModal.status)} />
+            
+            {/* Gradient Banner Header */}
+            <div style={{
+              background: "linear-gradient(135deg, #72102a 0%, #3a0010 100%)",
+              margin: isMobile ? "-4px -16px 20px" : "-4px -24px 20px",
+              padding: isMobile ? "18px 20px" : "24px 28px 20px",
+              display: "flex",
+              alignItems: "center",
+              gap: 16,
+            }}>
+              <div style={{
+                width: 54, height: 54, borderRadius: 14,
+                background: "rgba(255,255,255,0.15)",
+                backdropFilter: "blur(8px)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 24, flexShrink: 0,
+              }}>
+                📄
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+                  {selectedOfferForModal.id} · {selectedOfferForModal.role}
+                </div>
+                <h3 style={{ margin: 0, fontSize: font.lg + 1, fontWeight: font.black, fontFamily: font.heading, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {selectedOfferForModal.candidate}
+                </h3>
+              </div>
+              <div style={{ display: "flex", gap: 6, flexDirection: "column", alignItems: "flex-end", flexShrink: 0 }}>
+                <span style={{
+                  fontSize: 11, fontWeight: 700, borderRadius: 99, padding: "5px 14px",
+                  background: selectedOfferForModal.status === "Accepted" ? "rgba(52,211,153,0.2)" : selectedOfferForModal.status === "Rejected" ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.12)",
+                  color: selectedOfferForModal.status === "Accepted" ? "#6EE7B7" : selectedOfferForModal.status === "Rejected" ? "#FCA5A5" : "rgba(255,255,255,0.7)",
+                  border: `1px solid ${selectedOfferForModal.status === "Accepted" ? "rgba(110,231,183,0.35)" : selectedOfferForModal.status === "Rejected" ? "rgba(252,165,165,0.35)" : "rgba(255,255,255,0.18)"}`,
+                  letterSpacing: "0.02em",
+                }}>
+                  {selectedOfferForModal.status}
+                </span>
+              </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+
+            {/* Details Grid */}
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 16 }}>
               {[
-                ["Offer ID", selectedOfferForModal.id],
-                ["Candidate", selectedOfferForModal.candidate],
-                ["Role", selectedOfferForModal.role],
-                ["Interview Score", (() => {
-                  const int = INTERVIEWS.find(i => i.candidate === selectedOfferForModal.candidate && i.role === selectedOfferForModal.role);
-                  return int && int.score !== null ? `${int.score}` : "—";
-                })()],
-                ["Status", selectedOfferForModal.status],
-                ["CTC (Monthly)", selectedOfferForModal.ctc || "—"],
-                ["Issued Date", selectedOfferForModal.issued || "—"],
-                ["Expiry Date", selectedOfferForModal.expiry || "—"],
-                ["Expected Joining Date", selectedOfferForModal.joining || "—"],
-              ].map(([label, value]) => (
-                <div key={label as string}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>{label as string}</div>
-                  <div style={{ fontSize: 14, color: T.ink }}>{value as React.ReactNode}</div>
+                { label: "Offer ID", value: selectedOfferForModal.id },
+                { label: "Candidate", value: selectedOfferForModal.candidate },
+                { label: "Role Name", value: selectedOfferForModal.role },
+                { 
+                  label: "Interview Score", 
+                  value: (() => {
+                    const int = INTERVIEWS.find(i => i.candidate === selectedOfferForModal.candidate && i.role === selectedOfferForModal.role);
+                    return int && int.score !== null ? `${int.score} / 100` : "—";
+                  })()
+                },
+                { label: "CTC (Monthly)", value: selectedOfferForModal.ctc || "—" },
+                { label: "Issued Date", value: selectedOfferForModal.issued || "—" },
+                { label: "Expiry Date", value: selectedOfferForModal.expiry || "—" },
+                { label: "Expected Joining Date", value: selectedOfferForModal.joining || "—" },
+              ].map((item, idx) => (
+                <div key={idx} style={{
+                  padding: "10px 12px", background: T.canvas, border: `1px solid ${T.border}`,
+                  borderRadius: 8, display: "flex", flexDirection: "column", gap: 3
+                }}>
+                  <span style={{ fontSize: 9.5, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    {item.label}
+                  </span>
+                  <div style={{ fontSize: 12.5, color: T.ink, fontWeight: 600 }}>
+                    {item.value || "—"}
+                  </div>
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 24, display: "flex", gap: 10, justifyContent: "flex-end" }}>
+
+            <div style={{
+              marginTop: 20,
+              display: "flex",
+              gap: 10,
+              justifyContent: isMobile ? "stretch" : "flex-end",
+              borderTop: `1px solid ${T.border}`,
+              paddingTop: 16
+            }}>
               {selectedOfferForModal.ctc && selectedOfferForModal.issued && selectedOfferForModal.expiry ? (
                 <Btn
                   label="View Letter"
@@ -608,6 +664,7 @@ export default function OfferManagement({
                     setViewOffer(selectedOfferForModal);
                     setSelectedOfferForModal(null);
                   }}
+                  style={{ flex: isMobile ? 1 : undefined }}
                 />
               ) : (
                 <Btn
@@ -619,6 +676,7 @@ export default function OfferManagement({
                     setShowGenerateModal(true);
                     setSelectedOfferForModal(null);
                   }}
+                  style={{ flex: isMobile ? 1 : undefined }}
                 />
               )}
             </div>
@@ -631,56 +689,136 @@ export default function OfferManagement({
         {viewOffer && (
           <>
             <ModalHeader title="Offer Letter Preview" onClose={() => setViewOffer(null)} />
-            <div style={{ background: T.canvas, border: `1px solid ${T.border}`, borderRadius: 10, padding: 24, marginBottom: 20 }}>
-              <div style={{ textAlign: "center", marginBottom: 20 }}>
-                <div style={{ fontSize: 18, fontWeight: 900, color: T.blue }}>South Point School</div>
-                <div style={{ fontSize: 12, color: T.inkLight, marginTop: 2 }}>Offer of Employment</div>
+            
+            {/* Gradient Banner Header */}
+            <div style={{
+              background: "linear-gradient(135deg, #72102a 0%, #3a0010 100%)",
+              margin: isMobile ? "-4px -16px 20px" : "-4px -24px 20px",
+              padding: isMobile ? "18px 20px" : "24px 28px 20px",
+              display: "flex",
+              alignItems: "center",
+              gap: 16,
+            }}>
+              <div style={{
+                width: 54, height: 54, borderRadius: 14,
+                background: "rgba(255,255,255,0.15)",
+                backdropFilter: "blur(8px)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 24, flexShrink: 0,
+              }}>
+                📄
               </div>
-              <div style={{ fontSize: 13, color: T.inkMid, lineHeight: 1.8 }}>
-                <p>Dear <strong>{viewOffer.candidate}</strong>,</p>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+                  Offer Letter Preview · {viewOffer.role}
+                </div>
+                <h3 style={{ margin: 0, fontSize: font.lg + 1, fontWeight: font.black, fontFamily: font.heading, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {viewOffer.candidate}
+                </h3>
+              </div>
+            </div>
+
+            <div style={{
+              background: T.canvas,
+              border: `1px solid ${T.border}`,
+              borderRadius: 12,
+              padding: isMobile ? "16px 18px" : "24px 28px",
+              marginBottom: 20,
+              boxShadow: "inset 0 1px 3px rgba(0,0,0,0.02)",
+            }}>
+              <div style={{ textAlign: "center", marginBottom: 20, borderBottom: `1px dashed ${T.border}`, paddingBottom: 16 }}>
+                <div style={{ fontSize: 20, fontWeight: 900, color: "#72102a", fontFamily: font.heading }}>South Point School</div>
+                <div style={{ fontSize: 12, color: T.inkLight, fontWeight: 600, marginTop: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Offer of Employment</div>
+              </div>
+              <div style={{ fontSize: 13.5, color: T.inkMid, lineHeight: 1.8, fontFamily: font.body }}>
+                <p style={{ marginTop: 0 }}>Dear <strong>{viewOffer.candidate}</strong>,</p>
                 <p>
                   We are pleased to offer you the position of <strong>{viewOffer.role}</strong> at South Point School.
                   The monthly compensation for this role is <strong style={{ color: T.tealDark }}>{viewOffer.ctc}</strong>.
                 </p>
                 <p>This offer is valid until <strong>{viewOffer.expiry}</strong>. Please confirm your acceptance by the deadline.</p>
-                <p style={{ marginTop: 16 }}>Warm regards,<br /><strong>HR Department</strong><br />South Point School</p>
+                <p style={{ marginTop: 24, marginBottom: 0, borderTop: `1px solid ${T.border}`, paddingTop: 16 }}>
+                  Warm regards,<br />
+                  <strong style={{ color: T.ink }}>HR Department</strong><br />
+                  <span style={{ fontSize: 12, color: T.inkFaint }}>South Point School</span>
+                </p>
               </div>
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <Btn label="Download PDF" variant="outline" onClick={() => alert("PDF download would be implemented here.")} />
+
+            <div style={{
+              display: "flex",
+              gap: 10,
+              justifyContent: isMobile ? "stretch" : "flex-end",
+              borderTop: `1px solid ${T.border}`,
+              paddingTop: 16
+            }}>
+              <Btn
+                label="Download PDF"
+                onClick={() => alert("PDF download would be implemented here.")}
+                style={{ flex: isMobile ? 1 : undefined }}
+              />
+              <Btn
+                label="Close"
+                variant="ghost"
+                onClick={() => setViewOffer(null)}
+                style={{ flex: isMobile ? 1 : undefined }}
+              />
             </div>
           </>
         )}
       </Modal>
+
       {/* Generate Offer Modal (OfferManagement) */}
       <Modal open={showGenerateModal} onClose={() => setShowGenerateModal(false)} maxWidth={520}>
         <ModalHeader title="Generate Offer Letter" onClose={() => setShowGenerateModal(false)} />
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14, marginBottom: 14 }}>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: T.inkLight, marginBottom: 6 }}>Candidate</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: T.ink }}>{genForm.candidate}</div>
+        
+        {/* Gradient Banner Header */}
+        <div style={{
+          background: "linear-gradient(135deg, #72102a 0%, #3a0010 100%)",
+          margin: isMobile ? "-4px -16px 20px" : "-4px -24px 20px",
+          padding: isMobile ? "18px 20px" : "24px 28px 20px",
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+        }}>
+          <div style={{
+            width: 54, height: 54, borderRadius: 14,
+            background: "rgba(255,255,255,0.15)",
+            backdropFilter: "blur(8px)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 24, flexShrink: 0,
+          }}>
+            ✉️
           </div>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: T.inkLight, marginBottom: 6 }}>Role</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: T.ink }}>{genForm.role}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+              Generate Offer Letter · {genForm.role}
+            </div>
+            <h3 style={{ margin: 0, fontSize: font.lg + 1, fontWeight: font.black, fontFamily: font.heading, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {genForm.candidate}
+            </h3>
           </div>
-          <div>
-            <FormField label="CTC (Monthly)" required>
-              <Input
-                type="number"
-                placeholder={genRange ? genRange.label : "Enter monthly CTC"}
-                value={genForm.ctc}
-                onChange={(e) => setGenForm((p) => ({ ...p, ctc: e.target.value }))}
-                style={{ width: "100%" }}
-              />
-              {genRange && (
-                <div style={{ marginTop: 6, fontSize: 11, color: T.inkLight }}>
-                  Allowed range: {genRange.label}
-                </div>
-              )}
-            </FormField>
-          </div>
-          <div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 20 }}>
+          <FormField label="CTC (Monthly)" required>
+            <Input
+              type="number"
+              placeholder={genRange ? genRange.label : "Enter monthly CTC"}
+              value={genForm.ctc}
+              onChange={(e) => setGenForm((p) => ({ ...p, ctc: e.target.value }))}
+              style={{ width: "100%" }}
+            />
+            {genRange && (
+              <div style={{ marginTop: 6, fontSize: 11, color: T.inkLight }}>
+                Allowed range: {genRange.label}
+              </div>
+            )}
+          </FormField>
+
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14 }}>
             <FormField label="Offer Expiry Date" required>
               <Input
                 type="date"
@@ -689,8 +827,6 @@ export default function OfferManagement({
                 style={{ width: "100%" }}
               />
             </FormField>
-          </div>
-          <div>
             <FormField label="Expected Joining Date" required>
               <Input
                 type="date"
@@ -701,7 +837,14 @@ export default function OfferManagement({
             </FormField>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
+
+        <div style={{
+          display: "flex",
+          gap: 10,
+          justifyContent: isMobile ? "stretch" : "flex-end",
+          borderTop: `1px solid ${T.border}`,
+          paddingTop: 16
+        }}>
           <Btn
             label="Generate & Send"
             onClick={() => {
@@ -732,8 +875,14 @@ export default function OfferManagement({
               setGenForm({ candidate: "", role: "", ctc: "", expiry: "", joining: "" });
               setGenRange(null);
             }}
+            style={{ flex: isMobile ? 1 : undefined }}
           />
-          <Btn label="Cancel" variant="ghost" onClick={() => setShowGenerateModal(false)} />
+          <Btn
+            label="Cancel"
+            variant="ghost"
+            onClick={() => setShowGenerateModal(false)}
+            style={{ flex: isMobile ? 1 : undefined }}
+          />
         </div>
       </Modal>
     </div>

@@ -2216,7 +2216,6 @@ export default function InterviewPanel({
                   setSelectedAppDetail(null);
                 }}
               />
-              <Btn label="Close" onClick={() => setSelectedAppDetail(null)} />
             </div>
           </>
         )}

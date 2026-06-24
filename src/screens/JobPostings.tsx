@@ -546,42 +546,90 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
         return (
           <Modal open={!!selectedJobForModal} onClose={() => setSelectedJobForModal(null)} maxWidth={600}>
             <ModalHeader title="Job Posting Details" onClose={() => setSelectedJobForModal(null)} />
-            <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-              <Badge label={selectedJobForModal.status || "Unpublished"} variant={selectedJobForModal.status === "Published" ? "green" : "amber"} />
-              <Badge label={`${selectedJobForModal.apps || 0} Applications`} variant="blue" />
+            
+            {/* Gradient Banner Header */}
+            <div style={{
+              background: "linear-gradient(135deg, #72102a 0%, #3a0010 100%)",
+              margin: isMobile ? "-4px -16px 20px" : "-4px -24px 20px",
+              padding: isMobile ? "18px 20px" : "24px 28px 20px",
+              display: "flex",
+              alignItems: "center",
+              gap: 16,
+            }}>
+              <div style={{
+                width: 54, height: 54, borderRadius: 14,
+                background: "rgba(255,255,255,0.15)",
+                backdropFilter: "blur(8px)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 24, flexShrink: 0,
+              }}>
+                💼
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+                  {selectedJobForModal.id} · {selectedJobForModal.channel || "Posting Channel"}
+                </div>
+                <h3 style={{ margin: 0, fontSize: font.lg + 1, fontWeight: font.black, fontFamily: font.heading, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {selectedJobForModal.role}
+                </h3>
+              </div>
+              <div style={{ display: "flex", gap: 6, flexDirection: "column", alignItems: "flex-end", flexShrink: 0 }}>
+                <span style={{
+                  fontSize: 11, fontWeight: 700, borderRadius: 99, padding: "5px 14px",
+                  background: selectedJobForModal.status === "Published" ? "rgba(52,211,153,0.2)" : "rgba(255,255,255,0.12)",
+                  color: selectedJobForModal.status === "Published" ? "#6EE7B7" : "rgba(255,255,255,0.7)",
+                  border: `1px solid ${selectedJobForModal.status === "Published" ? "rgba(110,231,183,0.35)" : "rgba(255,255,255,0.18)"}`,
+                  letterSpacing: "0.02em",
+                }}>
+                  {selectedJobForModal.status || "Unpublished"}
+                </span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 600 }}>
+                  {selectedJobForModal.apps || 0} applications
+                </span>
+              </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+
+            {/* Details Grid */}
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 16 }}>
               {[
-                ["Role", selectedJobForModal.role],
-                ["Vacancies", details.vacancies],
-                ["Experience", details.exp],
-                ["Qualification", details.qual],
-                ["Employment Type", details.type],
-                ["Salary Range", details.salary],
-                ["Location", details.location],
-                ["Channel", selectedJobForModal.channel],
-                ["Posted Date", selectedJobForModal.posted || "—"],
-                ["Expiry", selectedJobForModal.expiry || "—"],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>{label}</div>
-                  <div style={{ fontSize: 14, color: T.ink }}>{value || "—"}</div>
+                { label: "Vacancies", value: details.vacancies },
+                { label: "Experience", value: details.exp },
+                { label: "Qualification", value: details.qual },
+                { label: "Employment Type", value: details.type },
+                { label: "Salary Range", value: details.salary },
+                { label: "Location", value: details.location },
+                { label: "Posted Date", value: selectedJobForModal.posted || "—" },
+                { label: "Expiry", value: selectedJobForModal.expiry || "—" },
+              ].map((item, idx) => (
+                <div key={idx} style={{
+                  padding: "10px 12px", background: T.canvas, border: `1px solid ${T.border}`,
+                  borderRadius: 8, display: "flex", flexDirection: "column", gap: 3
+                }}>
+                  <span style={{ fontSize: 9.5, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    {item.label}
+                  </span>
+                  <div style={{ fontSize: 12.5, color: T.ink, fontWeight: 600 }}>
+                    {item.value || "—"}
+                  </div>
                 </div>
               ))}
             </div>
+
             {details.description && details.description !== "—" && (
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>Job Description</div>
-                <div style={{ fontSize: 13, color: T.ink, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{details.description}</div>
+              <div style={{ marginBottom: 14, background: T.canvas, border: `1px solid ${T.border}`, borderRadius: 8, padding: 12 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Job Description</div>
+                <div style={{ fontSize: 12.5, color: T.ink, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{details.description}</div>
               </div>
             )}
             {details.justification && details.justification !== "—" && (
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>Justification</div>
-                <div style={{ fontSize: 13, color: T.ink, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{details.justification}</div>
+              <div style={{ marginBottom: 14, background: T.canvas, border: `1px solid ${T.border}`, borderRadius: 8, padding: 12 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Justification</div>
+                <div style={{ fontSize: 12.5, color: T.ink, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{details.justification}</div>
               </div>
             )}
-            <div style={{ marginTop: 24, display: "flex", gap: 10, justifyContent: "flex-end" }}>
+
+            <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: "flex-end", borderTop: `1px solid ${T.border}`, paddingTop: 16 }}>
               {selectedJobForModal.status === "Published" && (
                 <Btn label="Share" variant="outline" onClick={(e) => { e.stopPropagation(); shareJob(selectedJobForModal); }} />
               )}
@@ -597,7 +645,6 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
                 }}
               />
             </div>
-
           </Modal>
         );
       })()}

@@ -177,16 +177,15 @@ function RolesTable({
   const renderRoleDetailsModal = () => {
     if (!sel) return null;
     const sc = STATUS_COLORS[sel.currentStatus] || STATUS_COLORS.Active;
-    return (
-      <Modal open={!!sel} onClose={close} maxWidth={520}>
+    return (      <Modal open={!!sel} onClose={close} maxWidth={520}>
         <div>
-          <ModalHeader title="" onClose={close} />
-
+          <ModalHeader title="Role Details" onClose={close} />
+ 
           {/* Gradient Banner Header */}
           <div style={{
             background: "linear-gradient(135deg, #72102a 0%, #3a0010 100%)",
-            margin: "-4px -24px 0",
-            padding: "24px 28px 20px",
+            margin: bp === "mobile" ? "-4px -16px 20px" : "-4px -24px 20px",
+            padding: bp === "mobile" ? "18px 20px" : "24px 28px 20px",
             display: "flex",
             alignItems: "center",
             gap: 16,
@@ -277,10 +276,9 @@ function RolesTable({
             />
           </div>
         </div>
-      </div>
-      </Modal >
+      </Modal>
     );
-};
+  };
 
 const renderRows = () => rows.map((r: any) => {
   const sc = STATUS_COLORS[r.currentStatus] || STATUS_COLORS.Active;
